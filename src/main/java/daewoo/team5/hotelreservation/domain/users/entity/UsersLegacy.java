@@ -13,7 +13,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Users {
+public class UsersLegacy {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

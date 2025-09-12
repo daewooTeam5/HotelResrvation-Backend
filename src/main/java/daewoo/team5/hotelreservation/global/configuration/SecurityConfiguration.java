@@ -49,8 +49,9 @@ public class SecurityConfiguration {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/api/v1/users",
-                                "/api/v1/users/login"
-                        ).permitAll()
+                                "/api/v1/users/login",
+                                "/api/v1/reservations/**"
+                        ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

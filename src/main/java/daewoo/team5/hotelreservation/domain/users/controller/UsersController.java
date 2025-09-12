@@ -3,7 +3,7 @@ package daewoo.team5.hotelreservation.domain.users.controller;
 import daewoo.team5.hotelreservation.domain.users.controller.swagger.UsersSwagger;
 import daewoo.team5.hotelreservation.domain.users.dto.request.CreateUserDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.LogInUserDto;
-import daewoo.team5.hotelreservation.domain.users.entity.Users;
+import daewoo.team5.hotelreservation.domain.users.entity.UsersLegacy;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.service.UsersService;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
@@ -25,8 +25,8 @@ public class UsersController implements UsersSwagger {
 
     @PostMapping
     @Override
-    public ApiResult<Users> createUser(@RequestBody CreateUserDto createUserDto) {
-        Users users = usersService.registerUser(createUserDto);
+    public ApiResult<UsersLegacy> createUser(@RequestBody CreateUserDto createUserDto) {
+        UsersLegacy users = usersService.registerUser(createUserDto);
         return ApiResult.created(users,"회원가입 성공");
     }
 
@@ -50,7 +50,7 @@ public class UsersController implements UsersSwagger {
 
     @GetMapping("/my")
     @AuthUser
-    public ApiResult<Users> getMyInfo( Users user) {
+    public ApiResult<UsersLegacy> getMyInfo(UsersLegacy user) {
         return ApiResult.ok(user, "내 정보 조회 성공");
     }
 }
