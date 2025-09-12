@@ -24,31 +24,30 @@ public class ReservationController {
 
     private final ReservationService reservationService;
 
-    // 예약 생성 (POST)
-    @PostMapping
-    public ApiResult<Map<String, String>> createReservation(@RequestBody ReservationDTO reservationDTO) {
-        // JWT 인증 없이 예약 생성 처리
-        ReservationDTO createdReservation = reservationService.createReservation(reservationDTO);
-        return new ApiResult<Map<String, String>>()
-                .status(201)
-                .message("Created")
-                .success(true)
-                .data(Map.of(
-                        "reservationId", String.valueOf(createdReservation.getReservationId())
-                ));
+    // 예약 목록 조회 (GET)
+    @GetMapping("/all")
+    public ResponseEntity<List<ReservationDTO>> getAllReservations() {
+        List<ReservationDTO> reservations = reservationService.getAllReservations();
+        return ResponseEntity.ok(reservations);  // 예약 목록 반환
     }
 
-    // 예약 조회 (예약 ID로) (GET)
+    // 예약 상세 조회 (예약 ID로) (GET)
     @GetMapping("/{reservationId}")
     public ResponseEntity<ReservationDTO> getReservationById(@PathVariable Long reservationId) {
         Optional<ReservationDTO> reservationDTO = reservationService.getReservationById(reservationId);
-        return reservationDTO.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build()); // 예약이 존재하지 않으면 404 반환
+        return reservationDTO.map(ResponseEntity::ok) // 예약이 존재하면 200 OK와 함께 반환
+                .orElseGet(() -> ResponseEntity.notFound().build()); // 예약이 존재하지 않으면 404 반환
     }
 
-    // 예약자 ID로 예약 조회 (GET)
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ReservationDTO>> getReservationsByUserId(@PathVariable int userId) {
-        List<ReservationDTO> reservations = reservationService.getReservationsByUserId(userId);
-        return ResponseEntity.ok(reservations); // 예약 목록 반환
+    // 예약 수정 (PUT)
+    @PutMapping("/{reservationId}")
+    public ResponseEntity<ReservationDTO> updateReservation(@PathVariable Long reservationId,
+                                                            @RequestBody ReservationDTO reservationDTO) {
+        ReservationDTO updatedReservation = reservationService.updateReservation(reservationId, reservationDTO);
+        if (updatedReservation != null) {
+            return ResponseEntity.ok(updatedReservation);  // 수정된 예약 정보를 반환
+        } else {
+            return ResponseEntity.notFound().build();  // 예약이 없으면 404 반환
+        }
     }
 }

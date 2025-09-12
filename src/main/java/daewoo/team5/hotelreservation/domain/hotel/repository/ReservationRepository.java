@@ -5,15 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
-    // 예약자 ID로 예약 조회
-    List<Reservation> findByUserId(int userId);
-
-    // 객실 ID로 예약 조회
-    List<Reservation> findByRoomId(String roomId);
-
-    // 예약 상태로 조회 (예: confirmed, pending 등)
-    List<Reservation> findByStatus(String status);
+    // 예약 ID로 예약을 조회
+    Optional<Reservation> findById(Long reservationId);
 }

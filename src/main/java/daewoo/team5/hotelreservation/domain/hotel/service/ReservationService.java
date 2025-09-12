@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservationService {
@@ -15,32 +16,71 @@ public class ReservationService {
     @Autowired
     private ReservationRepository reservationRepository;
 
-    // 예약 생성
-    public ReservationDTO createReservation(ReservationDTO reservationDTO) {
-        Reservation reservation = Reservation.builder()
-                .userId(reservationDTO.getUserId()) // userId는 int로 처리
-                .roomId(reservationDTO.getRoomId())
-                .status(Reservation.Status.valueOf(reservationDTO.getStatus())) // Status 변환
-                .amount(reservationDTO.getAmount())
-                .resevStart(reservationDTO.getResevStart())
-                .resevEnd(reservationDTO.getResevEnd())
-                .paymentStatus(Reservation.PaymentStatus.valueOf(reservationDTO.getPaymentStatus())) // PaymentStatus 변환
-                .createdAt(reservationDTO.getCreatedAt())
-                .build();
-
-        Reservation savedReservation = reservationRepository.save(reservation);
-        return savedReservation.toDTO(); // 엔티티를 DTO로 변환하여 반환
+    // 예약 목록 조회
+    public List<ReservationDTO> getAllReservations() {
+        return reservationRepository.findAll().stream()
+                .map(reservation -> new ReservationDTO(
+                        reservation.getReservationId(),
+                        reservation.getUserId(),
+                        reservation.getRoomId(),
+                        reservation.getStatus().name(),
+                        reservation.getAmount(),
+                        reservation.getResevStart(),
+                        reservation.getResevEnd(),
+                        reservation.getPaymentStatus().name(),
+                        reservation.getCreatedAt()
+                ))
+                .collect(Collectors.toList());  // 예약 목록을 DTO로 변환하여 반환
     }
 
-    // 예약 조회 (예약 ID로)
+    // 예약 상세 조회 (예약 ID로)
     public Optional<ReservationDTO> getReservationById(Long reservationId) {
-        Optional<Reservation> reservation = reservationRepository.findById(reservationId);
-        return reservation.map(Reservation::toDTO); // 엔티티를 DTO로 변환하여 반환
+        return reservationRepository.findById(reservationId)
+                .map(reservation -> new ReservationDTO(
+                        reservation.getReservationId(),
+                        reservation.getUserId(),
+                        reservation.getRoomId(),
+                        reservation.getStatus().name(),
+                        reservation.getAmount(),
+                        reservation.getResevStart(),
+                        reservation.getResevEnd(),
+                        reservation.getPaymentStatus().name(),
+                        reservation.getCreatedAt()
+                ));
     }
 
-    // 예약자 ID로 예약 조회
-    public List<ReservationDTO> getReservationsByUserId(int userId) { // userId는 int로 처리
-        List<Reservation> reservations = reservationRepository.findByUserId(userId);
-        return reservations.stream().map(Reservation::toDTO).toList(); // 리스트를 DTO로 변환
+    // 예약 수정 (예약 ID로)
+    public ReservationDTO updateReservation(Long reservationId, ReservationDTO reservationDTO) {
+        // 예약 ID로 예약을 조회
+        Optional<Reservation> reservationOptional = reservationRepository.findById(reservationId);
+        if (reservationOptional.isPresent()) {
+            Reservation reservation = reservationOptional.get();
+
+            // 예약 정보를 수정
+            reservation.setRoomId(reservationDTO.getRoomId());
+            reservation.setStatus(Reservation.Status.valueOf(reservationDTO.getStatus()));
+            reservation.setAmount(reservationDTO.getAmount());
+            reservation.setResevStart(reservationDTO.getResevStart());
+            reservation.setResevEnd(reservationDTO.getResevEnd());
+            reservation.setPaymentStatus(Reservation.PaymentStatus.valueOf(reservationDTO.getPaymentStatus()));
+            reservation.setCreatedAt(reservationDTO.getCreatedAt());
+
+            // 수정된 예약 정보 저장
+            reservationRepository.save(reservation);
+
+            // DTO로 변환하여 반환
+            return new ReservationDTO(
+                    reservation.getReservationId(),
+                    reservation.getUserId(),
+                    reservation.getRoomId(),
+                    reservation.getStatus().name(),
+                    reservation.getAmount(),
+                    reservation.getResevStart(),
+                    reservation.getResevEnd(),
+                    reservation.getPaymentStatus().name(),
+                    reservation.getCreatedAt()
+            );
+        }
+        return null;  // 예약이 존재하지 않으면 null 반환
     }
 }
