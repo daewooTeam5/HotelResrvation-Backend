@@ -6,7 +6,7 @@ spring:
       ddl-auto: update
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://127.0.0.1:9999/mysql
+    url: jdbc:mariadb://127.0.0.1:9999/hotel_db
     username: root
     password: night
 logging:

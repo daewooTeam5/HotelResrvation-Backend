@@ -5,34 +5,25 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "address")
+@Table(name = "room")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Address {
+public class Room {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long addressId;
+    private Long roomId;
 
-    private String province;
+    private int roomNumber; //호실 번호
 
-    private String city;
+    private int price;  //가격
 
-    private String town;
-
-    private String road;
-
-    private String roadNumber;
-
-    private String postNumber;
-
-    private String detailPost;
+    private int maxCount;   //인원 수
 
     @ManyToOne
     @JoinColumn(name = "publishing_id")
     private Publishing publishing;
-
 }

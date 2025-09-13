@@ -1,0 +1,36 @@
+package daewoo.team5.hotelreservation.domain.hotel.publishing.controller;
+
+import daewoo.team5.hotelreservation.domain.hotel.publishing.dto.PublishingDTO;
+import daewoo.team5.hotelreservation.domain.hotel.publishing.service.PublishingService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/hotel/publishing")
+@RequiredArgsConstructor
+public class PublishingController {
+
+    private final PublishingService publishingService;
+    //String 타입 붙히면 ""로 내가 쓰고싶은 말 쓰고 호출
+
+    // 숙소 등록
+    @PostMapping("/register")
+    public String registerHotel(@RequestBody PublishingDTO publishingDTO) {
+        publishingService.registerHotel(publishingDTO);
+        return "숙소 등록 성공: " + publishingDTO.getHotelName();
+    }
+
+    // 숙소 전체 조회
+    @GetMapping("/list")
+    public List<PublishingDTO> getAllHotels() {
+        return publishingService.getAllHotels();
+    }
+
+    // 특정 숙소 조회
+    @GetMapping("/list/{id}")
+    public PublishingDTO getHotel(@PathVariable Long id) {
+        return publishingService.getHotel(id);
+    }
+}
