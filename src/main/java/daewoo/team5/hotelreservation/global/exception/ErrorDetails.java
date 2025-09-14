@@ -23,4 +23,15 @@ public class ErrorDetails {
     private String detail;
     // error 가 발생한 instance URI
     private String instance;
+    // custom error code
+    private String errorCode;
+
+    public ErrorDetails(String type, String title, Integer status, String detail, String instance) {
+        this.type = type;
+        this.title = title;
+        this.status = status;
+        this.detail = detail;
+        this.instance = instance;
+    }
+
 }
