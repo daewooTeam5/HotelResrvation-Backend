@@ -15,9 +15,9 @@ public class ImageList {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long imageId;
+    private Long imageId;   //고유 아이디
 
-    private String imageUrl;
+    private String imageUrl;    //이미지 url 전부 붙혀넣기
 
     @ManyToOne
     @JoinColumn(name = "publishing_id")
