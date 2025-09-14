@@ -10,13 +10,16 @@ public class RoomNo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // room_no.id
+    private Long id; // room_no PK (숫자)
 
-    // rooms.id (숫자 PK)
     @Column(name = "room_id", nullable = false)
-    private Long roomId;
+    private Long roomId; // rooms.id (숫자 PK)
 
-    // 사람이 보는 객실 번호/코드 (예: "101", "A101")
-    @Column(name = "room_no")
-    private String roomNo;
+    @Column(name = "room_no", nullable = false, unique = true)
+    private String roomNo; // 사람이 보는 객실 번호 ("A101")
+
+    // Room 연관관계
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Room room;
 }

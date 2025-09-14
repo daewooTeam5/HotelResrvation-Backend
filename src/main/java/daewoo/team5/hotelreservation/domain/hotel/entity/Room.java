@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "rooms")
@@ -12,10 +13,7 @@ public class Room {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // rooms.id
-
-    @Column(name = "place_id", nullable = false)
-    private Long placeId;
+    private Long id;
 
     @Column(name = "room_type")
     private String roomType;
@@ -23,16 +21,21 @@ public class Room {
     @Column(name = "bed_type")
     private String bedType;
 
-    @Column(name = "capacity_room", nullable = false)
+    @Column(name = "capacity_room")
     private Integer capacityRoom;
 
-    @Column(name = "price", nullable = false, precision = 38, scale = 2)
+    @Column(name = "price")
     private BigDecimal price;
 
-    // DB는 ENUM('available','reserved','cleaning'); 문자열로 매핑
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private String status;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    // ✅ Place 연관관계
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "place_id", nullable = false)
+    private Place place;
+
+    // ✅ RoomNo (사람이 보는 객실번호, 일대다)
+    @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
+    private List<RoomNo> roomNos;
 }

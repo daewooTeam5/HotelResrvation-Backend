@@ -1,6 +1,8 @@
 package daewoo.team5.hotelreservation.domain.hotel.controller;
 
 import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationDTO;
+import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationSearchRequest;
+import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationSearchResponse;
 import daewoo.team5.hotelreservation.domain.hotel.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,5 +55,13 @@ public class ReservationController {
     public ResponseEntity<Void> cancel(@PathVariable Long reservationId) {
         reservationService.cancel(reservationId);
         return ResponseEntity.ok().build();
+    }
+
+    // 필터
+    @PostMapping("/search")
+    public ResponseEntity<List<ReservationSearchResponse>> searchReservations(
+            @RequestBody ReservationSearchRequest request) {
+        List<ReservationSearchResponse> results = reservationService.searchReservations(request);
+        return ResponseEntity.ok(results);
     }
 }

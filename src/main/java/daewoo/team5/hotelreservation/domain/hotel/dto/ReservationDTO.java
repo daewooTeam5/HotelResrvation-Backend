@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class ReservationDTO {
 
     private Long reservationId;
-    private int userId; // 변경: userId는 int 타입
+    private Long userId; // 변경: userId는 int 타입
     private String roomId;
     private String status;
     private BigDecimal amount;

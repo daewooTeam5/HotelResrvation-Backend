@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 public record ReservationResponse(
         Long reservationId,
         String roomId,
-        int userId,
+        Long userId,
         String status,
         BigDecimal amount,
         String resevStart,
