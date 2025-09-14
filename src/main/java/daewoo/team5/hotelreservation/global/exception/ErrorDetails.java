@@ -13,9 +13,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ErrorDetails {
+    // error 에 관련된 문서 링크
     private String type;
+    // error 제목
     private String title;
+    // HTTP 상태 코드
     private Integer status;
+    // error 상세 내용
     private String detail;
+    // error 가 발생한 instance URI
     private String instance;
 }
