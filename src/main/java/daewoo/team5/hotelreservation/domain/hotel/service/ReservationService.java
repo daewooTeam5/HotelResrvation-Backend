@@ -11,6 +11,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,20 +25,19 @@ public class ReservationService {
     private final RoomRepository roomRepository;
 
     // 예약 목록 조회
-    public List<ReservationDTO> getAllReservations() {
-        return reservationRepository.findAll().stream()
+    public Page<ReservationDTO> getAllReservations(Pageable pageable) {
+        return reservationRepository.findAll(pageable)
                 .map(reservation -> new ReservationDTO(
                         reservation.getReservationId(),
-                        reservation.getUser().getId(),
-                        reservation.getRoomNoString(), // 사람이 보는 객실 번호
-                        reservation.getStatus().name(),
+                        reservation.getUser() != null ? reservation.getUser().getId() : null,
+                        reservation.getRoom() != null ? reservation.getRoom().getId().toString() : null,
+                        reservation.getStatus() != null ? reservation.getStatus().name() : null,
                         reservation.getAmount(),
-                        reservation.getResevStart().toString(),
-                        reservation.getResevEnd().toString(),
-                        reservation.getPaymentStatus().name(),
+                        reservation.getResevStart() != null ? reservation.getResevStart().toString() : null,
+                        reservation.getResevEnd() != null ? reservation.getResevEnd().toString() : null,
+                        reservation.getPaymentStatus() != null ? reservation.getPaymentStatus().name() : null,
                         reservation.getCreatedAt()
-                ))
-                .toList();
+                ));
     }
 
     // 예약 상세 조회
@@ -102,18 +103,22 @@ public class ReservationService {
     }
 
     // 검색
-    public List<ReservationSearchResponse> searchReservations(ReservationSearchRequest req) {
-        List<Reservation> reservations = reservationRepository.findAll(
-                ReservationSpecification.filter(req)
+    public Page<ReservationSearchResponse> searchReservations(ReservationSearchRequest req, Pageable pageable) {
+        Page<Reservation> reservations = reservationRepository.findAll(
+                ReservationSpecification.filter(req), pageable
         );
 
-        return reservations.stream().map(r -> ReservationSearchResponse.builder()
+        return reservations.map(r -> ReservationSearchResponse.builder()
                 .reservationId(r.getReservationId())
                 .userName(r.getUser() != null ? r.getUser().getName() : null)
                 .email(r.getUser() != null ? r.getUser().getEmail() : null)
-                .roomNo(r.getRoomNoString())
+                .roomNo(
+                        (r.getRoom() != null && r.getRoom().getRoomNos() != null && !r.getRoom().getRoomNos().isEmpty())
+                                ? r.getRoom().getRoomNos().get(0).getRoomNo()
+                                : null
+                )
                 .hotelName(
-                        (r.getRoom() != null && r.getRoom().getPlace() != null)
+                        r.getRoom() != null && r.getRoom().getPlace() != null
                                 ? r.getRoom().getPlace().getName()
                                 : null
                 )
@@ -124,7 +129,7 @@ public class ReservationService {
                 .amount(r.getAmount())
                 .createdAt(r.getCreatedAt())
                 .build()
-        ).toList();
+        );
     }
 }
 
