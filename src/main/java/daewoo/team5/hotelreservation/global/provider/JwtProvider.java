@@ -1,8 +1,10 @@
 package daewoo.team5.hotelreservation.global.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -10,17 +12,24 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class JwtProvider {
     private final ObjectMapper objectMapper;
+    private final PasswordEncoder passwordEncoder;
     private final long expirationTimeAccessToken = 1000 * 60 * 60; // 1 hour
     private final long expirationTimeRefreshToken = 1000L * 60 * 60 * 24 * 30; // 1 month
     @Value("${JWT_SECRET}")
@@ -30,7 +39,24 @@ public class JwtProvider {
         // 문자열 키를 SecretKey 객체로 변환
         return Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
     }
+    public Claims parseClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey()).build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
 
+    public Authentication getAuthentication(String token) throws JsonProcessingException {
+        Claims claims = parseClaims(token);
+        String subJson = claims.getSubject(); // JSON 문자열
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> subMap = mapper.readValue(subJson, new TypeReference<>(){});
+        String role = (String) subMap.get("role");
+        log.info("Claims: {}", claims);
+        String userId = claims.getSubject();
+
+        return new UsernamePasswordAuthenticationToken(userId, null, List.of(new SimpleGrantedAuthority(role)));
+    }
     // JWT 토큰 발급
     public <T> String generateToken(T data, TokenType tokenType) {
         log.info("secret key: {}", jwtSecretKey);

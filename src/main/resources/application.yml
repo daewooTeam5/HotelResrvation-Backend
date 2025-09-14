@@ -6,8 +6,10 @@ spring:
       ddl-auto: update
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://localhost:3333/hotel_db
-    username: hotel
-    password: eodnxlavmf5wh!
-server:
-  port: 8888
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
