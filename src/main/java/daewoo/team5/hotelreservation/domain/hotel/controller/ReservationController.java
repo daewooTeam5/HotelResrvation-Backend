@@ -1,16 +1,17 @@
 package daewoo.team5.hotelreservation.domain.hotel.controller;
 
 import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationDTO;
+import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationSearchRequest;
+import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationSearchResponse;
 import daewoo.team5.hotelreservation.domain.hotel.service.ReservationService;
-import daewoo.team5.hotelreservation.global.model.ApiResult;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -26,9 +27,9 @@ public class ReservationController {
 
     // 예약 목록 조회 (GET)
     @GetMapping("/all")
-    public ResponseEntity<List<ReservationDTO>> getAllReservations() {
-        List<ReservationDTO> reservations = reservationService.getAllReservations();
-        return ResponseEntity.ok(reservations);  // 예약 목록 반환
+    public ResponseEntity<Page<ReservationDTO>> getAllReservations(Pageable pageable) {
+        Page<ReservationDTO> reservations = reservationService.getAllReservations(pageable);
+        return ResponseEntity.ok(reservations);  // 페이징된 예약 목록 반환
     }
 
     // 예약 상세 조회 (예약 ID로) (GET)
@@ -49,5 +50,21 @@ public class ReservationController {
         } else {
             return ResponseEntity.notFound().build();  // 예약이 없으면 404 반환
         }
+    }
+
+    // 예약 취소( + 객실 available 복구 )
+    @PutMapping("/{reservationId}/cancel")
+    public ResponseEntity<Void> cancel(@PathVariable Long reservationId) {
+        reservationService.cancel(reservationId);
+        return ResponseEntity.ok().build();
+    }
+
+    // 필터
+    @PostMapping("/search")
+    public ResponseEntity<Page<ReservationSearchResponse>> searchReservations(
+            @RequestBody ReservationSearchRequest request,
+            Pageable pageable) {
+        Page<ReservationSearchResponse> results = reservationService.searchReservations(request, pageable);
+        return ResponseEntity.ok(results);
     }
 }
