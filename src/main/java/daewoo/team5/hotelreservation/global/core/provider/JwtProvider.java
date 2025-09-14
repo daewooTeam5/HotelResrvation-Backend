@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.global.provider;
+package daewoo.team5.hotelreservation.global.core.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -57,8 +57,7 @@ public class JwtProvider {
 
         return new UsernamePasswordAuthenticationToken(userId, null, List.of(new SimpleGrantedAuthority(role)));
     }
-    // JWT 토큰 발급
-    public <T> String generateToken(T data, TokenType tokenType) {
+    public <T> String generateToken(T data,long expirationTime) {
         log.info("secret key: {}", jwtSecretKey);
 
         String payloadJson;
@@ -69,6 +68,27 @@ public class JwtProvider {
             throw new RuntimeException("JWT payload 직렬화 실패", e);
         }
 
+        Date now = new Date();
+
+        Date expiryDate = new Date(now.getTime() + expirationTime);
+
+        return Jwts.builder()
+                .setSubject(payloadJson)        // payload를 문자열로 넣음
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+    // JWT 토큰 발급
+    public <T> String generateToken(T data, TokenType tokenType) {
+        log.info("secret key: {}", jwtSecretKey);
+        String payloadJson;
+        try {
+            // 객체를 JSON 문자열로 변환
+            payloadJson = objectMapper.writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("JWT payload 직렬화 실패", e);
+        }
         Date now = new Date();
 
         Date expiryDate = new Date(now.getTime() +

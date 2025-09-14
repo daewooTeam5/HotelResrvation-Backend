@@ -1,7 +1,7 @@
 package daewoo.team5.hotelreservation.global.aop.aspect;
 
 import daewoo.team5.hotelreservation.domain.users.entity.UsersLegacy;
-import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersLegacyRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class AuthUserAspect {
-    private final UsersRepository usersRepository;
+    private final UsersLegacyRepository usersLegacyRepository;
 
     @Before("@annotation(daewoo.team5.hotelreservation.global.aop.annotation.AuthUser)")
     public void injectCurrentUser(JoinPoint joinPoint) {
@@ -27,7 +27,7 @@ public class AuthUserAspect {
 
         String principal = (String)auth.getPrincipal();
 
-        UsersLegacy currentUser = usersRepository.findByUsername(principal)
+        UsersLegacy currentUser = usersLegacyRepository.findByUsername(principal)
                 .orElseThrow(() -> new ApiException(401, "401E001", "인증되지 않은 유저"));
 
         for (int i = 0; i < args.length; i++) {
