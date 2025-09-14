@@ -7,7 +7,7 @@ import daewoo.team5.hotelreservation.domain.users.entity.UsersLegacy;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.service.UsersService;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
-import daewoo.team5.hotelreservation.global.model.ApiResult;
+import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;

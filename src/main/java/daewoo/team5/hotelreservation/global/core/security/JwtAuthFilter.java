@@ -1,7 +1,7 @@
-package daewoo.team5.hotelreservation.global.security;
+package daewoo.team5.hotelreservation.global.core.security;
 
 
-import daewoo.team5.hotelreservation.global.provider.JwtProvider;
+import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

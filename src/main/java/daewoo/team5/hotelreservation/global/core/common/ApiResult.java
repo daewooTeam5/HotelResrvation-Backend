@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.global.model;
+package daewoo.team5.hotelreservation.global.core.common;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

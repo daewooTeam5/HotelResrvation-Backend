@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.global.provider;
+package daewoo.team5.hotelreservation.global.core.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;

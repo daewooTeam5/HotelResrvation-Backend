@@ -1,9 +1,9 @@
-package daewoo.team5.hotelreservation.global.security;
+package daewoo.team5.hotelreservation.global.core.security;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import daewoo.team5.hotelreservation.global.exception.ErrorDetails;
-import daewoo.team5.hotelreservation.global.model.ApiResult;
+import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

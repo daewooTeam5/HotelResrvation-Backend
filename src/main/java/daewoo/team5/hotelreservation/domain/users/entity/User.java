@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.users.entity;
 
+import daewoo.team5.hotelreservation.global.core.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

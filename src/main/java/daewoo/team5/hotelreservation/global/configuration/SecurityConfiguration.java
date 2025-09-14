@@ -1,9 +1,9 @@
 package daewoo.team5.hotelreservation.global.configuration;
 
-import daewoo.team5.hotelreservation.global.security.CustomAccessDeniedHandler;
-import daewoo.team5.hotelreservation.global.security.CustomAuthenticationEntryPoint;
-import daewoo.team5.hotelreservation.global.security.CustomUserDetailsService;
-import daewoo.team5.hotelreservation.global.security.JwtAuthFilter;
+import daewoo.team5.hotelreservation.global.core.security.CustomAccessDeniedHandler;
+import daewoo.team5.hotelreservation.global.core.security.CustomAuthenticationEntryPoint;
+import daewoo.team5.hotelreservation.global.core.security.CustomUserDetailsService;
+import daewoo.team5.hotelreservation.global.core.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
