@@ -16,12 +16,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class CustomUserDetailsService implements UserDetailsService {
-    private final UsersRepository usersRepository;
+    private final UsersLegacyRepository usersLegacyRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        UsersLegacy users = usersRepository.findByUsername(username).orElseThrow(() -> new ApiException(400, "로그인 실패", "아이디 또는 비밀번호가 일치하지 않습니다."));
+        UsersLegacy users = usersLegacyRepository.findByUsername(username).orElseThrow(() -> new ApiException(400, "로그인 실패", "아이디 또는 비밀번호가 일치하지 않습니다."));
 
         return User.builder()
                 .username(users.getUsername())
