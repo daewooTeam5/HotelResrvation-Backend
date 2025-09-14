@@ -25,7 +25,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
                 null,
                 "Forbidden",
                 403,
-                accessDeniedException.getMessage(),
+                "접근 권한이 없습니다.",
                 request.getRequestURI()
         );
         ApiResult<?> body = ApiResult.builder()
@@ -34,6 +34,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
                 .timestamp(LocalDateTime.now())
                 .error(errorDetails)
                 .build();
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
         response.getWriter().write(objectMapper.writeValueAsString(body));
 

@@ -13,6 +13,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -29,22 +30,18 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 null,
                 "Unauthorized",
                 401,
-                authException.getMessage(),
-                request.getRequestURI()
-        );
-        ErrorDetails error = new ErrorDetails(
-                null,
-                "Unauthorized",
-                401,
-                authException.getMessage(),
+                "인증되지 않은 사용자입니다. 로그인후 이용해주세요.",
                 request.getRequestURI()
         );
         ApiResult<?> unauthorized =
-                new ApiResult<>()
+                ApiResult.builder()
                         .status(401)
                         .message("Unauthorized")
-                        .error(error)
-                        .success(false);
+                        .error(errorDetails)
+                        .success(false)
+                        .timestamp(LocalDateTime.now())
+                        .build();
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
         response.getWriter().write(objectMapper.writeValueAsString(unauthorized));
 
