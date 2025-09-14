@@ -8,11 +8,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "place")
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Place {
 
     @Id
@@ -26,7 +22,7 @@ public class Place {
     private Long categoryId;
 
     @Column(nullable = false, length = 100)
-    private String name;
+    private String name; // 호텔 이름
 
     @Column(length = 2000)
     private String description;
