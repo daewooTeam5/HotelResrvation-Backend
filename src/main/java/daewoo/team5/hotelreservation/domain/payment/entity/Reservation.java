@@ -1,78 +1,59 @@
 package daewoo.team5.hotelreservation.domain.payment.entity;
 
-import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationDTO;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "reservations")
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Reservation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "reservation_id")
     private Long reservationId;
 
-    @Column(nullable = false)
+    // 문자열 룸코드 (예: "A101" 또는 숫자가 들어올 수도 있음)
+    @Column(name = "room_id", nullable = false)
     private String roomId;
 
-    // 변경된 부분: userId를 int로 변경
     @Column(name = "user_id", nullable = false)
-    private int userId; // userId를 int로 설정
+    private int userId;
 
+    // 예약 상태
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('pending','confirmed','cancelled','checked_in','checked_out') DEFAULT 'pending'")
-    private Status status;
+    @Column(name = "status",
+            columnDefinition = "ENUM('pending','confirmed','cancelled','checked_in','checked_out') DEFAULT 'pending'")
+    private ReservationStatus status;
 
-    @Column(nullable = false)
+    @Column(name = "amount", nullable = false, precision = 38, scale = 2)
     private BigDecimal amount;
 
-    @Column
+    // 스키마가 varchar(255)라 문자열로 유지
+    @Column(name = "resev_start")
     private String resevStart;
 
-    @Column
+    @Column(name = "resev_end")
     private String resevEnd;
 
+    // 결제 상태 (캐시 컬럼: B안) - reservations.payment_status
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('unpaid','paid','refunded') DEFAULT 'unpaid'")
-    private PaymentStatus paymentStatus;
+    @Column(name = "payment_status",
+            columnDefinition = "ENUM('unpaid','paid','refunded') DEFAULT 'unpaid'")
+    private ReservationPaymentStatus paymentStatus;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public enum Status {
-        pending,
-        confirmed,
-        cancelled,
-        checked_in,
-        checked_out
+    // 예약 상태 Enum
+    public enum ReservationStatus {
+        pending, confirmed, cancelled, checked_in, checked_out
     }
 
-    public enum PaymentStatus {
-        unpaid,
-        paid,
-        refunded
-    }
-
-    // DTO로 변환하는 메소드 추가
-    public ReservationDTO toDTO() {
-        return new ReservationDTO(
-                this.reservationId,
-                this.userId, // userId를 int로 변환
-                this.roomId,
-                this.status != null ? this.status.name() : null,
-                this.amount,
-                this.resevStart,
-                this.resevEnd,
-                this.paymentStatus != null ? this.paymentStatus.name() : null,
-                this.createdAt
-        );
+    // 예약의 결제 진행 상태(캐시)
+    public enum ReservationPaymentStatus {
+        unpaid, paid, refunded
     }
 }

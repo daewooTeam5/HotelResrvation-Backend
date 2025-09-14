@@ -9,3 +9,5 @@ spring:
     url: jdbc:mariadb://localhost:3333/hotel_db
     username: hotel
     password: eodnxlavmf5wh!
+server:
+  port: 8888

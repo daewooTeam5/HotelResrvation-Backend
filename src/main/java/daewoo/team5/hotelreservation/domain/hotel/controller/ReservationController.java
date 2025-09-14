@@ -2,15 +2,12 @@ package daewoo.team5.hotelreservation.domain.hotel.controller;
 
 import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationDTO;
 import daewoo.team5.hotelreservation.domain.hotel.service.ReservationService;
-import daewoo.team5.hotelreservation.global.model.ApiResult;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -49,5 +46,12 @@ public class ReservationController {
         } else {
             return ResponseEntity.notFound().build();  // 예약이 없으면 404 반환
         }
+    }
+
+    // 예약 취소( + 객실 available 복구 )
+    @PutMapping("/{reservationId}/cancel")
+    public ResponseEntity<Void> cancel(@PathVariable Long reservationId) {
+        reservationService.cancel(reservationId);
+        return ResponseEntity.ok().build();
     }
 }
