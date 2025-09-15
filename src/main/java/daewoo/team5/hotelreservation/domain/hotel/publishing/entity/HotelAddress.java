@@ -1,17 +1,16 @@
 package daewoo.team5.hotelreservation.domain.hotel.publishing.entity;
 
-import daewoo.team5.hotelreservation.domain.hotel.publishing.entity.Publishing;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "address")
+@Table(name = "hotel_address")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Address {
+public class HotelAddress {  //엔티티 ERD랑 맞추기
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +31,7 @@ public class Address {
     private String detailPost;  //상세 주소
 
     @ManyToOne
-    @JoinColumn(name = "publishing_id")
-    private Publishing publishing;
+    @JoinColumn(name = "place_id")
+    private Place place;
 
 }

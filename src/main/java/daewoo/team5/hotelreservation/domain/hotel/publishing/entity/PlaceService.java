@@ -4,22 +4,22 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "image_list")
+@Table(name = "place_service")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ImageList {// 엔티티 ERD랑 맞추기 나중에 추가(erd에 없어서)
+public class PlaceService {// 엔티티 ERD랑 맞추기
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long imageId;   //고유 아이디
-
-    private String imageUrl;    //이미지 url 전부 붙혀넣기
+    private Long placeKey; //고유 아이디
 
     @ManyToOne
-    @JoinColumn(name = "place_id")
+    private Service service;
+
+    @ManyToOne
     private Place place;
 
 }

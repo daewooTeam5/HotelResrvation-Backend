@@ -1,8 +1,8 @@
 package daewoo.team5.hotelreservation.domain.hotel.publishing.service;
 
 import daewoo.team5.hotelreservation.domain.hotel.publishing.dto.PublishingDTO;
-import daewoo.team5.hotelreservation.domain.hotel.publishing.entity.Publishing;
-import daewoo.team5.hotelreservation.domain.hotel.publishing.repository.PublishingRepository;
+import daewoo.team5.hotelreservation.domain.hotel.publishing.entity.Place;
+import daewoo.team5.hotelreservation.domain.hotel.publishing.repository.PlaceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,17 +15,17 @@ import java.util.stream.Collectors;
 @Transactional
 public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없어도 됨
 
-    private final PublishingRepository repository;
+    private final PlaceRepository repository;
 
     // 등록
-    public Publishing registerHotel(PublishingDTO dto) {
-        Publishing publishing = Publishing.builder()
+    public Place registerHotel(PublishingDTO dto) {
+        Place place = Place.builder()
                 .hotelName(dto.getHotelName())
-                .introduction(dto.getDescription())
+                .description(dto.getDescription())
                 .build();
 
         // rooms, addresses, amenities는 나중에 추가 가능
-        return repository.save(publishing);
+        return repository.save(place);
     }
 
     // 전체 조회
@@ -33,23 +33,19 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
         return repository.findAll().stream()
                 .map(p -> PublishingDTO.builder()
                         .hotelName(p.getHotelName())
-                        .description(p.getIntroduction())
+                        .description(p.getDescription())
                         .build())
                 .collect(Collectors.toList());
     }
 
     // 숙소 하나 조회
     public PublishingDTO getHotel(Long id) {
-    Publishing publishing = repository.findById(id)
+    Place place  = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("해당 숙소 없음"));
 
         return new PublishingDTO(//dto 모든 내용
-                publishing.getHotelName(),
-                publishing.getAddresses(),
-                publishing.getImages(),
-                publishing.getRooms(),
-                publishing.getIntroduction(),
-                publishing.getAmenities()
+
+
         );
     }
 }
