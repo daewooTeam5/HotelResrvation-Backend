@@ -6,14 +6,16 @@ import lombok.*;
 
 import java.util.List;
 
-@Entity
+@Entity(name = "publishing")
 @Table(name = "publishing")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Publishing {
+public class Publishing {// 엔티티 ERD랑 맞추기
+    
+    //리스트들을 전부 ManyToOne으로 맞춰주기 이 페이지들 전부 바꾸기
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,11 +24,14 @@ public class Publishing {
     @Column(nullable = false)
     private String hotelName;   //호텔 이름은 필수
 
+    @ManyToOne
+    private Address address;
+
     @OneToMany(mappedBy = "publishing", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Room> rooms;     //호실 가져오기
 
     @OneToMany(mappedBy = "publishing", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Address> addresses;    //주소 가져오기
+    private List<Address> addresses;    //주소 가져오기+매니 투 원으로 바꾸기
 
     @OneToMany(mappedBy = "publishing", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ImageList> images;     //이미지 가져오기

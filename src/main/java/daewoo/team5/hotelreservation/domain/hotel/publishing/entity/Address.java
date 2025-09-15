@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Address {
+public class Address {  //엔티티 ERD랑 맞추기
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
