@@ -1,7 +1,7 @@
 package daewoo.team5.hotelreservation.domain.payment.entity;
 
-import daewoo.team5.hotelreservation.domain.hotel.entity.Room;
-import daewoo.team5.hotelreservation.domain.hotel.entity.RoomNo;
+import daewoo.team5.hotelreservation.domain.place.entity.Room;
+import daewoo.team5.hotelreservation.domain.place.entity.RoomNo;
 import daewoo.team5.hotelreservation.domain.users.entity.User;
 import jakarta.persistence.*;
 import lombok.*;

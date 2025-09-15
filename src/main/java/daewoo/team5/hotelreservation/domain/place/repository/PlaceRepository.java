@@ -73,6 +73,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                     FROM rooms r
                     WHERE r.place_id = p.id
                       AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :rooms)
+                      AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999) -- 가격 범위 추가
                       AND NOT EXISTS (
                           SELECT 1
                           FROM date_range d
@@ -107,18 +108,14 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
               )
               AND (:placeCategory IS NULL OR pc.name = :placeCategory)
               AND (:minRating IS NULL OR p.avg_rating >= :minRating)
-              AND (:minPrice IS NULL OR (
-                    SELECT MIN(r.price) 
-                    FROM rooms r 
-                    WHERE r.place_id = p.id
-                      AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :rooms)
-                ) >= :minPrice)
-              AND (:maxPrice IS NULL OR (
-                    SELECT MIN(r.price) 
-                    FROM rooms r 
-                    WHERE r.place_id = p.id
-                      AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :rooms)
-                ) <= :maxPrice)
+              -- 가격 조건 체크도 수정: 가격 범위 내 객실이 존재하는지 확인
+              AND EXISTS (
+                  SELECT 1
+                  FROM rooms r
+                  WHERE r.place_id = p.id
+                    AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :rooms)
+                    AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+              )
             """,
             countQuery = """
                         SELECT COUNT(*)
@@ -160,7 +157,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
     @Query(value = """
             SELECT f.url
             FROM file f
-            WHERE f.domain = 'place'
+            WHERE f.domain IN ('place', 'room')
               AND f.domain_file_id = :placeId
               AND f.filetype = 'image'
             """, nativeQuery = true)

@@ -1,11 +1,14 @@
-package daewoo.team5.hotelreservation.domain.hotel.service;
+package daewoo.team5.hotelreservation.domain.place.service;
 
-import daewoo.team5.hotelreservation.domain.hotel.dto.*;
-import daewoo.team5.hotelreservation.domain.hotel.entity.Room;
-import daewoo.team5.hotelreservation.domain.hotel.repository.RoomRepository;
-import daewoo.team5.hotelreservation.domain.hotel.specification.ReservationSpecification;
+import daewoo.team5.hotelreservation.domain.place.entity.Room;
+import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
+import daewoo.team5.hotelreservation.domain.place.specification.ReservationSpecification;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
-import daewoo.team5.hotelreservation.domain.hotel.repository.ReservationRepository;
+import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
+import daewoo.team5.hotelreservation.domain.place.dto.ReservationDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.ReservationResponse;
+import daewoo.team5.hotelreservation.domain.place.dto.ReservationSearchRequest;
+import daewoo.team5.hotelreservation.domain.place.dto.ReservationSearchResponse;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -82,7 +84,7 @@ public class ReservationService {
 
         Room room = r.getRoom();
         if (room != null) {
-            room.setStatus("available");
+            room.setStatus(Room.Status.AVAILABLE);
         }
 
         Reservation saved = reservationRepository.save(r);
@@ -113,7 +115,7 @@ public class ReservationService {
                 .userName(r.getUser() != null ? r.getUser().getName() : null)
                 .email(r.getUser() != null ? r.getUser().getEmail() : null)
                 .roomNo(
-                        (r.getRoom() != null && r.getRoom().getRoomNos() != null && !r.getRoom().getRoomNos().isEmpty())
+                        (r.getRoom() != null && r.getRoom().getId() != null && !r.getRoom().getRoomNos().isEmpty())
                                 ? r.getRoom().getRoomNos().get(0).getRoomNo()
                                 : null
                 )

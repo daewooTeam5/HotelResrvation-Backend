@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.domain.hotel.repository;
+package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment.PaymentStatus;

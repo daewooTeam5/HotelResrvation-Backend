@@ -1,10 +1,10 @@
-package daewoo.team5.hotelreservation.domain.hotel.specification;
+package daewoo.team5.hotelreservation.domain.place.specification;
 
-import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationSearchRequest;
-import daewoo.team5.hotelreservation.domain.hotel.entity.Place;
-import daewoo.team5.hotelreservation.domain.hotel.entity.Room;
-import daewoo.team5.hotelreservation.domain.hotel.entity.RoomNo;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
+import daewoo.team5.hotelreservation.domain.place.dto.ReservationSearchRequest;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
+import daewoo.team5.hotelreservation.domain.place.entity.Room;
+import daewoo.team5.hotelreservation.domain.place.entity.RoomNo;
 import daewoo.team5.hotelreservation.domain.users.entity.User;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -30,7 +30,7 @@ public class ReservationSpecification {
             Join<RoomNo, Room> room = roomNo.join("room", JoinType.LEFT);
 
             // Join: Place (room.place → place.id)
-            Join<Room, Place> place = room.join("place", JoinType.LEFT);
+            Join<Room, Places> place = room.join("place", JoinType.LEFT);
 
             // 예약자 이름
             if (req.getUserName() != null && !req.getUserName().isBlank()) {

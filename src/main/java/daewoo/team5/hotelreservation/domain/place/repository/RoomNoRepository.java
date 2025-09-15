@@ -1,8 +1,7 @@
-package daewoo.team5.hotelreservation.domain.hotel.repository;
+package daewoo.team5.hotelreservation.domain.place.repository;
 
-import daewoo.team5.hotelreservation.domain.hotel.entity.RoomNo;
+import daewoo.team5.hotelreservation.domain.place.entity.RoomNo;
 import org.springframework.data.jpa.repository.*;
-import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 

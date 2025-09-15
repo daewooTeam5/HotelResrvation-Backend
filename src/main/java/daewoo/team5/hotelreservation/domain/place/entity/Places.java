@@ -1,7 +1,10 @@
 package daewoo.team5.hotelreservation.domain.place.entity;
 
+import daewoo.team5.hotelreservation.domain.users.entity.User;
+import daewoo.team5.hotelreservation.global.core.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,14 +17,14 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Places {
+public class Places extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;   // 숙소 아이디
 
-    @Column(name = "owner_id", nullable = false)
-    private Long ownerId;  // 숙소 주인 ID
+    @ManyToOne
+    private User owner;  // 숙소 주인 ID
 
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "id")
@@ -49,11 +52,10 @@ public class Places {
     @Column(name = "min_price", precision = 10, scale = 2)
     private BigDecimal minPrice;   // 최소 가격
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt; // 생성일시
-
     @Column(name = "updated_at")
+    @UpdateTimestamp
     private LocalDateTime updatedAt; // 수정일시
+
 
     @Column(name = "check_in")
     private LocalTime checkIn;   // 체크인 시간

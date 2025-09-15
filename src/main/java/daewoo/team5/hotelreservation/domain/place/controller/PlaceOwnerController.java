@@ -1,9 +1,9 @@
-package daewoo.team5.hotelreservation.domain.hotel.controller;
+package daewoo.team5.hotelreservation.domain.place.controller;
 
-import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationDTO;
-import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationSearchRequest;
-import daewoo.team5.hotelreservation.domain.hotel.dto.ReservationSearchResponse;
-import daewoo.team5.hotelreservation.domain.hotel.service.ReservationService;
+import daewoo.team5.hotelreservation.domain.place.dto.ReservationDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.ReservationSearchRequest;
+import daewoo.team5.hotelreservation.domain.place.dto.ReservationSearchResponse;
+import daewoo.team5.hotelreservation.domain.place.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,7 @@ import java.util.Optional;
 @RequestMapping("/api/v1/reservations") // API의 기본 경로
 @RequiredArgsConstructor
 @Slf4j
-public class ReservationController {
+public class PlaceOwnerController {
 
     private final ReservationService reservationService;
 
