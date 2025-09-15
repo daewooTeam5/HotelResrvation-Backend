@@ -1,5 +1,7 @@
 package daewoo.team5.hotelreservation.domain.users.entity;
 
+import jakarta.persistence.*;
+import lombok.*;
 import daewoo.team5.hotelreservation.global.core.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -42,6 +44,9 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('active', 'inactive', 'banned') DEFAULT 'active'")
     private Status status;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @Column(nullable = false)
     @UpdateTimestamp

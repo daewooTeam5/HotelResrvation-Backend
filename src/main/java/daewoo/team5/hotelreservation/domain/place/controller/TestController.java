@@ -1,8 +1,8 @@
-package daewoo.team5.hotelreservation.domain.hotel.controller;
+package daewoo.team5.hotelreservation.domain.place.controller;
 
-import daewoo.team5.hotelreservation.domain.hotel.controller.swagger.TestSwagger;
-import daewoo.team5.hotelreservation.domain.hotel.dto.TestDto;
-import daewoo.team5.hotelreservation.domain.hotel.entity.MyTest;
+import daewoo.team5.hotelreservation.domain.place.controller.swagger.TestSwagger;
+import daewoo.team5.hotelreservation.domain.place.dto.TestDto;
+import daewoo.team5.hotelreservation.domain.place.entity.MyTest;
 import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;

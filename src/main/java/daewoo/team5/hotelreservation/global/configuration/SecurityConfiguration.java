@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -52,7 +53,10 @@ public class SecurityConfiguration {
                                 "/v3/api-docs/**",
                                 "/api/v1/users",
                                 "/api/v1/users/login",
-                                "/api/v1/reservations/**"
+                                "/api/v1/reservations/**",
+                                "/api/v1/places/**",
+                                "/images/**"
+
                         ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()
                 )

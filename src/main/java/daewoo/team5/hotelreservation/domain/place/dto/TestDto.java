@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.domain.hotel.dto;
+package daewoo.team5.hotelreservation.domain.place.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

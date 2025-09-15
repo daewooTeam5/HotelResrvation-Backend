@@ -5,6 +5,7 @@ import daewoo.team5.hotelreservation.domain.users.dto.request.LogInUserDto;
 import daewoo.team5.hotelreservation.domain.users.entity.UsersLegacy;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersLegacyRepository;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class UsersService {
+    private final UsersRepository usersRepository;
     private final UsersLegacyRepository usersLegacyRepository;
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
@@ -33,7 +35,7 @@ public class UsersService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword())
         );
-        UsersLegacy loginUser = usersLegacyRepository.findByUsername(dto.getUsername()).orElseThrow(() -> new ApiException(400, "로그인 실패", "아이디 또는 비밀번호가 일치하지 않습니다."));
+        UsersLegacy loginUser = usersRepository.findByUsername(dto.getUsername()).orElseThrow(() -> new ApiException(400, "로그인 실패", "아이디 또는 비밀번호가 일치하지 않습니다."));
         String accessToken = jwtProvider.generateToken(loginUser, JwtProvider.TokenType.ACCESS);
         String refreshToken = jwtProvider.generateToken(loginUser.getId(), JwtProvider.TokenType.REFRESH);
 

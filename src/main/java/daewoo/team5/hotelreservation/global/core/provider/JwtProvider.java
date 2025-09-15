@@ -57,6 +57,7 @@ public class JwtProvider {
 
         return new UsernamePasswordAuthenticationToken(userId, null, List.of(new SimpleGrantedAuthority(role)));
     }
+    // JWT 토큰 발급
     public <T> String generateToken(T data,long expirationTime) {
         log.info("secret key: {}", jwtSecretKey);
 
