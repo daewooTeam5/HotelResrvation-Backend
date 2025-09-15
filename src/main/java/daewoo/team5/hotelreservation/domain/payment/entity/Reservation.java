@@ -29,7 +29,7 @@ public class Reservation {
 
     // 객실번호(RoomNo 연관관계)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id", referencedColumnName = "room_no")
+    @JoinColumn(name = "room_id", referencedColumnName = "id")
     private RoomNo roomNo;
 
     // 예약 상태
