@@ -1,9 +1,9 @@
 package daewoo.team5.hotelreservation.global.configuration;
 
-import daewoo.team5.hotelreservation.global.security.CustomAccessDeniedHandler;
-import daewoo.team5.hotelreservation.global.security.CustomAuthenticationEntryPoint;
-import daewoo.team5.hotelreservation.global.security.CustomUserDetailsService;
-import daewoo.team5.hotelreservation.global.security.JwtAuthFilter;
+import daewoo.team5.hotelreservation.global.core.security.CustomAccessDeniedHandler;
+import daewoo.team5.hotelreservation.global.core.security.CustomAuthenticationEntryPoint;
+import daewoo.team5.hotelreservation.global.core.security.CustomUserDetailsService;
+import daewoo.team5.hotelreservation.global.core.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,12 +45,19 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
+                                "/auth",
+                                "/auth/code",
+                                "/auth/token",
                                 "/test",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/api/v1/users",
-                                "/api/v1/users/login"
-                        ).permitAll()
+                                "/api/v1/users/login",
+                                "/api/v1/reservations/**",
+                                "/api/v1/places/**",
+                                "/images/**"
+
+                        ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -68,7 +75,7 @@ public class SecurityConfiguration {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOriginPatterns(List.of("*")); // 모든 Origin 허용
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:5173","https://127.0.0.1:5173")); // 모든 Origin 허용
         configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // 쿠키/Authorization 헤더 허용
