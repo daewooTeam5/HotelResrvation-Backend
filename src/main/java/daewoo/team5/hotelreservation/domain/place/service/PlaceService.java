@@ -24,7 +24,7 @@ public class PlaceService {
             int people, int rooms,
             String placeCategory, Double minRating, Double minPrice, Double maxPrice
     ) {
-        return placeRepository.findAllSearchPlaceInfo(
+        return placeRepository.findAllSearchPlaceInfoTest(
                 name, checkIn, checkOut, people, rooms,
                 placeCategory, minRating, minPrice, maxPrice,
                 PageRequest.of(start - 1, 10)

@@ -5,8 +5,8 @@ import daewoo.team5.hotelreservation.domain.place.projection.PlaceDetailProjecti
 import daewoo.team5.hotelreservation.domain.place.projection.PlaceItemInfomation;
 import daewoo.team5.hotelreservation.domain.place.projection.RoomInfo;
 import org.springframework.data.domain.Page;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -19,7 +19,7 @@ import java.util.List;
 public interface PlaceRepository extends JpaRepository<Places, Long> {
 
     @Query(value = """
-            
+                        
                 SELECT 
                 p.id AS id,
                 p.name AS name,
@@ -127,6 +127,82 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                     """,
             nativeQuery = true)
     Page<PlaceItemInfomation> findAllSearchPlaceInfo(
+            @Param("name") String name,
+            @Param("checkIn") String checkIn,
+            @Param("checkOut") String checkOut,
+            @Param("people") int people,
+            @Param("room") int room,
+            @Param("placeCategory") String placeCategory,
+            @Param("minRating") Double minRating,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice,
+            Pageable pageable
+    );
+
+    @Query(value = """
+            SELECT
+                p.id AS id,
+                p.name AS name,
+                p.avg_rating AS avgRating,
+                pa.sido AS sido,
+                c.name AS categoryName,
+                ar.price AS price,
+                (
+                    SELECT f.url
+                    FROM file f
+                    WHERE f.domain = 'place' AND f.domain_file_id = p.id AND f.filetype = 'image'
+                    LIMIT 1
+                ) AS fileUrl
+            FROM places p
+            JOIN place_address pa ON p.id = pa.place_id
+            JOIN place_category c ON p.category_id = c.id
+            JOIN (
+                SELECT r.place_id, MIN(r.price) AS price
+                FROM room r
+                WHERE r.capacity_people >= :people
+                AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+                AND r.id NOT IN (
+                    SELECT DISTINCT dr.room_id
+                    FROM daily_place_reservation dr
+                    WHERE dr.date BETWEEN :checkIn AND :checkOut
+                    AND dr.available_room = 0
+                )
+                GROUP BY r.place_id
+                HAVING COUNT(r.id) >= :room
+                ) AS ar ON p.id = ar.place_id
+            WHERE (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
+              AND (:minRating IS NULL OR p.avg_rating >= :minRating)
+              AND (:placeCategory IS NULL OR c.name = :placeCategory)
+              AND p.status = 'APPROVED';
+            """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT p.id) AS totalCount
+                    FROM places p
+                    JOIN place_address pa ON p.id = pa.place_id
+                    JOIN place_category c ON p.category_id = c.id
+                    JOIN (
+                        SELECT r.place_id
+                        FROM room r
+                        WHERE r.capacity_people >= :people
+                          AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+                          AND r.id NOT IN (
+                              SELECT DISTINCT dr.room_id
+                              FROM daily_place_reservation dr
+                              WHERE dr.date BETWEEN :checkIn AND :checkOut
+                                AND dr.available_room = 0
+                          )
+                        GROUP BY r.place_id
+                        HAVING COUNT(r.id) >= :room
+                    ) AS ar ON p.id = ar.place_id
+                    WHERE (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
+                      AND (:minRating IS NULL OR p.avg_rating >= :minRating)
+                      AND (:placeCategory IS NULL OR c.name = :placeCategory)
+                      AND p.status = 'APPROVED';
+                                        
+                    """,
+            nativeQuery = true
+    )
+    Page<PlaceItemInfomation> findAllSearchPlaceInfoTest(
             @Param("name") String name,
             @Param("checkIn") String checkIn,
             @Param("checkOut") String checkOut,
