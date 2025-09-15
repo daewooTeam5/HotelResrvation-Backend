@@ -32,7 +32,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                 ) AS fileUrl,
                 (
                     SELECT MIN(r.price)
-                    FROM rooms r
+                    FROM room r
                     WHERE r.place_id = p.id
                 ) AS price
             FROM places p
@@ -70,9 +70,9 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                 ) AS fileUrl,
                 (
                     SELECT MIN(r.price)
-                    FROM rooms r
+                    FROM room r
                     WHERE r.place_id = p.id
-                      AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :rooms)
+                      AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
                       AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999) -- 가격 범위 추가
                       AND NOT EXISTS (
                           SELECT 1
@@ -89,20 +89,20 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             WHERE (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
               AND EXISTS (
                   SELECT 1
-                  FROM rooms r
+                  FROM room r
                   WHERE r.place_id = p.id
-                    AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :rooms)
+                    AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
               )
               AND NOT EXISTS (
                   SELECT 1
                   FROM date_range d
-                  JOIN rooms r ON r.place_id = p.id
+                  JOIN room r ON r.place_id = p.id
                   LEFT JOIN daily_place_reservation dpr
                          ON r.id = dpr.room_id 
                         AND DATE(dpr.date) = d.date
                   GROUP BY d.date
                   HAVING
-                      SUM(COALESCE(dpr.available_room, r.capacity_room)) < :rooms
+                      SUM(COALESCE(dpr.available_room, r.capacity_room)) < :room
                       OR SUM(COALESCE(dpr.available_room, r.capacity_room) * r.capacity_people) < :people
                       OR COUNT(r.id) = 0
               )
@@ -111,9 +111,9 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
               -- 가격 조건 체크도 수정: 가격 범위 내 객실이 존재하는지 확인
               AND EXISTS (
                   SELECT 1
-                  FROM rooms r
+                  FROM room r
                   WHERE r.place_id = p.id
-                    AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :rooms)
+                    AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
                     AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
               )
             """,
@@ -129,7 +129,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             @Param("checkIn") String checkIn,
             @Param("checkOut") String checkOut,
             @Param("people") int people,
-            @Param("rooms") int rooms,
+            @Param("room") int room,
             @Param("placeCategory") String placeCategory,
             @Param("minRating") Double minRating,
             @Param("minPrice") Double minPrice,
@@ -172,7 +172,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                 r.capacity_room AS capacityRoom,
                 r.price AS price,
                 r.status AS status
-            FROM rooms r
+            FROM room r
             WHERE r.place_id = :placeId
             """, nativeQuery = true)
     List<RoomInfo> findRoomsByPlace(@Param("placeId") Long placeId);
