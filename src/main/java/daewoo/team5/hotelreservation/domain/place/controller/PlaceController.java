@@ -3,7 +3,7 @@ package daewoo.team5.hotelreservation.domain.place.controller;
 import daewoo.team5.hotelreservation.domain.place.dto.PlaceDetailResponse;
 import daewoo.team5.hotelreservation.domain.place.projection.PlaceItemInfomation;
 import daewoo.team5.hotelreservation.domain.place.service.PlaceService;
-import daewoo.team5.hotelreservation.global.model.ApiResult;
+import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;

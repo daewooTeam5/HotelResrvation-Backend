@@ -1,6 +1,7 @@
 package daewoo.team5.hotelreservation.global.aop.aspect;
 
 import daewoo.team5.hotelreservation.domain.users.entity.UsersLegacy;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersLegacyRepository;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;

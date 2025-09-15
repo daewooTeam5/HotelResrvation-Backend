@@ -4,9 +4,10 @@ import daewoo.team5.hotelreservation.domain.users.dto.request.CreateUserDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.LogInUserDto;
 import daewoo.team5.hotelreservation.domain.users.entity.UsersLegacy;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersLegacyRepository;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
-import daewoo.team5.hotelreservation.global.provider.JwtProvider;
+import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import java.util.Map;
 @Slf4j
 public class UsersService {
     private final UsersRepository usersRepository;
+    private final UsersLegacyRepository usersLegacyRepository;
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -45,7 +47,7 @@ public class UsersService {
     }
 
     public UsersLegacy registerUser(CreateUserDto dto) {
-        UsersLegacy user = usersRepository.save(
+        UsersLegacy user = usersLegacyRepository.save(
                 UsersLegacy
                         .builder()
                         .password(passwordEncoder.encode(dto.getPassword()))
@@ -58,6 +60,6 @@ public class UsersService {
     }
 
     public Page<UserProjection> getAllUserPage(int start, int size) {
-        return usersRepository.findAllBy(UserProjection.class,PageRequest.of(start,size));
+        return usersLegacyRepository.findAllBy(UserProjection.class,PageRequest.of(start,size));
     }
 }

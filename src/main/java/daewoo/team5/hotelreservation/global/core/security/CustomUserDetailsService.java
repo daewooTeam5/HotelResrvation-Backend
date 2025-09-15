@@ -1,6 +1,7 @@
-package daewoo.team5.hotelreservation.global.security;
+package daewoo.team5.hotelreservation.global.core.security;
 
 import daewoo.team5.hotelreservation.domain.users.entity.UsersLegacy;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersLegacyRepository;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import org.springframework.security.core.userdetails.User;

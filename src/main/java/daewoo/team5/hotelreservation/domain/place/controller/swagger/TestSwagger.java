@@ -3,7 +3,7 @@ package daewoo.team5.hotelreservation.domain.place.controller.swagger;
 
 import daewoo.team5.hotelreservation.domain.place.dto.TestDto;
 import daewoo.team5.hotelreservation.domain.place.entity.MyTest;
-import daewoo.team5.hotelreservation.global.model.ApiResult;
+import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
