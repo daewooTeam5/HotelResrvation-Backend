@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.global.aop;
+package daewoo.team5.hotelreservation.global.aop.aspect;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

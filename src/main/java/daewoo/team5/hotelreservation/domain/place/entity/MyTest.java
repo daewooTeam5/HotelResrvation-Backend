@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.domain.hotel.entity;
+package daewoo.team5.hotelreservation.domain.place.entity;
 
 
 import jakarta.persistence.*;
