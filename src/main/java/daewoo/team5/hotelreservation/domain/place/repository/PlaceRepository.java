@@ -13,6 +13,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+//rooms -> room으로 수정
+
 @Repository
 public interface PlaceRepository extends JpaRepository<Places, Long> {
 
