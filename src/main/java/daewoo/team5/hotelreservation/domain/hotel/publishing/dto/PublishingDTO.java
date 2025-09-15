@@ -1,5 +1,9 @@
 package daewoo.team5.hotelreservation.domain.hotel.publishing.dto;
 
+import daewoo.team5.hotelreservation.domain.hotel.publishing.entity.Address;
+import daewoo.team5.hotelreservation.domain.hotel.publishing.entity.Amenities;
+import daewoo.team5.hotelreservation.domain.hotel.publishing.entity.ImageList;
+import daewoo.team5.hotelreservation.domain.hotel.publishing.entity.Room;
 import lombok.*;
 
 import java.util.List;
@@ -24,5 +28,6 @@ public class PublishingDTO {
     private String description;   //설명
 
 
-
+    public PublishingDTO(String hotelName, List<Address> addresses, List<ImageList> images, List<Room> rooms, String introduction, List<Amenities> amenities) {
+    }
 }

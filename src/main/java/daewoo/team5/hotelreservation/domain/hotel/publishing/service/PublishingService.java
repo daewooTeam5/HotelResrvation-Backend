@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class PublishingService {
+public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없어도 됨
 
     private final PublishingRepository repository;
 
@@ -38,13 +38,18 @@ public class PublishingService {
                 .collect(Collectors.toList());
     }
 
-    // 단건 조회
+    // 숙소 하나 조회
     public PublishingDTO getHotel(Long id) {
-        Publishing p = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 숙소 ID: " + id));
-        return PublishingDTO.builder()
-                .hotelName(p.getHotelName())
-                .description(p.getIntroduction())
-                .build();
+    Publishing publishing = repository.findById(id)
+            .orElseThrow(() -> new RuntimeException("해당 숙소 없음"));
+
+        return new PublishingDTO(//dto 모든 내용
+                publishing.getHotelName(),
+                publishing.getAddresses(),
+                publishing.getImages(),
+                publishing.getRooms(),
+                publishing.getIntroduction(),
+                publishing.getAmenities()
+        );
     }
 }
