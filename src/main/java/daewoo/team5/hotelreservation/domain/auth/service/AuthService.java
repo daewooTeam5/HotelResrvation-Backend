@@ -71,6 +71,10 @@ public class AuthService {
         if (refreshToken == null || !jwtProvider.validateToken(refreshToken)) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "토큰 재발급 실패", "유효하지 않은 리프레시 토큰입니다.");
         }
+        if( blackListRepository.isBlackListed(refreshToken)) {
+            cookieProvider.removeCookie("refreshToken",response);
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "토큰 재발급 실패", "예기치 못한 오류 발생");
+        }
         Claims tokenParse = jwtProvider.parseClaims(refreshToken);
         tokenParse.getSubject();
         Long userId = Long.parseLong(tokenParse.getSubject());
