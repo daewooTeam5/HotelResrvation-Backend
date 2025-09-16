@@ -1,6 +1,6 @@
 package daewoo.team5.hotelreservation.domain.place.entity;
 
-import daewoo.team5.hotelreservation.domain.users.entity.User;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.global.core.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,7 +24,7 @@ public class Places extends BaseTimeEntity {
     private Long id;   // 숙소 아이디
 
     @ManyToOne
-    private User owner;  // 숙소 주인 ID
+    private Users owner;  // 숙소 주인 ID
 
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "id")

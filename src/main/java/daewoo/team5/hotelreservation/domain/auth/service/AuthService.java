@@ -1,8 +1,11 @@
 package daewoo.team5.hotelreservation.domain.auth.service;
 
+import daewoo.team5.hotelreservation.domain.auth.repository.BlackListRepository;
 import daewoo.team5.hotelreservation.domain.auth.repository.OtpRepository;
-import daewoo.team5.hotelreservation.domain.users.entity.User;
-import daewoo.team5.hotelreservation.domain.users.repository.UserRepository;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
+import daewoo.team5.hotelreservation.global.core.provider.CookieProvider;
 import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import daewoo.team5.hotelreservation.global.mail.service.MailService;
@@ -26,8 +29,15 @@ import java.util.UUID;
 public class AuthService {
     private final OtpRepository otpRepository;
     private final MailService mailService;
-    private final UserRepository userRepository;
+    private final UsersRepository userRepository;
+    private final BlackListRepository blackListRepository;
+    private final CookieProvider cookieProvider;
     private final JwtProvider jwtProvider;
+
+    public void logout(String refreshToken) {
+        long expirationTime = jwtProvider.parseClaims(refreshToken).getExpiration().getTime();
+        blackListRepository.addToBlackList(refreshToken,expirationTime);
+    }
 
     public void sendOtpCode(String email) {
         String optCode = otpRepository.generateOtp(email);
@@ -36,23 +46,24 @@ public class AuthService {
     }
 
     @Transactional
-    public User authLogInOtpCode(String email, String code) {
+    public UserProjection authLogInOtpCode(String email, String code) {
         boolean isValid = otpRepository.validateOtp(email, code);
         if (!isValid) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "인증 실패", "유효하지 않은 인증 코드입니다.");
         }
-        Optional<User> findUser = userRepository.findByEmail(email);
+        Optional<Users> findUser = userRepository.findByEmail(email);
         Random random = new Random();
-        return findUser.orElseGet(() -> userRepository.save(
-                User.builder()
+        findUser.orElseGet(() -> userRepository.save(
+                Users.builder()
                         .email(email)
                         .name("Guest" + random.nextInt())
                         .userId(UUID.randomUUID().toString())
-                        .role(User.Role.customer)
-                        .status(User.Status.active)
+                        .role(Users.Role.customer)
+                        .status(Users.Status.active)
                         .build()
 
         ));
+        return userRepository.findByName(findUser.get().getName(),UserProjection.class).get();
 
     }
 
@@ -60,14 +71,18 @@ public class AuthService {
         if (refreshToken == null || !jwtProvider.validateToken(refreshToken)) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "토큰 재발급 실패", "유효하지 않은 리프레시 토큰입니다.");
         }
+        if( blackListRepository.isBlackListed(refreshToken)) {
+            cookieProvider.removeCookie("refreshToken",response);
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "토큰 재발급 실패", "예기치 못한 오류 발생");
+        }
         Claims tokenParse = jwtProvider.parseClaims(refreshToken);
         tokenParse.getSubject();
         Long userId = Long.parseLong(tokenParse.getSubject());
-        User user = userRepository.findById(userId).orElseThrow(
+        UserProjection users = userRepository.findById(userId,UserProjection.class).orElseThrow(
                 () -> new ApiException(HttpStatus.NOT_FOUND, "사용자 없음", "해당 사용자가 존재하지 않습니다.")
         );
-        String newAccessToken = jwtProvider.generateToken(user, JwtProvider.TokenType.ACCESS);
-        String newRefreshToken = jwtProvider.generateToken(user.getId(), tokenParse.getExpiration().getTime());
+        String newAccessToken = jwtProvider.generateToken(users, JwtProvider.TokenType.ACCESS);
+        String newRefreshToken = jwtProvider.generateToken(users.getId(), tokenParse.getExpiration().getTime());
         Cookie refreshTokenCookie = new Cookie("refreshToken", newRefreshToken);
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(false);

@@ -31,7 +31,7 @@ public class ReservationService {
         return reservationRepository.findAll(pageable)
                 .map(reservation -> new ReservationDTO(
                         reservation.getReservationId(),
-                        reservation.getUser() != null ? reservation.getUser().getId() : null,
+                        reservation.getUsers() != null ? reservation.getUsers().getId() : null,
                         reservation.getRoom() != null ? reservation.getRoom().getId().toString() : null,
                         reservation.getStatus() != null ? reservation.getStatus().name() : null,
                         reservation.getAmount(),
@@ -47,7 +47,7 @@ public class ReservationService {
         return reservationRepository.findById(reservationId)
                 .map(reservation -> new ReservationDTO(
                         reservation.getReservationId(),
-                        reservation.getUser().getId(),
+                        reservation.getUsers().getId(),
                         reservation.getRoomNoString(),
                         reservation.getStatus().name(),
                         reservation.getAmount(),
@@ -95,7 +95,7 @@ public class ReservationService {
         return new ReservationResponse(
                 r.getReservationId(),
                 r.getRoomNoString(),
-                r.getUser().getId(),
+                r.getUsers().getId(),
                 r.getStatus() != null ? r.getStatus().name() : null,
                 r.getAmount(),
                 r.getResevStart().toString(),
@@ -112,8 +112,8 @@ public class ReservationService {
 
         return reservations.map(r -> ReservationSearchResponse.builder()
                 .reservationId(r.getReservationId())
-                .userName(r.getUser() != null ? r.getUser().getName() : null)
-                .email(r.getUser() != null ? r.getUser().getEmail() : null)
+                .userName(r.getUsers() != null ? r.getUsers().getName() : null)
+                .email(r.getUsers() != null ? r.getUsers().getEmail() : null)
                 .roomNo(
                         (r.getRoom() != null && r.getRoom().getId() != null && !r.getRoom().getRoomNos().isEmpty())
                                 ? r.getRoom().getRoomNos().get(0).getRoomNo()

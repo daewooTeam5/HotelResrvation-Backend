@@ -5,11 +5,12 @@ import daewoo.team5.hotelreservation.domain.auth.dto.AuthCodeDto;
 import daewoo.team5.hotelreservation.domain.auth.dto.EmailLoginDto;
 import daewoo.team5.hotelreservation.domain.auth.dto.LoginSuccessDto;
 import daewoo.team5.hotelreservation.domain.auth.service.AuthService;
-import daewoo.team5.hotelreservation.domain.users.entity.User;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
+import daewoo.team5.hotelreservation.global.core.provider.CookieProvider;
 import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -30,12 +31,27 @@ import java.util.Map;
 public class AuthController implements AuthSwagger {
     private final AuthService authService;
     private final JwtProvider jwtProvider;
+    private final CookieProvider cookieProvider;
 
     @PostMapping("/auth")
     public ApiResult<Boolean> emailLogin(@RequestBody @Valid EmailLoginDto emailLoginDto) {
         log.info("Email Login Request Received: {}", emailLoginDto);
         authService.sendOtpCode(emailLoginDto.getEmail());
         return ApiResult.ok(true, "인증 코드가 이메일로 전송되었습니다.");
+    }
+
+    @PostMapping("/logout")
+    public ApiResult<Boolean> logout(
+            @CookieValue(name = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response
+    ){
+        // refreshToken 쿠키 삭제
+        cookieProvider.removeCookie("refreshToken",response);
+
+        authService.logout(refreshToken);
+        return ApiResult.ok(true, "로그아웃 되었습니다.");
+
+
     }
 
     @PostMapping("/auth/code")
@@ -45,16 +61,16 @@ public class AuthController implements AuthSwagger {
             AuthCodeDto authCodeDto,
             HttpServletResponse response
     ) {
-        User user = authService.authLogInOtpCode(authCodeDto.getEmail(), authCodeDto.getCode());
-        String accessToken = jwtProvider.generateToken(user, JwtProvider.TokenType.ACCESS);
-        String refreshToken = jwtProvider.generateToken(user.getId(), JwtProvider.TokenType.REFRESH);
+        UserProjection users = authService.authLogInOtpCode(authCodeDto.getEmail(), authCodeDto.getCode());
+        String accessToken = jwtProvider.generateToken(users, JwtProvider.TokenType.ACCESS);
+        String refreshToken = jwtProvider.generateToken(users.getId(), JwtProvider.TokenType.REFRESH);
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(false);
         cookie.setPath("/");
         cookie.setMaxAge(30 * 24 * 60 * 60);
         response.addCookie(cookie);
-        LoginSuccessDto loginSuccessDto = new LoginSuccessDto(accessToken, user);
+        LoginSuccessDto loginSuccessDto = new LoginSuccessDto(accessToken, users);
         return ApiResult.ok(loginSuccessDto, "인증 성공");
     }
 

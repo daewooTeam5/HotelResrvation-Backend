@@ -1,7 +1,7 @@
 package daewoo.team5.hotelreservation.global.aop.aspect;
 
-import daewoo.team5.hotelreservation.domain.users.entity.UsersLegacy;
-import daewoo.team5.hotelreservation.domain.users.repository.UsersLegacyRepository;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +28,11 @@ public class AuthUserAspect {
 
         String principal = (String)auth.getPrincipal();
 
-        UsersLegacy currentUser = usersRepository.findByUsername(principal)
-                .orElseThrow(() -> new ApiException(401, "401E001", "인증되지 않은 유저"));
+        UserProjection currentUser = usersRepository.findByName(principal,UserProjection.class)
+                .orElseThrow(() -> new ApiException(404, "존재하지 않는 유저", "존재 하지 않는 유저입니다."));
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof UsersLegacy || args[i] == null) {
+            if (args[i] instanceof Users || args[i] == null) {
                 args[i] = currentUser;
             }
         }

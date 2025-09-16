@@ -5,7 +5,7 @@ import daewoo.team5.hotelreservation.domain.place.dto.ReservationSearchRequest;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
 import daewoo.team5.hotelreservation.domain.place.entity.RoomNo;
-import daewoo.team5.hotelreservation.domain.users.entity.User;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -21,7 +21,7 @@ public class ReservationSpecification {
             List<Predicate> predicates = new ArrayList<>();
 
             // Join: User (reservations.user → users.id)
-            Join<Reservation, User> user = root.join("user", JoinType.LEFT);
+            Join<Reservation, Users> user = root.join("user", JoinType.LEFT);
 
             // Join: RoomNo (reservations.roomNo → room_no.room_no)
             Join<Reservation, RoomNo> roomNo = root.join("roomNo", JoinType.LEFT);
