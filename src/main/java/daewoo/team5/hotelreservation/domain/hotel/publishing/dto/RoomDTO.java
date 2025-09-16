@@ -15,7 +15,7 @@ public class RoomDTO {
 
     private int price;
 
-    private int maxCount;
+    private int capacityPeople;
 
 
 }

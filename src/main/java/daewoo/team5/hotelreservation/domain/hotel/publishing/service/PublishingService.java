@@ -2,7 +2,7 @@ package daewoo.team5.hotelreservation.domain.hotel.publishing.service;
 
 import daewoo.team5.hotelreservation.domain.hotel.publishing.dto.PublishingDTO;
 import daewoo.team5.hotelreservation.domain.hotel.publishing.entity.Place;
-import daewoo.team5.hotelreservation.domain.hotel.publishing.repository.PlaceRepository;
+import daewoo.team5.hotelreservation.domain.hotel.publishing.repository.Place_HotelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없어도 됨
 
-    private final PlaceRepository repository;
+    private final Place_HotelRepository repository;
 
     // 등록
     public Place registerHotel(PublishingDTO dto) {

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PlaceRepository extends JpaRepository<Place, Long> {
+public interface Place_HotelRepository extends JpaRepository<Place, Long> {
     //JPA레파스토리 불러오면 기본적인 findAll같은 함수 다 끌어다 쓰기 가능
 
     /*쿼리에서는 내가 했던 publishing에 대응되는 p.hotelname을 가져와야 되므로 이렇게 치고 as name으로 하면
