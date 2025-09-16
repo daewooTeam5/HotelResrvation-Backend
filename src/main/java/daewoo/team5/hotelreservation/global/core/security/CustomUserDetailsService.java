@@ -1,7 +1,6 @@
 package daewoo.team5.hotelreservation.global.core.security;
 
-import daewoo.team5.hotelreservation.domain.users.entity.UsersLegacy;
-import daewoo.team5.hotelreservation.domain.users.repository.UsersLegacyRepository;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import org.springframework.security.core.userdetails.User;
@@ -22,10 +21,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        UsersLegacy users = usersRepository.findByUsername(username).orElseThrow(() -> new ApiException(400, "로그인 실패", "아이디 또는 비밀번호가 일치하지 않습니다."));
+        Users users = usersRepository.findByName(username).orElseThrow(() -> new ApiException(400, "로그인 실패", "아이디 또는 비밀번호가 일치하지 않습니다."));
 
         return User.builder()
-                .username(users.getUsername())
+                .username(users.getName())
                 .password(users.getPassword())
                 .build();
     }

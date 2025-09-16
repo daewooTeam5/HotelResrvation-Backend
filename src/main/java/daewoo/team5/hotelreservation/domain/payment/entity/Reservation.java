@@ -2,7 +2,7 @@ package daewoo.team5.hotelreservation.domain.payment.entity;
 
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
 import daewoo.team5.hotelreservation.domain.place.entity.RoomNo;
-import daewoo.team5.hotelreservation.domain.users.entity.User;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -25,7 +25,7 @@ public class Reservation {
     // 예약자 (User 연관관계)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
+    private Users users;
 
     // 객실번호(RoomNo 연관관계)
     @ManyToOne(fetch = FetchType.LAZY)

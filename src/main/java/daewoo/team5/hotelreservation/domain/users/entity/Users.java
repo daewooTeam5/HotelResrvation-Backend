@@ -3,8 +3,6 @@ package daewoo.team5.hotelreservation.domain.users.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import daewoo.team5.hotelreservation.global.core.common.BaseTimeEntity;
-import jakarta.persistence.*;
-import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
@@ -16,7 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User extends BaseTimeEntity {
+public class Users extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
