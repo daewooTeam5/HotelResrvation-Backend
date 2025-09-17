@@ -1,8 +1,8 @@
-package daewoo.team5.hotelreservation.domain.hotel.publishing.controller;
+package daewoo.team5.hotelreservation.domain.place.controller;
 
-import daewoo.team5.hotelreservation.domain.hotel.publishing.dto.PublishingDTO;
-import daewoo.team5.hotelreservation.domain.hotel.publishing.service.PublishingService;
-import daewoo.team5.hotelreservation.global.model.ApiResult;
+import daewoo.team5.hotelreservation.domain.place.dto.PublishingDTO;
+import daewoo.team5.hotelreservation.domain.place.service.PublishingService;
+import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

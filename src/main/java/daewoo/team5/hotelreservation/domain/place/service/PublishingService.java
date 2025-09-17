@@ -1,8 +1,8 @@
-package daewoo.team5.hotelreservation.domain.hotel.publishing.service;
+package daewoo.team5.hotelreservation.domain.place.service;
 
-import daewoo.team5.hotelreservation.domain.hotel.publishing.dto.PublishingDTO;
-import daewoo.team5.hotelreservation.domain.hotel.publishing.entity.Place;
-import daewoo.team5.hotelreservation.domain.hotel.publishing.repository.PlaceRepository;
+import daewoo.team5.hotelreservation.domain.place.dto.PublishingDTO;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
+import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,9 +18,9 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
     private final PlaceRepository repository;
 
     // 등록
-    public Place registerHotel(PublishingDTO dto) {
-        Place place = Place.builder()
-                .hotelName(dto.getHotelName())
+    public Places registerHotel(PublishingDTO dto) {
+        Places place = Places.builder()
+                .name(dto.getHotelName())
                 .description(dto.getDescription())
                 .build();
 
@@ -32,7 +32,7 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
     public List<PublishingDTO> getAllHotels() {
         return repository.findAll().stream()
                 .map(p -> PublishingDTO.builder()
-                        .hotelName(p.getHotelName())
+                        .hotelName(p.getName())
                         .description(p.getDescription())
                         .build())
                 .collect(Collectors.toList());
@@ -40,9 +40,8 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
 
     // 숙소 하나 조회
     public PublishingDTO getHotel(Long id) {
-    Place place  = repository.findById(id)
+    Places place  = repository.findById(id)
             .orElseThrow(() -> new RuntimeException("해당 숙소 없음"));
-
         return new PublishingDTO(//dto 모든 내용
 
 

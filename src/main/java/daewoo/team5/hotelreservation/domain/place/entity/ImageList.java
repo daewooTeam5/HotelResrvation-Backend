@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.domain.hotel.publishing.entity;
+package daewoo.team5.hotelreservation.domain.place.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,7 +19,6 @@ public class ImageList {// 엔티티 ERD랑 맞추기 나중에 추가(erd에 �
     private String imageUrl;    //이미지 url 전부 붙혀넣기
 
     @ManyToOne
-    @JoinColumn(name = "place_id")
-    private Place place;
+    private Places place;
 
 }

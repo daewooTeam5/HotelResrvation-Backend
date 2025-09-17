@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.domain.hotel.publishing.entity;
+package daewoo.team5.hotelreservation.domain.place.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,6 +20,6 @@ public class PlaceService {// 엔티티 ERD랑 맞추기
     private Service service;
 
     @ManyToOne
-    private Place place;
+    private Places place;
 
 }

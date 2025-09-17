@@ -1,4 +1,4 @@
-package daewoo.team5.hotelreservation.domain.hotel.publishing.dto;
+package daewoo.team5.hotelreservation.domain.place.dto;
 
 import lombok.*;
 
