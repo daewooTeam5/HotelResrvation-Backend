@@ -7,6 +7,7 @@ import daewoo.team5.hotelreservation.domain.auth.dto.LoginSuccessDto;
 import daewoo.team5.hotelreservation.domain.auth.service.AuthService;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.core.provider.CookieProvider;
 import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
@@ -17,10 +18,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -84,6 +82,14 @@ public class AuthController implements AuthSwagger {
         }
         String accessToken = authService.reissueToken(refreshToken,response);
         return ApiResult.ok(Map.of("accessToken", accessToken), "토큰 재발급 성공");
+    }
+
+    @AuthUser
+    @GetMapping("/test1")
+    public ApiResult<UserProjection> test(
+            UserProjection user
+    ) {
+        return ApiResult.ok(user, "테스트 성공");
     }
 
 
