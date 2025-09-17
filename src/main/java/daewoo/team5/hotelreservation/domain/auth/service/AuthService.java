@@ -53,7 +53,7 @@ public class AuthService {
         }
         Optional<Users> findUser = userRepository.findByEmail(email);
         Random random = new Random();
-        findUser.orElseGet(() -> userRepository.save(
+        Users users = findUser.orElseGet(() -> userRepository.save(
                 Users.builder()
                         .email(email)
                         .name("Guest" + random.nextInt())
@@ -63,7 +63,7 @@ public class AuthService {
                         .build()
 
         ));
-        return userRepository.findByName(findUser.get().getName(),UserProjection.class).get();
+        return userRepository.findByName(users.getName(),UserProjection.class).get();
 
     }
 
