@@ -1,10 +1,10 @@
 package daewoo.team5.hotelreservation.domain.payment.entity;
 
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
-import daewoo.team5.hotelreservation.domain.place.entity.RoomNo;
-import daewoo.team5.hotelreservation.domain.users.entity.Users;
+import daewoo.team5.hotelreservation.global.core.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Reservation {
+public class Reservation extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,12 +25,14 @@ public class Reservation {
     // 예약자 (User 연관관계)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private Users users;
+    private GuestEntity guest;
 
-    // 객실번호(RoomNo 연관관계)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", referencedColumnName = "id")
-    private RoomNo roomNo;
+    private Room room;
+
+    @Column
+    private Long resevAmount;
 
     // 예약 상태
     @Enumerated(EnumType.STRING)
@@ -38,8 +40,17 @@ public class Reservation {
             columnDefinition = "ENUM('pending','confirmed','cancelled','checked_in','checked_out') DEFAULT 'pending'")
     private ReservationStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status",
+            columnDefinition = "ENUM('unpaid','paid','refunded','rejected','cancelled') DEFAULT 'unpaid'")
+    private ReservationPaymentStatus paymentStatus;
+
+
     @Column(name = "amount", nullable = false, precision = 38, scale = 2)
-    private BigDecimal amount;
+    private BigDecimal baseAmount;
+
+    @Column(name = "final_amount", nullable = false, precision = 38, scale = 2)
+    private BigDecimal finalAmount;
 
     @Column(name = "resev_start")
     private LocalDateTime resevStart;
@@ -47,23 +58,8 @@ public class Reservation {
     @Column(name = "resev_end")
     private LocalDateTime resevEnd;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status",
-            columnDefinition = "ENUM('unpaid','paid','refunded') DEFAULT 'unpaid'")
-    private ReservationPaymentStatus paymentStatus;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Transient
-    public Room getRoom() {
-        return this.roomNo != null ? this.roomNo.getRoom() : null;
-    }
-
-    @Transient
-    public String getRoomNoString() {
-        return this.roomNo != null ? this.roomNo.getRoomNo() : null;
-    }
+    @Column
+    private String request;
 
     // 예약 상태 Enum
     public enum ReservationStatus {
@@ -72,6 +68,6 @@ public class Reservation {
 
     // 결제 상태 Enum
     public enum ReservationPaymentStatus {
-        unpaid, paid, refunded
+        unpaid, paid, refunded, rejected, cancelled
     }
 }
