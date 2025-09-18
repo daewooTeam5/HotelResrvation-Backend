@@ -3,7 +3,7 @@ package daewoo.team5.hotelreservation.global.handler;
 
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import daewoo.team5.hotelreservation.global.exception.ErrorDetails;
-import daewoo.team5.hotelreservation.global.model.ApiResult;
+import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;

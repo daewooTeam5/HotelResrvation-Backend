@@ -6,7 +6,7 @@ import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
-import daewoo.team5.hotelreservation.global.provider.JwtProvider;
+import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,9 +33,9 @@ public class UsersService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword())
         );
-        Users loginUser = usersRepository.findByUsername(dto.getUsername()).orElseThrow(() -> new ApiException(400, "로그인 실패", "아이디 또는 비밀번호가 일치하지 않습니다."));
-        String accessToken = jwtProvider.generateToken(loginUser, JwtProvider.TokenType.ACCESS);
-        String refreshToken = jwtProvider.generateToken(loginUser.getId(), JwtProvider.TokenType.REFRESH);
+        Users loginUsers = usersRepository.findByName(dto.getUsername()).orElseThrow(() -> new ApiException(400, "로그인 실패", "아이디 또는 비밀번호가 일치하지 않습니다."));
+        String accessToken = jwtProvider.generateToken(loginUsers, JwtProvider.TokenType.ACCESS);
+        String refreshToken = jwtProvider.generateToken(loginUsers.getId(), JwtProvider.TokenType.REFRESH);
 
         return Map.of(
                 "accessToken", accessToken,
@@ -45,15 +45,15 @@ public class UsersService {
     }
 
     public Users registerUser(CreateUserDto dto) {
-        Users user = usersRepository.save(
+        Users users = usersRepository.save(
                 Users
                         .builder()
                         .password(passwordEncoder.encode(dto.getPassword()))
-                        .username(dto.getUsername())
-                        .role(dto.getRole())
+                        .name(dto.getUsername())
+                        .role(Users.Role.valueOf(dto.getRole()))
                         .build()
         );
-        return user;
+        return users;
 
     }
 
