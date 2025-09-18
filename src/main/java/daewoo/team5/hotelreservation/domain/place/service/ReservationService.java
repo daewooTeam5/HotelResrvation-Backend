@@ -31,10 +31,10 @@ public class ReservationService {
         return reservationRepository.findAll(pageable)
                 .map(reservation -> new ReservationDTO(
                         reservation.getReservationId(),
-                        reservation.getUsers() != null ? reservation.getUsers().getId() : null,
+                        reservation.getGuest() != null ? reservation.getGuest().getId() : null,
                         reservation.getRoom() != null ? reservation.getRoom().getId().toString() : null,
                         reservation.getStatus() != null ? reservation.getStatus().name() : null,
-                        reservation.getAmount(),
+                        reservation.getFinalAmount(),
                         reservation.getResevStart() != null ? reservation.getResevStart().toString() : null,
                         reservation.getResevEnd() != null ? reservation.getResevEnd().toString() : null,
                         reservation.getPaymentStatus() != null ? reservation.getPaymentStatus().name() : null,
@@ -47,10 +47,10 @@ public class ReservationService {
         return reservationRepository.findById(reservationId)
                 .map(reservation -> new ReservationDTO(
                         reservation.getReservationId(),
-                        reservation.getUsers().getId(),
-                        reservation.getRoomNoString(),
+                        reservation.getGuest().getId(),
+                        reservation.getRoom().getId().toString(),
                         reservation.getStatus().name(),
-                        reservation.getAmount(),
+                        reservation.getFinalAmount(),
                         reservation.getResevStart().toString(),
                         reservation.getResevEnd().toString(),
                         reservation.getPaymentStatus().name(),
@@ -62,7 +62,7 @@ public class ReservationService {
     public ReservationDTO updateReservation(Long reservationId, ReservationDTO reservationDTO) {
         return reservationRepository.findById(reservationId).map(reservation -> {
             reservation.setStatus(Reservation.ReservationStatus.valueOf(reservationDTO.getStatus()));
-            reservation.setAmount(reservationDTO.getAmount());
+            reservation.setFinalAmount(reservationDTO.getAmount());
             reservation.setResevStart(LocalDateTime.parse(reservationDTO.getResevStart()));
             reservation.setResevEnd(LocalDateTime.parse(reservationDTO.getResevEnd()));
             reservation.setPaymentStatus(Reservation.ReservationPaymentStatus.valueOf(reservationDTO.getPaymentStatus()));
@@ -94,10 +94,10 @@ public class ReservationService {
     private ReservationResponse toResponse(Reservation r) {
         return new ReservationResponse(
                 r.getReservationId(),
-                r.getRoomNoString(),
-                r.getUsers().getId(),
+                r.getRoom().getId().toString(),
+                r.getGuest().getId(),
                 r.getStatus() != null ? r.getStatus().name() : null,
-                r.getAmount(),
+                r.getFinalAmount(),
                 r.getResevStart().toString(),
                 r.getResevEnd().toString(),
                 r.getCreatedAt()
@@ -112,8 +112,8 @@ public class ReservationService {
 
         return reservations.map(r -> ReservationSearchResponse.builder()
                 .reservationId(r.getReservationId())
-                .userName(r.getUsers() != null ? r.getUsers().getName() : null)
-                .email(r.getUsers() != null ? r.getUsers().getEmail() : null)
+                .userName(r.getGuest() != null ? r.getGuest().getFirstName()+r.getGuest().getLastName() : null)
+                .email(r.getGuest() != null ? r.getGuest().getEmail() : null)
                 .roomNo(
                         (r.getRoom() != null && r.getRoom().getId() != null && !r.getRoom().getRoomNos().isEmpty())
                                 ? r.getRoom().getRoomNos().get(0).getRoomNo()
@@ -128,7 +128,7 @@ public class ReservationService {
                 .resevEnd(r.getResevEnd().toString())
                 .status(r.getStatus() != null ? r.getStatus().name() : null)
                 .paymentStatus(r.getPaymentStatus() != null ? r.getPaymentStatus().name() : null)
-                .amount(r.getAmount())
+                .amount(r.getFinalAmount())
                 .createdAt(r.getCreatedAt())
                 .build()
         );
