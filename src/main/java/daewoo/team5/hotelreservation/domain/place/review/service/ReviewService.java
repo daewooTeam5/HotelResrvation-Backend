@@ -46,7 +46,7 @@ public class ReviewService {
 
         // === 리뷰 작성 권한 검증 ===
         // 주석: 예약한 사용자와 현재 로그인한 사용자가 동일한지 확인합니다.
-        if (!reservation.getUsers().getId().equals(user.getId())) {
+        if (!reservation.getGuest().getUsers().getId().equals(user.getId())) {
             throw new ApiException(HttpStatus.FORBIDDEN, "리뷰 작성 권한이 없습니다.", "예약자 본인만 리뷰를 작성할 수 있습니다.");
         }
         // 주석: 리뷰를 작성하려는 숙소와 실제 예약한 숙소가 동일한지 확인합니다.
