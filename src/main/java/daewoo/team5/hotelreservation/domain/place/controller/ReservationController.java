@@ -1,0 +1,34 @@
+package daewoo.team5.hotelreservation.domain.place.controller;
+
+import daewoo.team5.hotelreservation.domain.place.service.ReservationService;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
+import daewoo.team5.hotelreservation.global.core.common.ApiResult;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/v1/reservations")
+@RequiredArgsConstructor
+public class ReservationController {
+
+    private final ReservationService reservationService;
+
+    /**
+     * 주석: 현재 로그인한 사용자가 특정 숙소에 대해 리뷰를 작성할 수 있는지 확인하는 API
+     * @param placeId 숙소 ID
+     * @param user 현재 로그인한 사용자 정보 (@AuthUser 어노테이션으로 자동 주입)
+     * @return 리뷰 작성 가능 여부를 담은 응답
+     */
+    @GetMapping("/can-review")
+    @AuthUser
+    public ApiResult<Map<String, Boolean>> canReview(@RequestParam Long placeId, UserProjection user) {
+        boolean canReview = reservationService.canUserWriteReview(placeId, user);
+        return ApiResult.ok(Map.of("canReview", canReview));
+    }
+}
