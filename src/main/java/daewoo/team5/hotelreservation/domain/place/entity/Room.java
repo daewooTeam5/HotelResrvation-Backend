@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity(name = "room")
 @Table(name = "room")
@@ -38,9 +36,6 @@ public class Room extends BaseTimeEntity {
 
     @Column(name = "price", precision = 10, scale = 2, nullable = false)
     private BigDecimal price; // 가격
-
-    @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
-    private List<RoomNo> roomNos;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
