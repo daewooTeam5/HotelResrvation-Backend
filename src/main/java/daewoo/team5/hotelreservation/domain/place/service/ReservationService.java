@@ -9,6 +9,7 @@ import daewoo.team5.hotelreservation.domain.place.dto.ReservationDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.ReservationResponse;
 import daewoo.team5.hotelreservation.domain.place.dto.ReservationSearchRequest;
 import daewoo.team5.hotelreservation.domain.place.dto.ReservationSearchResponse;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,24 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final RoomRepository roomRepository;
-
+    /**
+     * 주석: 사용자가 특정 숙소에 대해 리뷰를 작성할 수 있는지 확인합니다.
+     * @param placeId 확인할 숙소 ID
+     * @param user 현재 로그인한 사용자 정보
+     * @return 리뷰 작성 가능 여부 (true/false)
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public boolean canUserWriteReview(Long placeId, UserProjection user) {
+        if (user == null) {
+            return false;
+        }
+        // 체크아웃(checked_out) 상태의 예약이 존재하는지 확인
+        return reservationRepository.existsByUsersIdAndRoomPlaceIdAndStatus(
+                user.getId(),
+                placeId,
+                Reservation.ReservationStatus.checked_out
+        );
+    }
     // 예약 목록 조회
     public Page<ReservationDTO> getAllReservations(Pageable pageable) {
         return reservationRepository.findAll(pageable)
