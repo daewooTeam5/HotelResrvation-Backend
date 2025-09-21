@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "reservations")
@@ -34,6 +34,9 @@ public class Reservation extends BaseTimeEntity {
     @Column
     private Long resevAmount;
 
+    @Column
+    private String orderId;
+
     // 예약 상태
     @Enumerated(EnumType.STRING)
     @Column(name = "status",
@@ -53,10 +56,10 @@ public class Reservation extends BaseTimeEntity {
     private BigDecimal finalAmount;
 
     @Column(name = "resev_start")
-    private LocalDateTime resevStart;
+    private LocalDate resevStart;
 
     @Column(name = "resev_end")
-    private LocalDateTime resevEnd;
+    private LocalDate resevEnd;
 
     @Column
     private String request;
