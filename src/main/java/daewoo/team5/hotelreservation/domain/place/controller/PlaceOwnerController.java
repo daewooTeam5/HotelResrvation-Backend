@@ -90,4 +90,14 @@ public class PlaceOwnerController {
             Pageable pageable, UserProjection projection) {
         return ResponseEntity.ok(reservationService.searchReservations(request, projection.getId(), pageable));
     }
+
+    @PostMapping("/test")
+    @AuthUser
+    public ResponseEntity<ReservationDetailDTO> createTestReservation(
+            @RequestBody ReservationTestRequestDTO dto,
+            UserProjection projection
+    ) {
+        return ResponseEntity.ok(reservationService.createTestReservation(projection.getId(), dto));
+    }
+
 }
