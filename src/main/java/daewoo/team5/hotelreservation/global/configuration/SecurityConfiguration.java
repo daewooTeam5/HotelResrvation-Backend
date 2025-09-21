@@ -55,6 +55,10 @@ public class SecurityConfiguration {
                                 "/api/v1/users/login",
                                 "/api/v1/reservations/**",
                                 "/api/v1/places/**",
+                                "/api/v1/payment/process",
+                                "/api/v1/payment/reservation/*",
+                                "/api/v1/rooms/*",
+                                "/*.html",
                                 "/images/**"
                         ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()
