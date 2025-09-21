@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 @Builder
 public class Payment {
 
@@ -44,6 +45,9 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", columnDefinition = "ENUM('paid','cancelled','refunded') DEFAULT 'paid'")
     private PaymentStatus status;
+
+    @Column
+    private String methodType;
 
 
     public enum PaymentStatus {paid, cancelled, refunded}
