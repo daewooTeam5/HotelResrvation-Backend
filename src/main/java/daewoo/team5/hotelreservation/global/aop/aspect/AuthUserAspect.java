@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class AuthUserAspect {
+    private static final Logger log = LoggerFactory.getLogger(AuthUserAspect.class);
     private final UsersRepository usersRepository;
 
     @Around("@annotation(daewoo.team5.hotelreservation.global.aop.annotation.AuthUser)")
@@ -30,8 +33,10 @@ public class AuthUserAspect {
 
         Object principal = auth.getPrincipal();
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(principal.toString());
-        UserProjection currentUser = usersRepository.findById(Long.parseLong(node.get("id").toString()), UserProjection.class)
+        log.info(auth.getName());
+        log.info(auth.toString());
+        log.info(principal.toString());
+        UserProjection currentUser = usersRepository.findById(Long.parseLong(principal.toString()), UserProjection.class)
                 .orElseThrow(() -> new ApiException(404, "존재하지 않는 유저", "존재 하지 않는 유저입니다."));
         System.out.println(currentUser);
 
