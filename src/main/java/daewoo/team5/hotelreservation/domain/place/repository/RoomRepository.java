@@ -2,9 +2,8 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.projection.RoomInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,5 +68,4 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             @Param("startDate") String startDate,
             @Param("endDate") String endDate
     );
-
 }

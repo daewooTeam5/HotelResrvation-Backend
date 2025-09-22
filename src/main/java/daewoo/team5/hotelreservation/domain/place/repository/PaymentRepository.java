@@ -5,8 +5,6 @@ import daewoo.team5.hotelreservation.domain.payment.entity.Payment.PaymentStatus
 import org.springframework.data.jpa.repository.*;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Modifying
@@ -18,6 +16,4 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT p FROM Payment p WHERE p.reservation.reservationId = :reservationId " +
             "ORDER BY p.transactionDate DESC")
     java.util.List<Payment> findAllByReservationIdOrderByTransactionDateDesc(Long reservationId);
-
-    Optional<Payment> findByOrderId(String orderId);
 }
