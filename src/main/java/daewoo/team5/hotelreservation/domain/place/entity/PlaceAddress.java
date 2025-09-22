@@ -18,8 +18,9 @@ public class PlaceAddress {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;   // 주소 ID
 
-    @Column(name = "place_id", nullable = false)
-    private Long placeId; // 숙소 아이디 (FK, Place 테이블 참조 예정)
+    @OneToOne
+    @JoinColumn(name = "place_id", nullable = false, unique = true)
+    private Places place; // 숙소 (FK: Places 테이블)
 
     @Column(name = "postal_code", length = 5, nullable = false)
     private String postalCode; // 우편번호

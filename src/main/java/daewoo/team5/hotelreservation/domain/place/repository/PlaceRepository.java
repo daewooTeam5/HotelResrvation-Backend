@@ -12,7 +12,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 //rooms -> room으로 수정
 
@@ -255,12 +254,6 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             WHERE r.place_id = :placeId
             """, nativeQuery = true)
     List<RoomInfo> findRoomsByPlace(@Param("placeId") Long placeId);
-
-    @Query("SELECT p FROM Places p WHERE p.owner.id = :ownerId")
-    Optional<Places> findByOwnerId(@Param("ownerId") Long ownerId);
-
-    // ownerId로 소유자의 첫 번째 숙소만 조회
-    Optional<Places> findFirstByOwnerId(Long ownerId);
 }
 
 
