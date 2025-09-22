@@ -244,6 +244,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
     // 객실 상세
     @Query(value = """
             SELECT 
+                r.id as roomId,
                 r.room_type AS roomType,
                 r.bed_type AS bedType,
                 r.capacity_people AS capacityPeople,
