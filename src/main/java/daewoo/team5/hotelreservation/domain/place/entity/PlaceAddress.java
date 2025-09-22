@@ -41,4 +41,9 @@ public class PlaceAddress {
 
     @Column(name = "lng", precision = 10, scale = 7)
     private BigDecimal lng; // 경도
+
+    @ManyToOne
+    @JoinColumn(name = "place_id")
+    private Places place;
+
 }

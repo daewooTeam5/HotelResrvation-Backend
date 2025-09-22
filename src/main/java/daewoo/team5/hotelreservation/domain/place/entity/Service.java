@@ -19,4 +19,8 @@ public class Service {
 
     private String serviceIcon;
 
+    @ManyToOne
+    @JoinColumn(name = "place_id")
+    private Places place;
+
 }

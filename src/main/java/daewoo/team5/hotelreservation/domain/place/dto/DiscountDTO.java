@@ -9,6 +9,9 @@ import lombok.*;
 @Builder
 
 public class DiscountDTO {
+
     private int person;      // 인원
+
     private int discount;    // % 할인
+
 }

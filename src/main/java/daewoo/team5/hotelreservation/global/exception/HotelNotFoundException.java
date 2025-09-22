@@ -8,10 +8,8 @@ public class HotelNotFoundException extends ApiException {
     public HotelNotFoundException() {
         super(
                 HttpStatus.NOT_FOUND,
-                null,
                 "Hotel Not Found",
-                "호텔 정보가 존재 하지 않습니다.",
-                null
+                "호텔 정보가 존재 하지 않습니다."
         );
     }
 }

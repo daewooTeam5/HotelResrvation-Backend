@@ -20,6 +20,7 @@ public class PlaceService {// 엔티티 ERD랑 맞추기
     private Service service;
 
     @ManyToOne
+    @JoinColumn(name = "place_id")
     private Places place;
 
 }

@@ -30,10 +30,6 @@ public class PublishingController {//api리설트는 컨트롤러를 바꿔주�
         return ApiResult.ok(publishingService.getAllHotels());
     }
 
-    // 특정 숙소 조회
-    @GetMapping("/list/{id}")
-    public ApiResult<PublishingDTO> getHotel(@PathVariable Long id) {
-        return ApiResult.ok(publishingService.getHotel(id)) ;
-    }
+
 
 }

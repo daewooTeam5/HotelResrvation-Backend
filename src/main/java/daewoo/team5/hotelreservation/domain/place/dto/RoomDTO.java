@@ -15,7 +15,7 @@ public class RoomDTO {
 
     private int price;
 
-    private int maxCount;
+    private int CapacityPeople;
 
     private int extraPrice;
 
@@ -25,6 +25,6 @@ public class RoomDTO {
 
     private String checkOut;
 
-    private List<BedDTO> beds;
+    private List<BedDTO> bedType;
 
 }
