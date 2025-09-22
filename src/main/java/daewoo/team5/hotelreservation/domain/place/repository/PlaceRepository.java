@@ -190,6 +190,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
         WHERE ps.place_id = :placeId
         """, nativeQuery = true)
     List<PlaceServiceProjection> findPlaceServices(@Param("placeId") Long placeId);
+
 }
 
 

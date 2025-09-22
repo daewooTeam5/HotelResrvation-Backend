@@ -149,12 +149,17 @@ public class PaymentService {
     }
 
     @Transactional
-    public Reservation payment(UserProjection user, ReservationRequestDto dto) {
+    public Reservation reservationPlace(UserProjection user, ReservationRequestDto dto) {
         log.info("payment userproj" + user);
         GuestEntity guest = getGuest(user, dto.getEmail(), dto.getFirstName(), dto.getLastName(), dto.getPhone());
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재 하지 않는 방입니다.", "존재하지 않는 방입니다."));
 
+        // 선점형 예약 방식
+
+
+
+        // 예약
         Reservation reservation = Reservation.builder()
                 .guest(guest)
                 .orderId(dto.getRoomId() + "_" + guest.getId() + "_" + System.currentTimeMillis())

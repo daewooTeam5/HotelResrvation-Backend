@@ -57,6 +57,6 @@ public class PaymentController {
             currentUser = usersRepository.findById(Long.parseLong(node.get("id").toString()), UserProjection.class)
                     .orElseThrow(() -> new ApiException(404, "존재하지 않는 유저", "존재 하지 않는 유저입니다."));
         }
-        return ApiResult.ok(paymentService.payment(currentUser, dto), "예약 성공");
+        return ApiResult.ok(paymentService.reservationPlace(currentUser, dto), "예약 성공");
     }
 }
