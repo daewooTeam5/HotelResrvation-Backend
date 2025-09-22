@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/*
 @SpringBootTest
 class MailServiceTest {
     @Autowired
@@ -16,4 +17,4 @@ class MailServiceTest {
 //        mailService.sendOtpCode("seungho02051@gmail.com","123456");
 //    }
 //
-}
+}*/

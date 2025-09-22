@@ -68,4 +68,20 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             @Param("startDate") String startDate,
             @Param("endDate") String endDate
     );
+
+    // ownerId로 해당 소유자의 모든 객실 유형 조회
+    @Query("SELECT r FROM room r " +
+            "JOIN r.place p " +
+            "WHERE p.owner.id = :ownerId")
+    List<Room> findAllByOwnerId(@Param("ownerId") Long ownerId);
+
+    // ownerId + roomId 단건 조회 (권한 체크용)
+    @Query("SELECT r FROM room r " +
+            "JOIN r.place p " +
+            "WHERE r.id = :roomId " +
+            "AND p.owner.id = :ownerId")
+    Optional<Room> findByIdAndOwnerId(@Param("roomId") Long roomId,
+                                      @Param("ownerId") Long ownerId);
+
+
 }
