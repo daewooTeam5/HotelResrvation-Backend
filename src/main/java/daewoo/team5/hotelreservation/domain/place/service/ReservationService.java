@@ -2,12 +2,12 @@ package daewoo.team5.hotelreservation.domain.place.service;
 
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
-import daewoo.team5.hotelreservation.domain.payment.repository.PaymentRepository;
 import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
 import daewoo.team5.hotelreservation.domain.place.dto.*;
 import daewoo.team5.hotelreservation.domain.place.entity.DailyPlaceReservation;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
 import daewoo.team5.hotelreservation.domain.place.repository.DailyPlaceReservationRepository;
+import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
 import daewoo.team5.hotelreservation.domain.place.specification.ReservationSpecification;

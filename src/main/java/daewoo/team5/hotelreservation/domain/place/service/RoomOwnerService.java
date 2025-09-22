@@ -31,7 +31,7 @@ public class RoomOwnerService {
 
     public RoomOwnerDTO createRoom(Long ownerId, RoomOwnerDTO dto) {
         // ownerId로 소유자의 숙소 1개 가져오기 (여러 개 나오면 첫 번째만)
-        Places place = placeRepository.findFirstByOwnerId(ownerId)
+        Places place = placeRepository.findByOwnerId(ownerId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 소유자의 숙소를 찾을 수 없습니다."));
 
         Room room = toEntity(dto, place);
