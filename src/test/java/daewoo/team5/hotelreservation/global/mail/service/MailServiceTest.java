@@ -10,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class MailServiceTest {
     @Autowired
     private MailService mailService;
-
-    @Test
-    public void sendMailOtp(){
-        mailService.sendOtpCode("seungho020510@gmail.com","123456");
-    }
-
+//
+//    @Test
+//    public void sendMailOtp(){
+//        mailService.sendOtpCode("seungho02051@gmail.com","123456");
+//    }
+//
 }

@@ -55,7 +55,6 @@ public class SecurityConfiguration {
                                 "/api/v1/users/login",
                                 "/api/v1/reservations/**",
                                 "/api/v1/places/**",
-                                "/api/v1/autocomplete/**",
                                 "/images/**"
                         ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()

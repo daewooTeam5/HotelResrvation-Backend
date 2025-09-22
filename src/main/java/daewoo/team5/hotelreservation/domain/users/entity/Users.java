@@ -50,6 +50,9 @@ public class Users extends BaseTimeEntity {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(nullable = true ,columnDefinition = "BIGINT DEFAULT 0")
+    private Long point;
+
     public enum Role {
         customer,
         hotel_owner,

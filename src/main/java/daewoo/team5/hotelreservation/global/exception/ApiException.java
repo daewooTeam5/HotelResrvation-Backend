@@ -16,20 +16,20 @@ public class ApiException extends RuntimeException {
         this.error = error;
     }
 
-    public ApiException(HttpStatus status, HttpServletRequest request, String title, String detail, String type) {
-        this.error = new ErrorDetails(type, title, status.value(), detail, request.getRequestURI());
-    }
-
-    public ApiException(HttpStatus status, HttpServletRequest request, String title, String detail) {
-        this.error = new ErrorDetails(null, title, status.value(), detail, request.getRequestURI());
-    }
-
     public ApiException(HttpStatus status, String title, String detail) {
         this.error = new ErrorDetails(null, title, status.value(), detail, null);
     }
 
+    public ApiException(HttpStatus status, String title, String detail, String errorCode) {
+        this.error = new ErrorDetails(null, title, status.value(), detail, null, errorCode);
+    }
+
     public ApiException(int status, String title, String detail) {
         this.error = new ErrorDetails(null, title, status, detail, null);
+    }
+
+    public ApiException(int status, String title, String detail, String errorCode) {
+        this.error = new ErrorDetails(null, title, status, detail, null, errorCode);
     }
 
     public ApiException(int statusCode, String title, String detail, HttpServletRequest request) {

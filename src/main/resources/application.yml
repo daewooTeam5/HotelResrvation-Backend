@@ -20,6 +20,9 @@ spring:
     database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
     url: ${DB_URL}
