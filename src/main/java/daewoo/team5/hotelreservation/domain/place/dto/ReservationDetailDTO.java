@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -35,8 +36,8 @@ public class ReservationDetailDTO {
     private BigDecimal price;
 
     // 예약 기간 및 금액
-    private LocalDateTime resevStart;
-    private LocalDateTime resevEnd;
+    private LocalDate resevStart;
+    private LocalDate resevEnd;
     private Long resevAmount;
     private BigDecimal baseAmount;
     private BigDecimal finalAmount;

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,8 +19,8 @@ public class ReservationListDTO {
     private String roomType;        // 객실 유형
     private String status;          // 예약 상태
     private String paymentStatus;   // 결제 상태
-    private LocalDateTime resevStart;
-    private LocalDateTime resevEnd;
+    private LocalDate resevStart;
+    private LocalDate resevEnd;
     private LocalDateTime createdAt; // ✅ 예약일
     private BigDecimal finalAmount;  // 최종 금액
     private boolean member;         // 회원 여부

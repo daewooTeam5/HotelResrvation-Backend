@@ -3,6 +3,7 @@ package daewoo.team5.hotelreservation.domain.place.dto;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,8 +16,8 @@ public class ReservationRequestDTO {
     private Long guestId;           // 비회원 예약일 경우
     private Long roomId;
 
-    private LocalDateTime resevStart;
-    private LocalDateTime resevEnd;
+    private LocalDate resevStart;
+    private LocalDate resevEnd;
     private Long resevAmount;
 
     private BigDecimal baseAmount;
