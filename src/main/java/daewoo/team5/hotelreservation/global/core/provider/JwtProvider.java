@@ -53,7 +53,7 @@ public class JwtProvider {
         Map<String, Object> subMap = mapper.readValue(subJson, new TypeReference<>(){});
         String role = (String) subMap.get("role");
         log.info("Claims: {}", claims);
-        String userId = claims.getSubject();
+        Long userId = Long.valueOf(String.valueOf(subMap.get("id")));
 
         return new UsernamePasswordAuthenticationToken(userId, null, List.of(new SimpleGrantedAuthority(role)));
     }

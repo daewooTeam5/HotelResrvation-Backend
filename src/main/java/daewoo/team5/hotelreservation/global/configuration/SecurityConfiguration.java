@@ -7,7 +7,6 @@ import daewoo.team5.hotelreservation.global.core.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -42,11 +41,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 적용
-
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/v1/places/*/reviews").permitAll()
                         .requestMatchers(
                                 "/",
                                 "/auth",
@@ -59,10 +55,6 @@ public class SecurityConfiguration {
                                 "/api/v1/users/login",
                                 "/api/v1/reservations/**",
                                 "/api/v1/places/**",
-                                "/api/v1/payment/process",
-                                "/api/v1/payment/reservation/*",
-                                "/api/v1/rooms/*",
-                                "/*.html",
                                 "/images/**"
                         ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()

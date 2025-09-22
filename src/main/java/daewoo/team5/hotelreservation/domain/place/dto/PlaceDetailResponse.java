@@ -1,6 +1,7 @@
 package daewoo.team5.hotelreservation.domain.place.dto;
 
 import daewoo.team5.hotelreservation.domain.place.projection.PlaceDetailProjection;
+import daewoo.team5.hotelreservation.domain.place.projection.PlaceServiceProjection;
 import daewoo.team5.hotelreservation.domain.place.projection.RoomInfo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,10 +24,12 @@ public class PlaceDetailResponse {
 
     private List<String> fileUrls;
     private List<RoomInfo> rooms;
+    private List<PlaceServiceProjection> services;
 
     public PlaceDetailResponse(PlaceDetailProjection detail,
                                List<String> fileUrls,
-                               List<RoomInfo> rooms) {
+                               List<RoomInfo> rooms,
+                               List<PlaceServiceProjection> services) {
         this.name = detail.getName();
         this.description = detail.getDescription();
         this.avgRating = detail.getAvgRating();
@@ -36,5 +39,6 @@ public class PlaceDetailResponse {
         this.detailAddress = detail.getDetailAddress();
         this.fileUrls = fileUrls;
         this.rooms = rooms;
+        this.services = services;
     }
 }
