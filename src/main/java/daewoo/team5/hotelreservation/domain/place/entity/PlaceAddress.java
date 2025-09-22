@@ -18,7 +18,7 @@ public class PlaceAddress {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;   // 주소 ID
 
-    @Column(name = "place_id", nullable = false)
+    @Column(name = "place_id", insertable = false, updatable = false)
     private Long placeId; // 숙소 아이디 (FK, Place 테이블 참조 예정)
 
     @Column(name = "postal_code", length = 5, nullable = false)
@@ -43,7 +43,7 @@ public class PlaceAddress {
     private BigDecimal lng; // 경도
 
     @ManyToOne
-    @JoinColumn(name = "place_id")
+    @JoinColumn(name = "place_id", nullable = false)
     private Places place;
 
 }
