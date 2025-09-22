@@ -31,7 +31,9 @@ public class AuthUserAspect {
         Object principal = auth.getPrincipal();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(principal.toString());
-        UserProjection currentUser = usersRepository.findById(Long.parseLong(node.get("id").toString()), UserProjection.class)
+        System.out.printf("==============");
+        System.out.println(node.toString());
+        UserProjection currentUser = usersRepository.findById(Long.parseLong(node.toString()), UserProjection.class)
                 .orElseThrow(() -> new ApiException(404, "존재하지 않는 유저", "존재 하지 않는 유저입니다."));
         System.out.println(currentUser);
 
