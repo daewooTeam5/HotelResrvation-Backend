@@ -3,6 +3,8 @@ package daewoo.team5.hotelreservation.domain.place.review.service;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
+import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.review.dto.CreateReviewRequest;
 import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponse;
@@ -30,6 +32,7 @@ public class ReviewService {
     private final ReservationRepository reservationRepository;
     private final UsersRepository usersRepository; // Users 엔티티 조회를 위해 추가
     private final GuestRepository guestRepository;
+    private final PlaceRepository placeRepository;
 
     /**
      * 주석: 새로운 리뷰를 생성합니다.
@@ -45,10 +48,12 @@ public class ReviewService {
         GuestEntity currentGuest = guestRepository.findByUsersId(user.getId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "게스트 정보를 찾을 수 없습니다.", "게스트 정보가 존재하지 않습니다."));
 
+        Reservation reservation = reservationRepository.findTop1ByRoom_Place_IdAndGuest_IdOrderByCreatedAtDesc(placeId, currentGuest.getId())
+                .orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND, "예약 정보를 찾을 수 없습니다.", "해당 숙소에 대한 예약 정보가 존재하지 않습니다."));
         // 주석: 요청된 예약 ID로 예약 정보를 조회합니다.
-        Reservation reservation = reservationRepository.findById(request.getReservationId())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "예약 정보를 찾을 수 없습니다.", "존재하지 않는 예약입니다."));
-
+//        Reservation reservation = reservationRepository.findById(request.getReservationId())
+//                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "예약 정보를 찾을 수 없습니다.", "존재하지 않는 예약입니다."));
+//
         // === 리뷰 작성 권한 검증 ===
         // 주석: 예약한 사용자와 현재 로그인한 사용자가 동일한지 확인합니다.
         if (!reservation.getGuest().getId().equals(currentGuest.getId())) {
@@ -60,12 +65,13 @@ public class ReviewService {
         }
 
         // TODO: 체크아웃 상태를 확인하는 로직을 추가하면 더 좋습니다.
-        // if (reservation.getStatus() != Reservation.ReservationStatus.checked_out) {
-        //     throw new ApiException(HttpStatus.BAD_REQUEST, "리뷰 작성 조건이 아닙니다.", "리뷰는 체크아웃이 완료된 예약에 대해서만 작성할 수 있습니다.");
-        // }
+//         if (reservation.getStatus() != Reservation.ReservationStatus.checked_out) {
+//             throw new ApiException(HttpStatus.BAD_REQUEST, "리뷰 작성 조건이 아닙니다.", "리뷰는 체크아웃이 완료된 예약에 대해서만 작성할 수 있습니다.");
+//         }
+        Places places = placeRepository.findById(placeId).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "숙소를 찾을 수 없습니다.", "존재하지 않는 숙소입니다."));
 
         // 주석: Review 엔티티를 생성하고 데이터베이스에 저장합니다.
-        Review review = Review.createReview(reservation.getRoom().getPlace(), user, reservation, request.getRating(), request.getComment());
+        Review review = Review.createReview(places, user, reservation, request.getRating(), request.getComment());
         reviewRepository.save(review);
 
         // 주석: 생성된 리뷰 정보를 DTO로 변환하여 반환합니다.

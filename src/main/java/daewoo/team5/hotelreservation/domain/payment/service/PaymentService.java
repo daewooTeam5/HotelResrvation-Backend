@@ -11,6 +11,7 @@ import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.infrastructure.TossPayClient;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
+import daewoo.team5.hotelreservation.domain.place.repository.DailyPlaceReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
@@ -44,6 +45,7 @@ public class PaymentService {
     private final ReservationRepository reservationRepository;
     private final TossPayClient tossPayClient;
     private final PaymentRepository paymentRepository;
+    private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     @PersistenceContext
     private EntityManager entityManager;
     private Payment.PaymentStatus mapStatus(String status) {
@@ -156,6 +158,8 @@ public class PaymentService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재 하지 않는 방입니다.", "존재하지 않는 방입니다."));
 
         // 선점형 예약 방식
+//        for(dto.getCheckIn()<dto.getCheckout)
+//        dailyPlaceReservationRepository.findByRoomIdAndDate(dto.getRoomId())
 
 
 
