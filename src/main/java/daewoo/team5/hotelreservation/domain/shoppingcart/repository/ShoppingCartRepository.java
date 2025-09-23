@@ -18,13 +18,6 @@ public interface ShoppingCartRepository extends JpaRepository<ShoppingCart, Long
             LocalDate checkOut
     );
 
-    void deleteByUser_IdAndRoom_IdAndStartDateAndEndDate(
-            Long userId,
-            Long roomId,
-            LocalDate checkIn,
-            LocalDate checkOut
-    );
-
     @Query("SELECT COALESCE(SUM(sc.quantity), 0) FROM ShoppingCart sc WHERE sc.user.id = :userId")
     Integer countByUser_Id(@Param("userId") Long userId);
 

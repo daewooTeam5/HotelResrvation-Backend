@@ -59,6 +59,7 @@ public class SecurityConfiguration {
                                 "/hotel/publishing/register",
                                 "/api/v1/owner/rooms/**",
                                 "/api/v1/dashboard/**",
+                                "/api/v1/autocomplete",
                                 "/images/**"
                         ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()
@@ -79,7 +80,7 @@ public class SecurityConfiguration {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOriginPatterns(List.of("http://localhost:5173","https://127.0.0.1:5173")); // 모든 Origin 허용
-        configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH")); // 모든 HTTP 메서드 허용
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // 쿠키/Authorization 헤더 허용
 
