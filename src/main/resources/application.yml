@@ -26,3 +26,4 @@ logging:
     org.hibernate.orm.jdbc.bind: trace
 server:
   port: 8080
+
