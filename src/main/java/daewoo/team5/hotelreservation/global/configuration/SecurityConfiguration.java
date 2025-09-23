@@ -58,6 +58,7 @@ public class SecurityConfiguration {
                                 "/images/**",
                                 "/hotel/publishing/register",
                                 "/api/v1/owner/rooms/**",
+                                "/api/v1/dashboard/**",
                                 "/images/**"
                         ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()

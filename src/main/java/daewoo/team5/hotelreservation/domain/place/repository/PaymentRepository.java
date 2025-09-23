@@ -32,4 +32,20 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     // 예약 ID로 가장 최근 결제 1건만 조회
     Optional<Payment> findTop1ByReservation_ReservationIdOrderByTransactionDateDesc(Long reservationId);
 
+    @Query(value = """
+    SELECT COALESCE(SUM(p.amount), 0)
+    FROM payments p
+    JOIN reservations r ON p.reservation_id = r.reservation_id
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    WHERE pl.owner_id = :ownerId
+      AND p.status = 'paid'
+      AND YEAR(p.transaction_date) = :year
+      AND MONTH(p.transaction_date) = :month
+    """, nativeQuery = true)
+    long sumRevenueByOwnerAndMonth(
+            @Param("ownerId") Long ownerId,
+            @Param("year") int year,
+            @Param("month") int month
+    );
 }
