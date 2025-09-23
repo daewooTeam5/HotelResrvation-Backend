@@ -10,6 +10,7 @@ import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.infrastructure.TossPayClient;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
+import daewoo.team5.hotelreservation.domain.place.entity.DailyPlaceReservation;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
 import daewoo.team5.hotelreservation.domain.place.repository.DailyPlaceReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -90,8 +92,10 @@ public class PaymentService {
             Payment payment = paymentRepository.findByOrderId(savePayment.getOrderId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "결제 정보가 존재하지 않습니다.", "결제 정보가 존재하지 않습니다."));
             // TODO : Room 양방향 제거후 영속성 유지
             entityManager.detach(payment);
+            Reservation reservationUpdate = reservationRepository.findByOrderId(savePayment.getOrderId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "예약 정보가 존재하지 않습니다.", "예약 정보가 존재하지 않습니다."));
+            reservationUpdate.setStatus(Reservation.ReservationStatus.confirmed);
+            reservationUpdate.setPaymentStatus(Reservation.ReservationPaymentStatus.paid);
             payment.setReservation(null);
-
             return payment;
         } catch (FeignException e) {
             String errorMessage = "알 수 없는 오류";
@@ -156,13 +160,29 @@ public class PaymentService {
         GuestEntity guest = getGuest(user, dto.getEmail(), dto.getFirstName(), dto.getLastName(), dto.getPhone());
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재 하지 않는 방입니다.", "존재하지 않는 방입니다."));
+        LocalDate checkin = dto.getCheckIn();
+        LocalDate checkout = dto.getCheckOut();
 
         // 선점형 예약 방식
-//        for(dto.getCheckIn()<dto.getCheckout)
-//        dailyPlaceReservationRepository.findByRoomIdAndDate(dto.getRoomId())
-
-
-
+        // 날짜별로 객실수가 0개가 있는지 확인 -> 있으면 예약 불가
+        for (LocalDate date = checkin; !date.isAfter(checkout.minusDays(1)); date = date.plusDays(1)) {
+            Optional<DailyPlaceReservation> byRoomIdAndDate = dailyPlaceReservationRepository.findByRoomIdAndDate(dto.getRoomId(), date);
+            if(byRoomIdAndDate.isEmpty()){
+                dailyPlaceReservationRepository.save(
+                        DailyPlaceReservation.builder()
+                                .room(room)
+                                .date(date)
+                                .availableRoom(room.getCapacityRoom()-1)
+                                .build()
+                );
+                continue;
+            }
+            if(byRoomIdAndDate.get().getAvailableRoom()==0){
+                throw new ApiException(HttpStatus.BAD_REQUEST, "예약 불가", "이미 예약이 완료된 날짜가 포함되어 있습니다. 날짜를 확인해주세요.");
+            }else{
+                byRoomIdAndDate.get().setAvailableRoom(byRoomIdAndDate.get().getAvailableRoom()-1);
+            }
+        }
         // 예약
         Reservation reservation = Reservation.builder()
                 .guest(guest)
@@ -177,8 +197,6 @@ public class PaymentService {
                 .room(room)
                 .build();
         return reservationRepository.save(reservation);
-
-
     }
 
     public Reservation getReservationById(Long reservationId) {
