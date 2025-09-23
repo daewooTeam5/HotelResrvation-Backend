@@ -56,11 +56,15 @@ public class ShoppingCartService {
     }
 
     @Transactional
-    public Boolean removeFromCart(Long roodId, Long userId, LocalDate startDate, LocalDate endDate) {
-        if (shoppingCartRepository.findByUser_IdAndRoom_IdAndStartDateAndEndDate(userId, roodId, startDate, endDate).isEmpty()) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "장바구니 내역 없음", "해당 유저가 이 숙소를 장바구니에 담지 않았습니다.");
+    public boolean removeFromCart(Long cartId, Long userId) {
+        ShoppingCart cart = shoppingCartRepository.findById(cartId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "장바구니 없음", "해당 장바구니 항목이 존재하지 않습니다."));
+
+        if (!cart.getUser().getId().equals(userId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "권한 없음", "본인 장바구니만 삭제할 수 있습니다.");
         }
-        shoppingCartRepository.deleteByUser_IdAndRoom_IdAndStartDateAndEndDate(userId, roodId, startDate, endDate);
+
+        shoppingCartRepository.delete(cart);
         return true;
     }
 
@@ -70,5 +74,18 @@ public class ShoppingCartService {
 
     public List<CartProjection> getCartItems(Long userId) {
         return shoppingCartRepository.findCartItemsByUserId(userId);
+    }
+
+    public boolean updateQuantity(Long cartId, Long userId, int quantity) {
+        ShoppingCart cart = shoppingCartRepository.findById(cartId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "장바구니 없음", "해당 장바구니 항목이 존재하지 않습니다."));
+
+        if (!cart.getUser().getId().equals(userId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "권한 없음", "본인 장바구니만 수정할 수 있습니다.");
+        }
+
+        cart.setQuantity(quantity);
+        shoppingCartRepository.save(cart);
+        return true;
     }
 }

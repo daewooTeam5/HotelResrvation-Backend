@@ -22,6 +22,18 @@ public class ShoppingCartController {
 
     private final ShoppingCartService shoppingCartService;
 
+    @PatchMapping("/{cartId}")
+    public ApiResult<Boolean> updateQuantity(
+            @PathVariable Long cartId,
+            @AuthenticationPrincipal Long userId,
+            @RequestParam int quantity
+    ) {
+        return ApiResult.ok(
+                shoppingCartService.updateQuantity(cartId, userId, quantity),
+                "장바구니 수량 변경 성공"
+        );
+    }
+
     @PostMapping("/{roodId}")
     public ApiResult<Boolean> addToCart(
             @PathVariable Long roodId,
@@ -36,15 +48,13 @@ public class ShoppingCartController {
         );
     }
 
-    @DeleteMapping("/{roomId}")
+    @DeleteMapping("/{cartId}")
     public ApiResult<Boolean> removeFromCart(
-            @PathVariable Long roomId,
-            @AuthenticationPrincipal Long userId,
-            @RequestParam LocalDate startDate,
-            @RequestParam LocalDate endDate
+            @PathVariable Long cartId,
+            @AuthenticationPrincipal Long userId
     ) {
         return ApiResult.ok(
-                shoppingCartService.removeFromCart(roomId, userId, startDate, endDate),
+                shoppingCartService.removeFromCart(cartId, userId),
                 "장바구니 삭제 성공"
         );
     }
