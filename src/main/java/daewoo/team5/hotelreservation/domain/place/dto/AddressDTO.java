@@ -15,7 +15,7 @@ public class AddressDTO {    //주소 추가 입력
 
     private String roadName;    //도로명
 
-    private String postalNumber;  //우편번호
+    private String postalCode;  //우편번호
 
     private String detailAddress;    //상세주소
 

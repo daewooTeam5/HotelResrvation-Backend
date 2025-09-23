@@ -4,13 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "service")
+@Table(name = "place_service")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Service {
+public class Service {  //
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long serviceId;
@@ -22,5 +22,4 @@ public class Service {
     @ManyToOne
     @JoinColumn(name = "place_id")
     private Places place;
-
 }

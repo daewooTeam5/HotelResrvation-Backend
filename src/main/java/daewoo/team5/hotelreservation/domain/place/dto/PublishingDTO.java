@@ -1,6 +1,7 @@
 package daewoo.team5.hotelreservation.domain.place.dto;
 
 
+import com.fasterxml.classmate.AnnotationOverrides;
 import daewoo.team5.hotelreservation.domain.place.entity.ImageList;
 
 import daewoo.team5.hotelreservation.domain.place.entity.PlaceAddress;
@@ -16,6 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class PublishingDTO {
+
+
 
     private String hotelName;   //숙소 이름
 

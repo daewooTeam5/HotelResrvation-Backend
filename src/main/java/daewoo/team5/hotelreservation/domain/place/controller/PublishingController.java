@@ -1,9 +1,15 @@
 package daewoo.team5.hotelreservation.domain.place.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import daewoo.team5.hotelreservation.domain.place.dto.PublishingDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.AddressDTO;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
+import daewoo.team5.hotelreservation.domain.place.dto.RoomDTO;
 import daewoo.team5.hotelreservation.domain.place.service.PublishingService;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,25 +17,62 @@ import java.util.List;
 @RestController
 @RequestMapping("/hotel/publishing")
 @RequiredArgsConstructor
-public class PublishingController {//api리설트는 컨트롤러를 바꿔주기
-    //apiResult.created는 post처럼 내가 데이터를 받아오는 경우 사용 나머지는 ok로(조회)
+public class PublishingController {
 
     private final PublishingService publishingService;
-    //String 타입 붙히면 ""로 내가 쓰고싶은 말 쓰고 호출
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // 숙소 등록
     @PostMapping("/register")
-    public ApiResult<String> registerHotel(@RequestBody PublishingDTO publishingDTO) {
-        publishingService.registerHotel(publishingDTO);
-        return ApiResult.created(publishingDTO.getHotelName(),"숙소 등록 성공");
+    public ResponseEntity<ApiResult<PublishingDTO>> registerHotel(@RequestBody PublishingDTO dto) {
+        try {
+            Places savedPlace = publishingService.registerHotel(dto);
+
+            List<RoomDTO> roomDTOs = savedPlace.getRooms().stream()
+                    .map(r -> RoomDTO.builder()
+                            .roomNumber(r.getId().intValue())
+                            .price(r.getPrice().intValue())
+                            .CapacityPeople(r.getCapacityPeople())
+                            .extraPrice(0)
+                            .roomType(r.getRoomType())
+                            .checkIn(null)
+                            .checkOut(null)
+                            .bedType(null) // 필요 시 JSON 변환
+                            .build())
+                    .toList();
+
+            List<AddressDTO> addressDTOs = savedPlace.getAddresses().stream()
+                    .map(a -> new AddressDTO(
+                            a.getSigungu(),
+                            a.getSido(),
+                            a.getRoadName(),
+                            a.getPostalCode(),
+                            a.getDetailAddress()
+                    ))
+                    .toList();
+
+            List<String> images = savedPlace.getImages().stream()
+                    .map(i -> i.getImageUrl())
+                    .toList();
+
+            PublishingDTO responseDto = PublishingDTO.builder()
+                    .hotelName(savedPlace.getName())
+                    .addressList(addressDTOs)
+                    .images(images)
+                    .rooms(roomDTOs)
+                    .description(savedPlace.getDescription())
+                    .build();
+
+            return ResponseEntity.ok(ApiResult.ok(responseDto));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(ApiResult.<PublishingDTO>ok(null, "숙소 등록 실패: " + e.getMessage()));
+        }
     }
 
-    // 숙소 전체 조회
-    @GetMapping("/list")
-    public ApiResult<List<PublishingDTO>> getAllHotels() {  //ApiResult<>이걸로 여기만 묶어주기
-        return ApiResult.ok(publishingService.getAllHotels());
+    @GetMapping("/all")
+    public ResponseEntity<ApiResult<List<PublishingDTO>>> getAllHotels() {
+        List<PublishingDTO> hotels = publishingService.getAllHotels();
+        return ResponseEntity.ok(ApiResult.ok(hotels));
     }
-
-
-
 }
