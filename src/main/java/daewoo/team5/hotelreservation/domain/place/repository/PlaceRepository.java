@@ -22,58 +22,59 @@ import java.util.Optional;
 public interface PlaceRepository extends JpaRepository<Places, Long> {
 
     @Query(value = """
-        SELECT
-            p.id,
-            p.name,
-            p.avg_rating AS avgRating,
-            pa.sido,
-            pc.name AS categoryName,
-            MIN(r.price) AS originalPrice, -- (1) 기존 가격
-            MIN(f.url) AS fileUrl,
-            MAX(d.discount_value) AS discountValue, -- (2) 할인 금액
-            MIN(r.price) - COALESCE(MAX(d.discount_value), 0) AS finalPrice, -- (3) 최종 가격
-            CASE
-                WHEN :userId IS NULL THEN 0
-                WHEN EXISTS (
+            SELECT
+                p.id,
+                p.name,
+                p.avg_rating AS avgRating,
+                pa.sido,
+                pc.name AS categoryName,
+                MIN(r.price) AS originalPrice, -- (1) 기존 가격
+                MIN(f.url) AS fileUrl,
+                MAX(d.discount_value) AS discountValue, -- (2) 할인 금액
+                MIN(r.price) - COALESCE(MAX(d.discount_value), 0) AS finalPrice, -- (3) 최종 가격
+                CASE
+                    WHEN :userId IS NULL THEN 0
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM wishlist w
+                        WHERE w.place_id = p.id AND w.user_id = :userId
+                    )
+                    THEN 1
+                    ELSE 0
+                END AS isLiked
+            FROM places p
+            INNER JOIN place_address pa ON p.id = pa.place_id
+            INNER JOIN place_category pc ON p.category_id = pc.id
+            INNER JOIN room r ON r.place_id = p.id
+            LEFT JOIN file f ON f.domain = 'place' AND f.domain_file_id = p.id AND f.filetype = 'image'
+            /* ===== [추가된 부분 시작] ===== */
+            LEFT JOIN discount d ON p.id = d.place_id
+                AND d.start_date <= CAST(:checkOut AS DATE) -- 검색 종료일 이전에 할인이 시작되고
+                AND d.end_date >= CAST(:checkIn AS DATE)   -- 검색 시작일 이후에 할인이 종료되는 경우
+            /* ===== [추가된 부분 끝] ===== */
+            WHERE
+                  (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
+                AND (:address IS NULL OR pa.sido = :address)
+                AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
+                AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+                AND (:placeCategory IS NULL OR pc.name = :placeCategory)
+                AND (:minRating IS NULL OR p.avg_rating >= :minRating)
+                AND NOT EXISTS (
                     SELECT 1
-                    FROM wishlist w
-                    WHERE w.place_id = p.id AND w.user_id = :userId
+                    FROM (
+                        SELECT CAST(:checkIn AS DATE) AS date
+                        UNION ALL
+                        SELECT DATE_ADD(date, INTERVAL 1 DAY) 
+                        FROM (SELECT CAST(:checkIn AS DATE) AS date) AS t
+                        WHERE DATE_ADD(date, INTERVAL 1 DAY) < CAST(:checkOut AS DATE)
+                    ) AS date_range
+                    JOIN daily_place_reservation dpr
+                         ON dpr.room_id = r.id
+                        AND dpr.date = date_range.date
+                    WHERE dpr.available_room <= 0
                 )
-                THEN 1
-                ELSE 0
-            END AS isLiked
-        FROM places p
-        INNER JOIN place_address pa ON p.id = pa.place_id
-        INNER JOIN place_category pc ON p.category_id = pc.id
-        INNER JOIN room r ON r.place_id = p.id
-        LEFT JOIN file f ON f.domain = 'place' AND f.domain_file_id = p.id AND f.filetype = 'image'
-        /* ===== [추가된 부분 시작] ===== */
-        LEFT JOIN discount d ON p.id = d.place_id
-            AND d.start_date <= CAST(:checkOut AS DATE) -- 검색 종료일 이전에 할인이 시작되고
-            AND d.end_date >= CAST(:checkIn AS DATE)   -- 검색 시작일 이후에 할인이 종료되는 경우
-        /* ===== [추가된 부분 끝] ===== */
-        WHERE
-            (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
-            AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
-            AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
-            AND (:placeCategory IS NULL OR pc.name = :placeCategory)
-            AND (:minRating IS NULL OR p.avg_rating >= :minRating)
-            AND NOT EXISTS (
-                SELECT 1
-                FROM (
-                    SELECT CAST(:checkIn AS DATE) AS date
-                    UNION ALL
-                    SELECT DATE_ADD(date, INTERVAL 1 DAY) 
-                    FROM (SELECT CAST(:checkIn AS DATE) AS date) AS t
-                    WHERE DATE_ADD(date, INTERVAL 1 DAY) < CAST(:checkOut AS DATE)
-                ) AS date_range
-                JOIN daily_place_reservation dpr
-                     ON dpr.room_id = r.id
-                    AND dpr.date = date_range.date
-                WHERE dpr.available_room <= 0
-            )
-        GROUP BY p.id, p.name, p.avg_rating, pa.sido, pc.name
-        """,
+            GROUP BY p.id, p.name, p.avg_rating, pa.sido, pc.name
+            """,
             countQuery = """
     WITH RECURSIVE date_range AS (
         SELECT CAST(:checkIn AS DATE) AS date
@@ -114,6 +115,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             @Param("minPrice") Double minPrice,
             @Param("maxPrice") Double maxPrice,
             @Param("userId") Long userId,
+            @Param("address") String address,
             Pageable pageable
     );
 

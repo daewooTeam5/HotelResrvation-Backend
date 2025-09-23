@@ -1,7 +1,9 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
+import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
+import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
 import daewoo.team5.hotelreservation.domain.place.dto.*;
 import daewoo.team5.hotelreservation.domain.place.entity.DailyPlaceReservation;
@@ -33,6 +35,7 @@ public class ReservationService {
     private final RoomRepository roomRepository;
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     private final TossPaymentService tossPaymentService;
+    private final GuestRepository guestRepository;
 
     // ===================== 변환 메서드 =====================
 
@@ -292,9 +295,14 @@ public class ReservationService {
         if (user == null) {
             return false;
         }
+        GuestEntity guestEntity = guestRepository.findByUsersId(user.getId()).orElseThrow(() -> new ApiException(
+                HttpStatus.NOT_FOUND,
+                "Guest Not Found",
+                "해당 유저의 투숙객 정보를 찾을 수 없습니다."
+        ));
         // 체크아웃(checked_out) 상태의 예약이 존재하는지 확인
         return reservationRepository.existsByUsersIdAndRoomPlaceIdAndStatus(
-                user.getId(),
+                guestEntity.getId(),
                 placeId,
                 Reservation.ReservationStatus.checked_out
         );

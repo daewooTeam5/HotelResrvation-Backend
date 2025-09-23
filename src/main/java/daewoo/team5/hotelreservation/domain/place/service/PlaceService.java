@@ -26,12 +26,12 @@ public class PlaceService {
             int start, String name, String checkIn, String checkOut,
             int people, int rooms,
             String placeCategory, Double minRating, Double minPrice, Double maxPrice,
-            Long userId
+            String address,Long userId
     ) {
         return placeRepository.findAllSearchPlaceInfo(
                 name, checkIn, checkOut, people, rooms,
                 placeCategory, minRating, minPrice, maxPrice,
-                userId,
+                userId,address,
                 PageRequest.of(start - 1, 10)
         );
     }

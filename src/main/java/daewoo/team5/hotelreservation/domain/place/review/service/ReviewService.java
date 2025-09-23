@@ -1,6 +1,8 @@
 package daewoo.team5.hotelreservation.domain.place.review.service;
 
+import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
+import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.review.dto.CreateReviewRequest;
 import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponse;
@@ -27,6 +29,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ReservationRepository reservationRepository;
     private final UsersRepository usersRepository; // Users 엔티티 조회를 위해 추가
+    private final GuestRepository guestRepository;
 
     /**
      * 주석: 새로운 리뷰를 생성합니다.
@@ -39,6 +42,8 @@ public class ReviewService {
         // 주석: UserProjection에서 Users 엔티티를 조회합니다.
         Users user = usersRepository.findById(userProjection.getId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.", "존재하지 않는 사용자입니다."));
+        GuestEntity currentGuest = guestRepository.findByUsersId(user.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "게스트 정보를 찾을 수 없습니다.", "게스트 정보가 존재하지 않습니다."));
 
         // 주석: 요청된 예약 ID로 예약 정보를 조회합니다.
         Reservation reservation = reservationRepository.findById(request.getReservationId())
@@ -46,7 +51,7 @@ public class ReviewService {
 
         // === 리뷰 작성 권한 검증 ===
         // 주석: 예약한 사용자와 현재 로그인한 사용자가 동일한지 확인합니다.
-        if (!reservation.getGuest().getUsers().getId().equals(user.getId())) {
+        if (!reservation.getGuest().getId().equals(currentGuest.getId())) {
             throw new ApiException(HttpStatus.FORBIDDEN, "리뷰 작성 권한이 없습니다.", "예약자 본인만 리뷰를 작성할 수 있습니다.");
         }
         // 주석: 리뷰를 작성하려는 숙소와 실제 예약한 숙소가 동일한지 확인합니다.

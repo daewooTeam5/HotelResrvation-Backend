@@ -68,7 +68,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             "FROM Reservation r " +
             "JOIN r.room ro " +           // r.room으로 직접 조인
             "JOIN r.guest g " +            // guest와 조인
-            "WHERE g.users.id = :userId " + // g.users.id로 사용자 ID에 접근
+            "WHERE g.id = :userId " + // g.users.id로 사용자 ID에 접근
             "AND ro.place.id = :placeId " +
             "AND r.status = :status")
     boolean existsByUsersIdAndRoomPlaceIdAndStatus(@Param("userId") Long userId,

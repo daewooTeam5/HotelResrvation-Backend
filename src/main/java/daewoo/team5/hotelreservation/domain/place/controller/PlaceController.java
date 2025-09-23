@@ -40,6 +40,7 @@ public class PlaceController {
             @RequestParam(required = false) Double minRating,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) String address,
             Authentication authentication
     )  {
         Long userId = extractUserId(authentication);
@@ -54,6 +55,7 @@ public class PlaceController {
                 placeService.AllSearchPlaces(
                         start, name, checkIn, checkOut, people, roomCount,
                         placeCategory, minRating, minPrice, maxPrice,
+                        address,
                         userId
                 ),
                 "호텔 조회 성공!!"
