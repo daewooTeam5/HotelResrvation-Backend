@@ -43,8 +43,6 @@ public class Users extends BaseTimeEntity {
     @Column(columnDefinition = "ENUM('active', 'inactive', 'banned') DEFAULT 'active'")
     private Status status;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 
     @Column(nullable = false)
     @UpdateTimestamp

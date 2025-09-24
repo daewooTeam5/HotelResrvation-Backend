@@ -1,3 +1,4 @@
+// src/main/java/daewoo/team5/hotelreservation/domain/place/review/entity/Review.java
 package daewoo.team5.hotelreservation.domain.place.review.entity;
 
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
@@ -9,7 +10,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 주석: 리뷰 정보를 담는 엔티티 클래스입니다.
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "reviews")
 @Getter
@@ -21,17 +24,14 @@ public class Review extends BaseTimeEntity {
     @Column(name = "review_id")
     private Long reviewId;
 
-    // 주석: 리뷰는 특정 장소(숙소)에 속합니다. (다대일 관계)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "place_id", nullable = false)
     private Places place;
 
-    // 주석: 리뷰는 사용자가 작성합니다. (다대일 관계)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
-    // 주석: 리뷰는 하나의 예약에 대해 작성됩니다. (일대일 관계)
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reservation_id", nullable = false, unique = true)
     private Reservation reservation;
@@ -39,8 +39,16 @@ public class Review extends BaseTimeEntity {
     @Column(nullable = false)
     private Integer rating; // 평점 (1~5)
 
-    @Lob // TEXT 타입 매핑
+    @Lob
     private String comment; // 리뷰 내용
+
+    // 주석: 리뷰에 달린 이미지 목록입니다. (일대다 관계)
+    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReviewImage> images = new ArrayList<>();
+
+    // 주석: 리뷰에 달린 관리자 댓글입니다. (일대일 관계)
+    @OneToOne(mappedBy = "review", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ReviewComment commentByOwner;
 
     public static Review createReview(Places place, Users user, Reservation reservation, Integer rating, String comment) {
         Review review = new Review();
@@ -50,5 +58,10 @@ public class Review extends BaseTimeEntity {
         review.rating = rating;
         review.comment = comment;
         return review;
+    }
+
+    // 주석: 연관관계 편의 메서드입니다. 리뷰에 이미지를 추가합니다.
+    public void addImage(ReviewImage image) {
+        images.add(image);
     }
 }

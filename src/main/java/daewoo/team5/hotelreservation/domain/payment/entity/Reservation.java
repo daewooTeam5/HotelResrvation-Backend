@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 @Builder
 public class Reservation extends BaseTimeEntity {
 
@@ -49,7 +50,7 @@ public class Reservation extends BaseTimeEntity {
     private ReservationPaymentStatus paymentStatus;
 
 
-    @Column(name = "amount", nullable = false, precision = 38, scale = 2)
+    @Column(name = "amount", nullable = false, precision = 38, scale = 2, columnDefinition = "DECIMAL(38, 2) DEFAULT 0")
     private BigDecimal baseAmount;
 
     @Column(name = "final_amount", nullable = false, precision = 38, scale = 2)
