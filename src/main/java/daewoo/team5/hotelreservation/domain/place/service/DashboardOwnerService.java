@@ -1,9 +1,6 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
-import daewoo.team5.hotelreservation.domain.place.dto.OccupancyRateDTO;
-import daewoo.team5.hotelreservation.domain.place.dto.RatingStatsDTO;
-import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
-import daewoo.team5.hotelreservation.domain.place.dto.MonthlyRevenueDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.*;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
 import daewoo.team5.hotelreservation.domain.place.repository.DailyPlaceReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
@@ -26,7 +23,7 @@ public class DashboardOwnerService {
     private final RoomRepository roomRepository;
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     private final PlaceRepository placeRepository;
-    private final PaymentRepository paymentRepository; // ✅ 추가
+    private final PaymentRepository paymentRepository;
 
     // 오늘 현황
     public ReservationStatsDTO getTodayStats(Long ownerId) {
@@ -108,4 +105,16 @@ public class DashboardOwnerService {
 
         return new MonthlyRevenueDTO(thisRevenue, lastRevenue, growthRate);
     }
+
+    public List<MonthlyRevenueChartDTO> getMonthlyRevenueChart(Long ownerId, int months) {
+        List<Object[]> raw = paymentRepository.findMonthlyRevenueLastMonths(ownerId, months);
+
+        return raw.stream()
+                .map(row -> new MonthlyRevenueChartDTO(
+                        (String) row[0],
+                        ((Number) row[1]).longValue()
+                ))
+                .collect(Collectors.toList());
+    }
+
 }
