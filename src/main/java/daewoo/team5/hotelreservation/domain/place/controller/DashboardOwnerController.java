@@ -67,4 +67,10 @@ public class DashboardOwnerController {
         );
     }
 
+    @GetMapping("/stats/reviews")
+    @AuthUser
+    public ResponseEntity<List<RecentReviewDTO>> getRecentReviews(UserProjection projection) {
+        return ResponseEntity.ok(dashboardOwnerService.getRecentReviews(projection.getId()));
+    }
+
 }

@@ -7,6 +7,8 @@ import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
+import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
+import daewoo.team5.hotelreservation.domain.place.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,7 @@ public class DashboardOwnerService {
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     private final PlaceRepository placeRepository;
     private final PaymentRepository paymentRepository;
+    private final ReviewRepository reviewRepository;
 
     // 오늘 현황
     public ReservationStatsDTO getTodayStats(Long ownerId) {
@@ -115,6 +118,21 @@ public class DashboardOwnerService {
                         ((Number) row[1]).longValue()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    // 최근 리뷰 조회
+    public List<RecentReviewDTO> getRecentReviews(Long ownerId) {
+        List<Review> reviews = reviewRepository.findTop3ByPlace_OwnerIdOrderByCreatedAtDesc(ownerId);
+
+        return reviews.stream()
+                .map(r -> new RecentReviewDTO(
+                        r.getReviewId(),
+                        r.getUser().getName(), // users.name
+                        r.getRating(),
+                        r.getComment(),
+                        r.getCreatedAt()
+                ))
+                .toList();
     }
 
 }
