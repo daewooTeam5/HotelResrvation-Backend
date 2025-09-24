@@ -156,7 +156,7 @@ public class PaymentService {
 
     @Transactional
     public Reservation reservationPlace(UserProjection user, ReservationRequestDto dto) {
-        log.info("payment userproj" + user);
+        log.info("payment userproj" + user+","+ dto);
         GuestEntity guest = getGuest(user, dto.getEmail(), dto.getFirstName(), dto.getLastName(), dto.getPhone());
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재 하지 않는 방입니다.", "존재하지 않는 방입니다."));
@@ -196,6 +196,7 @@ public class PaymentService {
                 .request(dto.getRequest())
                 .room(room)
                 .build();
+        log.info("1reservation"+reservation);
         return reservationRepository.save(reservation);
     }
 
