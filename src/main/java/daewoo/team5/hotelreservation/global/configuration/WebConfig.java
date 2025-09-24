@@ -16,5 +16,6 @@ public class WebConfig implements WebMvcConfigurer {
         // 주석: /uploads/** URL 요청이 오면, 실제 디스크의 uploadPath 경로에서 파일을 찾아 제공합니다.
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadPath);
+
     }
 }
