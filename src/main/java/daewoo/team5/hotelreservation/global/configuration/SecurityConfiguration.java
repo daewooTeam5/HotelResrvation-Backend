@@ -45,6 +45,8 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
+                                "/signup",
+                                "/admin/login",
                                 "/auth",
                                 "/auth/code",
                                 "/auth/token",
