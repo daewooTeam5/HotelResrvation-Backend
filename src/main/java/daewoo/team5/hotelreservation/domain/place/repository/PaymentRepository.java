@@ -48,4 +48,23 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("year") int year,
             @Param("month") int month
     );
+
+    @Query(value = """
+    SELECT DATE_FORMAT(p.transaction_date, '%Y-%m') as month,
+           COALESCE(SUM(p.amount), 0) as revenue
+    FROM payments p
+    JOIN reservations r ON p.reservation_id = r.reservation_id
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    WHERE pl.owner_id = :ownerId
+      AND p.status = 'paid'
+      AND p.transaction_date >= DATE_SUB(CURDATE(), INTERVAL :months MONTH)
+    GROUP BY DATE_FORMAT(p.transaction_date, '%Y-%m')
+    ORDER BY month ASC
+    """, nativeQuery = true)
+    List<Object[]> findMonthlyRevenueLastMonths(
+            @Param("ownerId") Long ownerId,
+            @Param("months") int months
+    );
+
 }

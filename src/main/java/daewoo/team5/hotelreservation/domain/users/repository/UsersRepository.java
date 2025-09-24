@@ -13,6 +13,8 @@ public interface UsersRepository extends JpaRepository<Users, Long> {
     Optional<Users> findByName(String username);
     Optional<Users> findByEmail(String email);
 
+    Optional<Users> findByUserId(String userId);
+
     <T> Optional<T> findByName(String username, Class<T> type);
     <T> Optional<T> findById(Long id, Class<T> type);
     <T> Page<T> findAllBy(Class<T> type, Pageable pageable);

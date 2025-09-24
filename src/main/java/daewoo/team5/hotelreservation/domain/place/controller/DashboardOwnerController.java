@@ -1,9 +1,6 @@
 package daewoo.team5.hotelreservation.domain.place.controller;
 
-import daewoo.team5.hotelreservation.domain.place.dto.MonthlyRevenueDTO;
-import daewoo.team5.hotelreservation.domain.place.dto.OccupancyRateDTO;
-import daewoo.team5.hotelreservation.domain.place.dto.RatingStatsDTO;
-import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.*;
 import daewoo.team5.hotelreservation.domain.place.service.DashboardOwnerService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
@@ -57,6 +54,23 @@ public class DashboardOwnerController {
     @AuthUser
     public ResponseEntity<MonthlyRevenueDTO> getMonthlyRevenue(UserProjection projection) {
         return ResponseEntity.ok(dashboardOwnerService.getMonthlyRevenue(projection.getId()));
+    }
+
+    @GetMapping("/stats/revenue/monthly")
+    @AuthUser
+    public ResponseEntity<List<MonthlyRevenueChartDTO>> getMonthlyRevenueChart(
+            UserProjection projection,
+            @RequestParam(defaultValue = "6") int months
+    ) {
+        return ResponseEntity.ok(
+                dashboardOwnerService.getMonthlyRevenueChart(projection.getId(), months)
+        );
+    }
+
+    @GetMapping("/stats/reviews")
+    @AuthUser
+    public ResponseEntity<List<RecentReviewDTO>> getRecentReviews(UserProjection projection) {
+        return ResponseEntity.ok(dashboardOwnerService.getRecentReviews(projection.getId()));
     }
 
 }

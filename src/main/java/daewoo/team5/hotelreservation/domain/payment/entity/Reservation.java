@@ -72,6 +72,6 @@ public class Reservation extends BaseTimeEntity {
 
     // 결제 상태 Enum
     public enum ReservationPaymentStatus {
-        unpaid, paid, refunded, rejected, cancelled
+        unpaid, paid, refunded
     }
 }
