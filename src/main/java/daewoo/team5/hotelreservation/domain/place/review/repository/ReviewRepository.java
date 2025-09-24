@@ -8,4 +8,7 @@ import java.util.List;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     // 주석: 특정 숙소(place) ID에 해당하는 모든 리뷰를 생성 시간 내림차순으로 조회합니다.
     List<Review> findByPlaceIdOrderByCreatedAtDesc(Long placeId);
+
+    // 특정 숙소 주인의 최근 리뷰 3개 (reviews → places → owner_id)
+    List<Review> findTop3ByPlace_OwnerIdOrderByCreatedAtDesc(Long ownerId);
 }
