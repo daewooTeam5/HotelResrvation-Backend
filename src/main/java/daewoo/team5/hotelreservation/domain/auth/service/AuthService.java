@@ -1,5 +1,8 @@
 package daewoo.team5.hotelreservation.domain.auth.service;
 
+import daewoo.team5.hotelreservation.domain.auth.dto.AdminLoginDto;
+import daewoo.team5.hotelreservation.domain.auth.dto.LoginSuccessDto;
+import daewoo.team5.hotelreservation.domain.auth.dto.SignUpRequest;
 import daewoo.team5.hotelreservation.domain.auth.repository.BlackListRepository;
 import daewoo.team5.hotelreservation.domain.auth.repository.OtpRepository;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
@@ -15,6 +18,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,10 +38,45 @@ public class AuthService {
     private final BlackListRepository blackListRepository;
     private final CookieProvider cookieProvider;
     private final JwtProvider jwtProvider;
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public void logout(String refreshToken) {
         long expirationTime = jwtProvider.parseClaims(refreshToken).getExpiration().getTime();
         blackListRepository.addToBlackList(refreshToken,expirationTime);
+    }
+
+    public Users adminSignUp(SignUpRequest signUpRequest){
+        signUpRequest.setAdminPassword(passwordEncoder.encode(signUpRequest.getAdminPassword()));
+        return userRepository.save(Users.builder()
+                .email(null)
+                .name(signUpRequest.getAdminName())
+                .userId(signUpRequest.getAdminId())
+                .password(signUpRequest.getAdminPassword())
+                .role(Users.Role.admin)
+                .status(Users.Status.active)
+                .build());
+    }
+
+    public LoginSuccessDto adminLogin(AdminLoginDto adminLoginDto, HttpServletResponse response){
+        Users admin = userRepository.findByUserId(adminLoginDto.getAdminId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,"사용자 없음","해당 관리자가 존재하지 않습니다."));
+        if(!passwordEncoder.matches(adminLoginDto.getAdminPassword(),admin.getPassword())){
+            throw new ApiException(HttpStatus.UNAUTHORIZED,"로그인 실패","비밀번호가 일치하지 않습니다.");
+        }
+        UserProjection projection = userRepository.findById(admin.getId(), UserProjection.class)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
+                        "사용자 없음", "해당 관리자가 존재하지 않습니다."));
+
+        String accessToken = jwtProvider.generateToken(projection, JwtProvider.TokenType.ACCESS);
+        String refreshToken = jwtProvider.generateToken(projection.getId(), JwtProvider.TokenType.REFRESH);
+
+        Cookie cookie = new Cookie("refreshToken", refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(30 * 24 * 60 * 60); // 30일
+        response.addCookie(cookie);
+
+        return new LoginSuccessDto(accessToken, projection);
     }
 
     public void sendOtpCode(String email) {

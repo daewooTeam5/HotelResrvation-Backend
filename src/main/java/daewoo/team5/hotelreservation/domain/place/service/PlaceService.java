@@ -1,15 +1,14 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
 import daewoo.team5.hotelreservation.domain.place.dto.PlaceDetailResponse;
-import daewoo.team5.hotelreservation.domain.place.projection.PlaceDetailProjection;
-import daewoo.team5.hotelreservation.domain.place.projection.PlaceItemInfomation;
-import daewoo.team5.hotelreservation.domain.place.projection.PlaceServiceProjection;
-import daewoo.team5.hotelreservation.domain.place.projection.RoomInfo;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
+import daewoo.team5.hotelreservation.domain.place.projection.*;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -45,5 +44,21 @@ public class PlaceService {
         return new PlaceDetailResponse(detail, images, rooms, services);
     }
 
+    public Page<AdminPlaceProjection> getAdminPlace(
+            Long placeId,
+            String approvalStatus,
+            String ownerName,
+            String placeName,
+            int start
+    ) {
+        Pageable pageable = PageRequest.of(start, 10);
+
+        Places.Status status = null;
+        if (approvalStatus != null && !approvalStatus.isEmpty()) {
+            status = Places.Status.valueOf(approvalStatus.toUpperCase());
+        }
+
+        return placeRepository.searchAdminPlaces(placeId, status, ownerName, placeName, pageable);
+    }
 }
 
