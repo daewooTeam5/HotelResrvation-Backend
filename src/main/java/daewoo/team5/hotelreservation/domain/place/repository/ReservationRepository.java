@@ -13,8 +13,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+<<<<<<< Updated upstream
 import java.time.LocalDate;
 import java.util.List;
+=======
+import java.time.LocalDateTime;
+>>>>>>> Stashed changes
 import java.util.Optional;
 
 @Repository
@@ -190,4 +194,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     List<Object[]> findRoomRevenueByOwnerAndPeriod(@Param("ownerId") Long ownerId,
                                                    @Param("startDate") LocalDate startDate,
                                                    @Param("endDate") LocalDate endDate);
+
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

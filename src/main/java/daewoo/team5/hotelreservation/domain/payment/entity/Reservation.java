@@ -62,6 +62,8 @@ public class Reservation extends BaseTimeEntity {
     @Column(name = "resev_end")
     private LocalDate resevEnd;
 
+
+
     @Column
     private String request;
 

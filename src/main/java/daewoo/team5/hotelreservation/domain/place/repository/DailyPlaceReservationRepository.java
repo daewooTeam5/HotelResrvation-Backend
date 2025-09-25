@@ -25,4 +25,13 @@ public interface DailyPlaceReservationRepository extends JpaRepository<DailyPlac
 
     // 단순 조회용 (락 없이)
     Optional<DailyPlaceReservation> findByRoomIdAndDate(Long roomId, LocalDate date);
+
+    @Query("SELECT addr.sido, COUNT(DISTINCT pl.id) " +
+            "FROM DailyPlaceReservation dpr " +
+            "JOIN dpr.room r " +
+            "JOIN r.place pl " +
+            "JOIN PlaceAddress addr ON addr.place = pl " +
+            "WHERE dpr.date = :targetDate " +
+            "GROUP BY addr.sido")
+    List<Object[]> getRegionReservationDistribution(@Param("targetDate") LocalDate targetDate);
 }
