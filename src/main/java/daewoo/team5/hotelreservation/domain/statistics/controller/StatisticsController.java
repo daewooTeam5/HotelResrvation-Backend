@@ -1,9 +1,18 @@
 package daewoo.team5.hotelreservation.domain.statistics.controller;
 
-import daewoo.team5.hotelreservation.domain.statistics.dto.StatisticsResponse;
+import daewoo.team5.hotelreservation.domain.statistics.dto.CancelRateDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.MonthlyReservationDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.RoomRevenueDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.TodayReservationDTO;
 import daewoo.team5.hotelreservation.domain.statistics.service.StatisticsService;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/statistics")
@@ -12,38 +21,40 @@ public class StatisticsController {
 
     private final StatisticsService statisticsService;
 
-    // 예약/매출 통계
-    @GetMapping("/reservations")
-    public StatisticsResponse getReservationStats(
-            @RequestParam(defaultValue = "monthly") String period,
-            @RequestParam(required = false) String start,
-            @RequestParam(required = false) String end,
-            @RequestParam(defaultValue = "all") String type
-    ) {
-        return statisticsService.getReservationStats(period, start, end, type);
+    /**
+     * 오늘 예약 현황 (예약 수 + 전일 대비 증감률)
+     */
+    @GetMapping("/reservation/today")
+    @AuthUser
+    public ResponseEntity<TodayReservationDTO> getTodayReservationSummary(UserProjection projection) {
+        Long ownerId = projection.getId();
+        TodayReservationDTO dto = statisticsService.getTodayReservationSummary(ownerId);
+        return ResponseEntity.ok(dto);
     }
 
-    // 고객 통계
-    @GetMapping("/customers")
-    public StatisticsResponse getCustomerStats(
-            @RequestParam(defaultValue = "monthly") String period
-    ) {
-        return statisticsService.getCustomerStats(period);
+    @GetMapping("/reservation/monthly")
+    @AuthUser
+    public ResponseEntity<MonthlyReservationDTO> getMonthlyReservationSummary(UserProjection projection) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getMonthlyReservationSummary(ownerId));
     }
 
-    // 리뷰 통계
-    @GetMapping("/reviews")
-    public StatisticsResponse getReviewStats(
-            @RequestParam(defaultValue = "monthly") String period
-    ) {
-        return statisticsService.getReviewStats(period);
+    @GetMapping("/reservation/cancel-rate")
+    @AuthUser
+    public ResponseEntity<CancelRateDTO> getCancelRate(UserProjection projection) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getCancelRate(ownerId));
     }
 
-    // 운영/객실 관리 통계
-    @GetMapping("/rooms")
-    public StatisticsResponse getRoomStats(
-            @RequestParam(defaultValue = "monthly") String period
+    @GetMapping("/reservation/room-revenue")
+    @AuthUser
+    public ResponseEntity<List<RoomRevenueDTO>> getRoomRevenue(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
     ) {
-        return statisticsService.getRoomStats(period);
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getRoomRevenue(ownerId, startDate, endDate));
     }
+
 }
