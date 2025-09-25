@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.statistics.controller;
 
 import daewoo.team5.hotelreservation.domain.statistics.dto.CancelRateDTO;
 import daewoo.team5.hotelreservation.domain.statistics.dto.MonthlyReservationDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.RoomRevenueDTO;
 import daewoo.team5.hotelreservation.domain.statistics.dto.TodayReservationDTO;
 import daewoo.team5.hotelreservation.domain.statistics.service.StatisticsService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
@@ -9,6 +10,9 @@ import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/statistics")
@@ -41,4 +45,16 @@ public class StatisticsController {
         Long ownerId = projection.getId();
         return ResponseEntity.ok(statisticsService.getCancelRate(ownerId));
     }
+
+    @GetMapping("/reservation/room-revenue")
+    @AuthUser
+    public ResponseEntity<List<RoomRevenueDTO>> getRoomRevenue(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getRoomRevenue(ownerId, startDate, endDate));
+    }
+
 }

@@ -177,4 +177,17 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     long countCancelledOrRefundedReservationsByOwnerAndMonth(@Param("ownerId") Long ownerId,
                                                              @Param("year") int year,
                                                              @Param("month") int month);
+
+    @Query("SELECT r.room.roomType, COUNT(r), SUM(r.finalAmount) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.status = 'confirmed' " +
+            "AND r.paymentStatus = 'paid' " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "GROUP BY r.room.roomType")
+    List<Object[]> findRoomRevenueByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                   @Param("startDate") LocalDate startDate,
+                                                   @Param("endDate") LocalDate endDate);
 }

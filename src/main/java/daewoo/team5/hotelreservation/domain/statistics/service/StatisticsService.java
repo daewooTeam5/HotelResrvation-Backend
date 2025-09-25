@@ -5,11 +5,14 @@ import daewoo.team5.hotelreservation.domain.place.repository.ReservationReposito
 import daewoo.team5.hotelreservation.domain.place.service.DashboardOwnerService;
 import daewoo.team5.hotelreservation.domain.statistics.dto.CancelRateDTO;
 import daewoo.team5.hotelreservation.domain.statistics.dto.MonthlyReservationDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.RoomRevenueDTO;
 import daewoo.team5.hotelreservation.domain.statistics.dto.TodayReservationDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -70,4 +73,17 @@ public class StatisticsService {
 
         return new CancelRateDTO(thisCancelRate, growthRate);
     }
+
+    public List<RoomRevenueDTO> getRoomRevenue(Long ownerId, LocalDate startDate, LocalDate endDate) {
+        List<Object[]> results = reservationRepository.findRoomRevenueByOwnerAndPeriod(ownerId, startDate, endDate);
+
+        return results.stream()
+                .map(row -> new RoomRevenueDTO(
+                        (String) row[0],
+                        ((Number) row[1]).longValue(),
+                        ((Number) row[2]).longValue()
+                ))
+                .toList();
+    }
+
 }
