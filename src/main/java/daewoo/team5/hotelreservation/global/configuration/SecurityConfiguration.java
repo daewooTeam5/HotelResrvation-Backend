@@ -45,6 +45,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
+                                "/uploads/*",
                                 "/signup",
                                 "/admin/login",
                                 "/auth",
