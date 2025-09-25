@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.coupon.service;
 
 import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
 import daewoo.team5.hotelreservation.domain.coupon.entity.UserCouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.projection.UserCouponProjection;
 import daewoo.team5.hotelreservation.domain.coupon.repository.CouponRepository;
 import daewoo.team5.hotelreservation.domain.coupon.repository.UserCouponRepository;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
@@ -52,9 +53,24 @@ public class CouponService {
 
     }
 
-    public List<CouponEntity> getUserCoupons(Long userId) {
-        return null;
+    public List<UserCouponProjection> getUserCoupons(Long userId, String type) {
+        /**
+         * 1. all : 전체 쿠폰
+         * 2. used + expired  : 사용한 쿠폰 + 기간 만료된 쿠폰
+         * 3. unused : 사용하지 않은 쿠폰 = 사용 가능
+         */
+        if (type.equals("all")) {
+            // userId로 발급된 쿠폰 조회후 couponEntity 리스트로 반환
+            return userCouponRepository.findAllByUserIdAndCouponAll(userId);
+        }else if(type.equals("unused")){
+            return userCouponRepository.findAllByUserIdAndCouponUsableCoupon(userId);
+        }else if(type.equals("used_expired")){
+            return userCouponRepository.findAllByUserIdAndCouponUsedAndExpiredCoupon(userId);
+        }
+        return userCouponRepository.findAllByUserIdAndCouponAll(userId);
+    }
 
-
+    public List<CouponEntity> getAvailableCoupon(UserProjection user,Long placeId) {
+        return userCouponRepository.findUsableCouponsByUserIdAndPlaceId(user.getId(),placeId);
     }
 }

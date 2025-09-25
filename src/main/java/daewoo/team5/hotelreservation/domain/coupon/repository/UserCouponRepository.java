@@ -1,11 +1,88 @@
 package daewoo.team5.hotelreservation.domain.coupon.repository;
 
+import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
 import daewoo.team5.hotelreservation.domain.coupon.entity.UserCouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.projection.UserCouponProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
 public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Long> {
     boolean existsByUserIdAndCoupon_CouponCode(Long userId, String couponCode);
-    List<UserCouponEntity> findByUserId(Long userId);
+    List<UserCouponEntity> findAllByUserId(Long userId);
+    @Query("""
+            select uc.user.id as userId,uc.isUsed as isUsed,
+                    uc.coupon.couponName as couponName,
+                    uc.coupon.expiredAt as expiredAt,
+                    uc.coupon.amount as amount,
+                    uc.coupon.couponType as couponType,
+                    uc.coupon.minOrderAmount as minOrderAmount,
+                    p.name as placeName,
+                    f.url as placeImageUrl,
+                    p.id as placeId
+             from UserCouponEntity uc
+             join Places p on uc.coupon.place.id = p.id
+             join File f on f.id = (
+                 select min(f2.id)
+                 from File f2
+                 where f2.domainFileId = p.id
+             )
+             where uc.user.id = :userId
+             and (uc.isUsed = true
+             or uc.coupon.expiredAt < current_timestamp)
+             """)
+    List<UserCouponProjection> findAllByUserIdAndCouponUsedAndExpiredCoupon(Long userId);
+    @Query("""
+            select uc.user.id as userId,uc.isUsed as isUsed,
+                    uc.coupon.couponName as couponName,
+                    uc.coupon.expiredAt as expiredAt,
+                    uc.coupon.amount as amount,
+                    uc.coupon.couponType as couponType,
+                    uc.coupon.minOrderAmount as minOrderAmount,
+                    p.name as placeName,
+                    f.url as placeImageUrl,
+                    p.id as placeId
+             from UserCouponEntity uc
+             join Places p on uc.coupon.place.id = p.id
+             join File f on f.id = (
+                 select min(f2.id)
+                 from File f2
+                 where f2.domainFileId = p.id
+             )
+             where uc.user.id = :userId
+             and uc.isUsed = false
+             """)
+    List<UserCouponProjection> findAllByUserIdAndCouponUsableCoupon(Long userId);
+
+    @Query("""
+            select uc.user.id as userId,uc.isUsed as isUsed,
+                    uc.coupon.couponName as couponName,
+                    uc.coupon.expiredAt as expiredAt,
+                    uc.coupon.amount as amount,
+                    uc.coupon.couponType as couponType,
+                    uc.coupon.minOrderAmount as minOrderAmount,
+                    p.name as placeName,
+                    f.url as placeImageUrl,
+                    p.id as placeId
+             from UserCouponEntity uc
+             join Places p on uc.coupon.place.id = p.id
+             join File f on f.id = (
+                 select min(f2.id)
+                 from File f2
+                 where f2.domainFileId = p.id
+             )
+             where uc.user.id = :userId""")
+    List<UserCouponProjection> findAllByUserIdAndCouponAll(Long userId);
+
+    @Query("""
+            select uc.coupon
+            from UserCouponEntity uc
+            where uc.user.id = :userId
+            and uc.isUsed = false
+            and uc.coupon.expiredAt > current_timestamp
+            and uc.coupon.place.id = :placeId
+            """)
+    List<CouponEntity> findUsableCouponsByUserIdAndPlaceId(Long userId, Long placeId);
+
 }
