@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.users.service;
 
 import daewoo.team5.hotelreservation.domain.users.dto.request.CreateUserDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.LogInUserDto;
+import daewoo.team5.hotelreservation.domain.users.dto.request.UserResponse;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
@@ -59,5 +60,20 @@ public class UsersService {
 
     public Page<UserProjection> getAllUserPage(int start, int size) {
         return usersRepository.findAllBy(UserProjection.class,PageRequest.of(start,size));
+    }
+
+    public Page<UserResponse> getAllUsers(int start, int size) {
+        Page<Users> usersPage = usersRepository.findAll(PageRequest.of(start, size));
+        return usersPage.map(u ->
+                new UserResponse(
+                        u.getId(),
+                        u.getUserId(),
+                        u.getEmail(),
+                        u.getName(),
+                        u.getPhone(),
+                        u.getRole(),
+                        u.getStatus(),
+                        u.getPoint()
+                ));
     }
 }

@@ -1,4 +1,4 @@
-// src/main/java/daewoo/team5/hotelreservation/domain/place/review/dto/ReviewResponse.java
+// daewooteam5/hotelreservation-backend/HotelReservation-Backend-feature-review3/src/main/java/daewoo/team5/hotelreservation/domain/place/review/dto/ReviewResponse.java
 package daewoo.team5.hotelreservation.domain.place.review.dto;
 
 import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public class ReviewResponse {
     private final Long reviewId;
     private final String userName;
+    private final Long userId; // <-- [추가] 사용자 ID 필드
     private final Integer rating;
     private final String comment;
     private final LocalDateTime createdAt;
@@ -28,6 +29,7 @@ public class ReviewResponse {
     public ReviewResponse(Review review) {
         this.reviewId = review.getReviewId();
         this.userName = review.getUser().getName();
+        this.userId = review.getUser().getId(); // <-- [추가] 생성자에서 userId 값 할당
         this.rating = review.getRating();
         this.comment = review.getComment();
         this.createdAt = review.getCreatedAt();

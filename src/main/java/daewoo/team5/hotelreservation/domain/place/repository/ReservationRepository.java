@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -145,4 +146,51 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             "AND r.status = daewoo.team5.hotelreservation.domain.payment.entity.Reservation$ReservationStatus.checked_out " +
             "AND NOT EXISTS (SELECT rv FROM Review rv WHERE rv.reservation.reservationId = r.reservationId)")
     List<ReviewableReservationResponse> findReviewableReservations(@Param("guestId") Long guestId, @Param("placeId") Long placeId);
+
+    @Query("SELECT COUNT(r) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND YEAR(r.createdAt) = :year " +
+            "AND MONTH(r.createdAt) = :month")
+    long countByOwnerIdAndMonth(@Param("ownerId") Long ownerId,
+                                @Param("year") int year,
+                                @Param("month") int month);
+
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND YEAR(r.resevStart) = :year " +
+            "AND MONTH(r.resevStart) = :month")
+    long countTotalReservationsByOwnerAndMonth(@Param("ownerId") Long ownerId,
+                                               @Param("year") int year,
+                                               @Param("month") int month);
+
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND YEAR(r.resevStart) = :year " +
+            "AND MONTH(r.resevStart) = :month " +
+            "AND (r.status = 'cancelled' OR r.paymentStatus IN ('cancelled', 'refunded'))")
+    long countCancelledOrRefundedReservationsByOwnerAndMonth(@Param("ownerId") Long ownerId,
+                                                             @Param("year") int year,
+                                                             @Param("month") int month);
+
+    @Query("SELECT r.room.roomType, COUNT(r), SUM(r.finalAmount) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.status = 'confirmed' " +
+            "AND r.paymentStatus = 'paid' " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "GROUP BY r.room.roomType")
+    List<Object[]> findRoomRevenueByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                   @Param("startDate") LocalDate startDate,
+                                                   @Param("endDate") LocalDate endDate);
+
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

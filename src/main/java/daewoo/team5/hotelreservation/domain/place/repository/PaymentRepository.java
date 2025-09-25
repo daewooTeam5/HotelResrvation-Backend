@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,5 +67,41 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("ownerId") Long ownerId,
             @Param("months") int months
     );
+    // 총 매출 합계|
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = 'paid'")
+    long getTotalPayments();
+
+    // 특정 기간 매출 합계
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p " +
+            "WHERE p.status = 'paid' AND p.transactionDate BETWEEN :start AND :end")
+    long getPaymentsBetween(@Param("start") LocalDateTime start,
+                            @Param("end") LocalDateTime end);
+
+    @Query("SELECT FUNCTION('YEAR', p.transactionDate) AS year, " +
+            "FUNCTION('MONTH', p.transactionDate) AS month, " +
+            "COALESCE(SUM(p.amount), 0) " +
+            "FROM Payment p " +
+            "WHERE p.status = 'paid' " +
+            "GROUP BY FUNCTION('YEAR', p.transactionDate), FUNCTION('MONTH', p.transactionDate) " +
+            "ORDER BY FUNCTION('YEAR', p.transactionDate), FUNCTION('MONTH', p.transactionDate)")
+    List<Object[]> getMonthlyRevenue();
+
+    @Query("SELECT pl.name, SUM(p.amount) " +
+            "FROM Payment p " +
+            "JOIN p.reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place pl " +
+            "WHERE p.status = 'paid' " +
+            "GROUP BY pl.name " +
+            "ORDER BY SUM(p.amount) DESC")
+    List<Object[]> getTop5HotelsByRevenue();
+
+    @Query("SELECT pl.name, COUNT(r) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place pl " +
+            "GROUP BY pl.name " +
+            "ORDER BY COUNT(r) DESC")
+    List<Object[]> getTop5HotelsByReservations();
 
 }

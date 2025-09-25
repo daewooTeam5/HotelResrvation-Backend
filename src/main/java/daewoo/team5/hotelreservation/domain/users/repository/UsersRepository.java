@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface UsersRepository extends JpaRepository<Users, Long> {
@@ -19,4 +20,5 @@ public interface UsersRepository extends JpaRepository<Users, Long> {
     <T> Optional<T> findById(Long id, Class<T> type);
     <T> Page<T> findAllBy(Class<T> type, Pageable pageable);
 
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

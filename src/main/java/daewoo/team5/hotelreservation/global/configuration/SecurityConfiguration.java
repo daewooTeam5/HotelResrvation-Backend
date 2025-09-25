@@ -45,6 +45,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
+                                "/uploads/*",
                                 "/signup",
                                 "/admin/login",
                                 "/auth",
@@ -63,6 +64,7 @@ public class SecurityConfiguration {
                                 "/api/v1/dashboard/**",
                                 "/api/v1/autocomplete",
                                 "/api/v1/statistics/**",
+                                "/api/v1/payment/**",
                                 "/images/**"
                         ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()

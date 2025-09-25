@@ -5,6 +5,7 @@ import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.projection.*;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -45,7 +46,8 @@ public class PlaceService {
     }
 
     public Page<AdminPlaceProjection> getAdminPlace(
-            Long placeId,
+            String sido,
+            String sigungu,
             String approvalStatus,
             String ownerName,
             String placeName,
@@ -58,7 +60,15 @@ public class PlaceService {
             status = Places.Status.valueOf(approvalStatus.toUpperCase());
         }
 
-        return placeRepository.searchAdminPlaces(placeId, status, ownerName, placeName, pageable);
+        return placeRepository.searchAdminPlaces(sido, sigungu, status, ownerName, placeName, pageable);
+    }
+
+    @Transactional
+    public void updatePlaceStatus(Long placeId, Places.Status status) {
+        Places place = placeRepository.findById(placeId)
+                .orElseThrow(() -> new IllegalArgumentException("숙소를 찾을 수 없습니다. ID=" + placeId));
+        place.setStatus(status);
+        placeRepository.save(place);
     }
 }
 
