@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/hotel/publishing")
+@RequestMapping("/api/hotel/publishing")
 @RequiredArgsConstructor
 public class PublishingController {//api리설트는 컨트롤러를 바꿔주기
     //apiResult.created는 post처럼 내가 데이터를 받아오는 경우 사용 나머지는 ok로(조회)
