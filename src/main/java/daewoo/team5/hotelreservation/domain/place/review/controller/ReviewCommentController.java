@@ -18,6 +18,7 @@ public class ReviewCommentController {
     private final ReviewCommentService reviewCommentService;
 
     /**
+     *
      * 주석: 특정 리뷰에 대한 관리자 댓글을 생성하는 API입니다.
      * @param reviewId 댓글을 달 리뷰의 ID
      * @param request 댓글 내용
