@@ -13,12 +13,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-<<<<<<< Updated upstream
 import java.time.LocalDate;
 import java.util.List;
-=======
 import java.time.LocalDateTime;
->>>>>>> Stashed changes
 import java.util.Optional;
 
 @Repository
