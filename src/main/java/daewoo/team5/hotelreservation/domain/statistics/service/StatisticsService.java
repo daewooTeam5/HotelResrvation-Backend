@@ -1,36 +1,73 @@
 package daewoo.team5.hotelreservation.domain.statistics.service;
 
-import daewoo.team5.hotelreservation.domain.statistics.dto.StatisticsResponse;
+import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
+import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
+import daewoo.team5.hotelreservation.domain.place.service.DashboardOwnerService;
+import daewoo.team5.hotelreservation.domain.statistics.dto.CancelRateDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.MonthlyReservationDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.TodayReservationDTO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.time.YearMonth;
 
 @Service
+@RequiredArgsConstructor
 public class StatisticsService {
 
-    public StatisticsResponse getReservationStats(String period, String start, String end, String type) {
-        List<String> labels = Arrays.asList("1월", "2월", "3월", "4월", "5월", "6월");
-        List<Number> values = Arrays.asList(120, 150, 180, 200, 170, 190);
-        return new StatisticsResponse("예약/매출 통계", period, labels, values, Map.of("type", type));
+    private final DashboardOwnerService dashboardOwnerService;
+    private final ReservationRepository reservationRepository;
+
+    public TodayReservationDTO getTodayReservationSummary(Long ownerId) {
+        ReservationStatsDTO stats = dashboardOwnerService.getTodayStats(ownerId);
+        return new TodayReservationDTO(
+                stats.getTodayReservations(),
+                stats.getGrowthRate()
+        );
     }
 
-    public StatisticsResponse getCustomerStats(String period) {
-        List<String> labels = Arrays.asList("신규", "재방문");
-        List<Number> values = Arrays.asList(80, 20);
-        return new StatisticsResponse("고객 통계", period, labels, values, null);
+    public MonthlyReservationDTO getMonthlyReservationSummary(Long ownerId) {
+        YearMonth thisMonth = YearMonth.now();
+        YearMonth lastMonth = thisMonth.minusMonths(1);
+
+        long thisMonthReservations = reservationRepository.countByOwnerIdAndMonth(
+                ownerId, thisMonth.getYear(), thisMonth.getMonthValue()
+        );
+
+        long lastMonthReservations = reservationRepository.countByOwnerIdAndMonth(
+                ownerId, lastMonth.getYear(), lastMonth.getMonthValue()
+        );
+
+        double growthRate = lastMonthReservations > 0
+                ? ((double)(thisMonthReservations - lastMonthReservations) / lastMonthReservations) * 100
+                : (thisMonthReservations > 0 ? 100.0 : 0.0);
+
+        return new MonthlyReservationDTO(thisMonthReservations, growthRate);
     }
 
-    public StatisticsResponse getReviewStats(String period) {
-        List<String> labels = Arrays.asList("1점", "2점", "3점", "4점", "5점");
-        List<Number> values = Arrays.asList(2, 5, 10, 20, 50);
-        return new StatisticsResponse("리뷰 평점 분포", period, labels, values, null);
-    }
+    public CancelRateDTO getCancelRate(Long ownerId) {
+        YearMonth thisMonth = YearMonth.now();
+        YearMonth lastMonth = thisMonth.minusMonths(1);
 
-    public StatisticsResponse getRoomStats(String period) {
-        List<String> labels = Arrays.asList("AVAILABLE", "RESERVED", "CLEANING");
-        List<Number> values = Arrays.asList(30, 50, 10);
-        return new StatisticsResponse("객실 상태 통계", period, labels, values, null);
+        // 이번 달
+        long thisTotal = reservationRepository.countTotalReservationsByOwnerAndMonth(
+                ownerId, thisMonth.getYear(), thisMonth.getMonthValue());
+        long thisCancelled = reservationRepository.countCancelledOrRefundedReservationsByOwnerAndMonth(
+                ownerId, thisMonth.getYear(), thisMonth.getMonthValue());
+
+        // 지난 달
+        long lastTotal = reservationRepository.countTotalReservationsByOwnerAndMonth(
+                ownerId, lastMonth.getYear(), lastMonth.getMonthValue());
+        long lastCancelled = reservationRepository.countCancelledOrRefundedReservationsByOwnerAndMonth(
+                ownerId, lastMonth.getYear(), lastMonth.getMonthValue());
+
+        double thisCancelRate = thisTotal > 0 ? ((double) thisCancelled / thisTotal) * 100 : 0.0;
+        double lastCancelRate = lastTotal > 0 ? ((double) lastCancelled / lastTotal) * 100 : 0.0;
+
+        double growthRate = lastCancelRate > 0
+                ? ((thisCancelRate - lastCancelRate) / lastCancelRate) * 100
+                : (thisCancelRate > 0 ? 100.0 : 0.0);
+
+        return new CancelRateDTO(thisCancelRate, growthRate);
     }
 }
