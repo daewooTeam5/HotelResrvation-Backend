@@ -31,6 +31,9 @@ public class PlaceAddress {
     @Column(name = "sigungu", length = 50, nullable = false)
     private String sigungu; // 시/군/구
 
+    @Column(name = "town", length = 50)
+    private String town; // 읍/면/동
+
     @Column(name = "road_name", length = 100, nullable = false)
     private String roadName; // 도로명
 
