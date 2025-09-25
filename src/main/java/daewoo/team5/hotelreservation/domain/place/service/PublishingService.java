@@ -1,9 +1,8 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
 import daewoo.team5.hotelreservation.domain.place.dto.PublishingDTO;
-import daewoo.team5.hotelreservation.domain.place.entity.PlaceCategory;
-import daewoo.team5.hotelreservation.domain.place.entity.Places;
-import daewoo.team5.hotelreservation.domain.place.entity.Room;
+import daewoo.team5.hotelreservation.domain.place.entity.*;
+import daewoo.team5.hotelreservation.domain.place.repository.PlaceAddressRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceCategoryRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
@@ -26,6 +25,7 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
     private final PlaceCategoryRepository  placeCategoryRepository;
     private final PlaceRepository repository;
     private final RoomRepository roomRepository;
+    private final PlaceAddressRepository placeAddressRepository;
 
     // 등록
     public Places registerHotel(PublishingDTO dto) {
@@ -45,7 +45,17 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
                 .build();
 
 // 먼저 place 저장
-        repository.save(place);
+        Places save = repository.save(place);
+/*        for(){
+
+        }
+        File.builder()
+                .filename(i)
+                .domainFileId(save.getId())
+                .filetype("place")
+                .build();*/
+        // domain file id save.getId();
+        // file_type = place
 
         // 2. DTO에 포함된 Room 정보들을 Room Entity로 변환
         // (실제로는 Room 엔티티와 빌더가 미리 정의되어 있어야 합니다)
@@ -65,6 +75,21 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
                 ).collect(Collectors.toList());
 
         roomRepository.saveAll(rooms);
+
+        dto.getAddressList().forEach(addressDto -> {
+            PlaceAddress address = PlaceAddress.builder()
+                    .place(place)
+                    .sido(addressDto.getSido())
+                    .sigungu(addressDto.getSigungu())
+                    .town(addressDto.getTown())
+                    .roadName(addressDto.getRoadName())
+                    .postalCode(addressDto.getPostalCode())
+                    .detailAddress(addressDto.getDetailAddress())
+                    .lat(BigDecimal.valueOf(221))   //하드 코딩
+                    .lng(BigDecimal.valueOf(213))
+                    .build();
+            placeAddressRepository.save(address);
+        });
 
 
         return place;
