@@ -3,10 +3,12 @@ package daewoo.team5.hotelreservation.domain.payment.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import daewoo.team5.hotelreservation.domain.payment.dto.DashboardSummary;
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
+import daewoo.team5.hotelreservation.domain.payment.service.DashboardService;
 import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
@@ -18,6 +20,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -26,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
     private final UsersRepository usersRepository;
     private final PaymentService paymentService;
+    private final DashboardService dashboardService;
 
     @GetMapping("/reservation/{id}")
     public ApiResult<Reservation> getReservationById(
@@ -58,5 +64,16 @@ public class PaymentController {
                     .orElseThrow(() -> new ApiException(404, "존재하지 않는 유저", "존재 하지 않는 유저입니다."));
         }
         return ApiResult.ok(paymentService.reservationPlace(currentUser, dto), "예약 성공");
+    }
+
+    @GetMapping("/dashboard")
+    public ApiResult<?> getFullDashboard() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("summary", dashboardService.getDashboardSummary());
+        result.put("monthlyRevenue", dashboardService.getMonthlyRevenueTrend());
+        result.put("topRevenueHotels", dashboardService.getTop5HotelsByRevenue());
+        result.put("topReservationHotels", dashboardService.getTop5HotelsByReservations());
+        result.put("occupancyRates", dashboardService.getRegionReservationDistribution());
+        return ApiResult.ok(result, "대시보드 전체 데이터 조회 성공");
     }
 }

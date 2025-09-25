@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -190,4 +191,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     List<Object[]> findRoomRevenueByOwnerAndPeriod(@Param("ownerId") Long ownerId,
                                                    @Param("startDate") LocalDate startDate,
                                                    @Param("endDate") LocalDate endDate);
+
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }
