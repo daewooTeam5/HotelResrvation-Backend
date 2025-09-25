@@ -2,9 +2,14 @@ package daewoo.team5.hotelreservation.domain.users.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.entity.UserCouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.projection.UserCouponProjection;
+import daewoo.team5.hotelreservation.domain.coupon.service.CouponService;
 import daewoo.team5.hotelreservation.domain.shoppingcart.projection.CartProjection;
 import daewoo.team5.hotelreservation.domain.shoppingcart.service.ShoppingCartService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -23,6 +29,16 @@ import java.util.Map;
 public class UserController {
 
     private final ShoppingCartService shoppingCartService;
+    private final CouponService couponService;
+
+    @GetMapping("/my/coupons")
+    @AuthUser
+    public ApiResult<List<UserCouponProjection>> getUserCoupons(
+            @RequestParam(defaultValue = "all") String type,
+            UserProjection user){
+        return ApiResult.ok(couponService.getUserCoupons(user.getId(),type), "사용자 쿠폰 조회 성공");
+
+    }
 
     @GetMapping("/cart")
     public ApiResult<List<CartProjection>> getCartItems(Authentication authentication) {

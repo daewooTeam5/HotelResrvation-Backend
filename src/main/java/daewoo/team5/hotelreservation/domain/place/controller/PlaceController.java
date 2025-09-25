@@ -1,13 +1,15 @@
 package daewoo.team5.hotelreservation.domain.place.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
+import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
 import daewoo.team5.hotelreservation.domain.place.dto.PlaceDetailResponse;
 import daewoo.team5.hotelreservation.domain.place.projection.PlaceItemInfomation;
 import daewoo.team5.hotelreservation.domain.place.service.PlaceService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.wishlist.service.WishListService;
+import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
@@ -17,15 +19,25 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/places")
 @RequiredArgsConstructor
 public class PlaceController {
-
     private final PlaceService placeService;
     private final WishListService wishListService;
+    private final PaymentService paymentService;
+
+    @GetMapping("/{id}/available/coupon")
+    @AuthUser
+    public ApiResult<List<CouponEntity>> getAvailableCoupon(
+            @PathVariable("id") Long placeId,
+            UserProjection user
+    ) {
+        return ApiResult.ok(paymentService.getAvailableCoupon(user, placeId), "사용 가능한 쿠폰 조회 성공");
+    }
 
     @GetMapping("")
     public ApiResult<Page<PlaceItemInfomation>> searchPlacesWithFilters(
@@ -42,7 +54,7 @@ public class PlaceController {
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) String address,
             Authentication authentication
-    )  {
+    ) {
         Long userId = extractUserId(authentication);
         int people = (adults != null ? adults : 0) + (children != null ? children : 0);
         int roomCount = rooms != null ? rooms : 1;
@@ -61,7 +73,6 @@ public class PlaceController {
                 "호텔 조회 성공!!"
         );
     }
-
 
 
     @GetMapping("/{placeId}")
@@ -130,13 +141,15 @@ public class PlaceController {
                 String principalStr = (String) principal;
                 try {
                     ObjectMapper mapper = new ObjectMapper();
-                    Map<String, Object> subMap = mapper.readValue(principalStr, new TypeReference<>() {});
+                    Map<String, Object> subMap = mapper.readValue(principalStr, new TypeReference<>() {
+                    });
                     userId = Long.valueOf(String.valueOf(subMap.get("id")));
                 } catch (Exception e) {
                     // 혹시 그냥 userId 문자열인 경우
                     try {
                         userId = Long.valueOf(principalStr);
-                    } catch (NumberFormatException ignored) {}
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
             }
         }

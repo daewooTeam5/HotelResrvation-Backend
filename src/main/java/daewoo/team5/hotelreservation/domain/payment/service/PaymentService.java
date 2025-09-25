@@ -2,6 +2,8 @@ package daewoo.team5.hotelreservation.domain.payment.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.service.CouponService;
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.TossPaymentDto;
@@ -34,6 +36,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -48,6 +51,7 @@ public class PaymentService {
     private final TossPayClient tossPayClient;
     private final PaymentRepository paymentRepository;
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
+    private final CouponService couponService;
     @PersistenceContext
     private EntityManager entityManager;
     private Payment.PaymentStatus mapStatus(String status) {
@@ -206,5 +210,9 @@ public class PaymentService {
                 .orElseThrow(
                         () -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 예약입니다.", "존재하지 않는 예약입니다.")
                 );
+    }
+
+    public List<CouponEntity> getAvailableCoupon(UserProjection user, Long placeId) {
+        return couponService.getAvailableCoupon(user,placeId);
     }
 }

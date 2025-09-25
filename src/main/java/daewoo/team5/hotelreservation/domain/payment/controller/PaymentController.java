@@ -3,6 +3,8 @@ package daewoo.team5.hotelreservation.domain.payment.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
 import daewoo.team5.hotelreservation.domain.payment.dto.DashboardSummary;
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
@@ -12,6 +14,7 @@ import daewoo.team5.hotelreservation.domain.payment.service.DashboardService;
 import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
+import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,6 +35,7 @@ public class PaymentController {
     private final UsersRepository usersRepository;
     private final PaymentService paymentService;
     private final DashboardService dashboardService;
+
 
     @GetMapping("/reservation/{id}")
     public ApiResult<Reservation> getReservationById(
