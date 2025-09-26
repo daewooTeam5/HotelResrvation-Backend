@@ -380,5 +380,29 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
                                                 @Param("startDate") LocalDate startDate,
                                                 @Param("endDate") LocalDate endDate);
 
+    @Query("SELECT COUNT(DISTINCT g.users.id) " +
+            "FROM Reservation r " +
+            "JOIN r.guest g " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND g.users IS NOT NULL")
+    long countDistinctMembers(@Param("ownerId") Long ownerId,
+                              @Param("startDate") LocalDate startDate,
+                              @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT COUNT(DISTINCT g.id) " +
+            "FROM Reservation r " +
+            "JOIN r.guest g " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND g.users IS NULL")
+    long countDistinctNonMembers(@Param("ownerId") Long ownerId,
+                                 @Param("startDate") LocalDate startDate,
+                                 @Param("endDate") LocalDate endDate);
+
 
 }

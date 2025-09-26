@@ -242,4 +242,11 @@ public class StatisticsService {
                 .toList();
     }
 
+    public MemberRatioDTO getMemberRatio(Long ownerId, LocalDate startDate, LocalDate endDate) {
+        long members = reservationRepository.countDistinctMembers(ownerId, startDate, endDate);
+        long nonMembers = reservationRepository.countDistinctNonMembers(ownerId, startDate, endDate);
+
+        return new MemberRatioDTO(members, nonMembers);
+    }
+
 }

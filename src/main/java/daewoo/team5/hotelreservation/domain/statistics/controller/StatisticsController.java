@@ -142,4 +142,16 @@ public class StatisticsController {
         Long ownerId = projection.getId();
         return ResponseEntity.ok(statisticsService.getStayDurationDistribution(ownerId, startDate, endDate));
     }
+
+    @GetMapping("/customers/member-ratio")
+    @AuthUser
+    public ResponseEntity<MemberRatioDTO> getMemberRatio(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        MemberRatioDTO dto = statisticsService.getMemberRatio(ownerId, startDate, endDate);
+        return ResponseEntity.ok(dto);
+    }
 }
