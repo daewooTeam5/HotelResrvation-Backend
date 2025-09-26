@@ -36,7 +36,7 @@ public class Users extends BaseTimeEntity {
     private String phone;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "ENUM('customer', 'hotel_owner', 'admin', 'hotel_admin', 'user_admin') DEFAULT 'customer'")
+    @Column(nullable = false, columnDefinition = "ENUM('customer', 'hotel_owner', 'admin', 'place_admin', 'user_admin') DEFAULT 'customer'")
     private Role role;
 
     @Enumerated(EnumType.STRING)
@@ -54,7 +54,9 @@ public class Users extends BaseTimeEntity {
     public enum Role {
         customer,
         hotel_owner,
-        admin
+        admin,
+        place_admin,
+        user_admin
     }
 
     public enum Status {
