@@ -82,7 +82,7 @@ public class DashboardOwnerService {
 
     // 평균 평점
     public RatingStatsDTO getRatingStats(Long ownerId) {
-        return placeRepository.findByOwnerId(ownerId)
+        return placeRepository.findByOwner_Id(ownerId)
                 .map(place -> new RatingStatsDTO(
                         place.getAvgRating() != null ? place.getAvgRating().doubleValue() : 0.0,
                         place.getReviewCount() != null ? place.getReviewCount() : 0

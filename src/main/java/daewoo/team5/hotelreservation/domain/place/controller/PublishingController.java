@@ -1,12 +1,18 @@
 package daewoo.team5.hotelreservation.domain.place.controller;
 
 import daewoo.team5.hotelreservation.domain.place.dto.PublishingDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.SearchDTO;
 import daewoo.team5.hotelreservation.domain.place.service.PublishingService;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/hotel/publishing")
@@ -19,21 +25,24 @@ public class PublishingController {//api리설트는 컨트롤러를 바꿔주�
 
     // 숙소 등록
     @PostMapping("/register")
-    public ApiResult<String> registerHotel(@RequestBody PublishingDTO publishingDTO) {
-        publishingService.registerHotel(publishingDTO);
+    @AuthUser
+    public ApiResult<String> registerHotel(@RequestBody PublishingDTO publishingDTO,
+                                           UserProjection user) {
+        publishingService.registerHotel(publishingDTO,user);
         return ApiResult.created(publishingDTO.getHotelName(),"숙소 등록 성공");
     }
 
-    // 숙소 전체 조회
-    @GetMapping("/list")
-    public ApiResult<List<PublishingDTO>> getAllHotels() {  //ApiResult<>이걸로 여기만 묶어주기
-        return ApiResult.ok(publishingService.getAllHotels());
+    @GetMapping("/my-list")
+    public ApiResult<List<SearchDTO>> getMyHotels(@RequestParam Long ownerId) {
+        return ApiResult.ok(publishingService.getMyHotels(ownerId));
     }
 
-    // 특정 숙소 조회
-    @GetMapping("/list/{id}")
-    public ApiResult<PublishingDTO> getHotel(@PathVariable Long id) {
-        return ApiResult.ok(publishingService.getHotel(id)) ;
-    }
 
+
+    // 숙소 삭제
+    @DeleteMapping("/list/{id}")
+    public ApiResult<String> deleteHotel(@PathVariable Long id) {
+        publishingService.deleteHotel(id);
+        return ApiResult.ok("삭제 완료");
+    }
 }

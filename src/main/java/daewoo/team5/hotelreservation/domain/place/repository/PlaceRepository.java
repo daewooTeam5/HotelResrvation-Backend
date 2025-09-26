@@ -207,6 +207,10 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             """, nativeQuery = true)
     List<PlaceServiceProjection> findPlaceServices(@Param("placeId") Long placeId);
 
+
+    List<Places> findByOwnerId(Long ownerId);
+    Optional<Places> findByOwner_Id(Long ownerId);
+
     Optional<Places> findByOwnerId(Long ownerId);
 
     @Query("""
@@ -245,7 +249,6 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             "LEFT JOIN File f ON f.domain = 'place' AND f.domainFileId = p.id " +
             "WHERE p.id = :placeId")
     PlaceInfoProjection findPlaceInfo(@Param("placeId") Long placeId);
-
 
 }
 
