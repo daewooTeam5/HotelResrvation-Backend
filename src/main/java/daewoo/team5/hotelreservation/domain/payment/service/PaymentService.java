@@ -3,6 +3,8 @@ package daewoo.team5.hotelreservation.domain.payment.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.service.CouponService;
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.TossPaymentDto;
@@ -37,6 +39,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -52,6 +55,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
+    private final CouponService couponService;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -170,7 +174,7 @@ public class PaymentService {
 
     @Transactional
     public Reservation reservationPlace(UserProjection user, ReservationRequestDto dto) {
-        log.info("payment userproj" + user);
+        log.info("payment userproj" + user+","+ dto);
         GuestEntity guest = getGuest(user, dto.getEmail(), dto.getFirstName(), dto.getLastName(), dto.getPhone());
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재 하지 않는 방입니다.", "존재하지 않는 방입니다."));
@@ -210,6 +214,7 @@ public class PaymentService {
                 .request(dto.getRequest())
                 .room(room)
                 .build();
+        log.info("1reservation"+reservation);
         return reservationRepository.save(reservation);
     }
 
@@ -219,5 +224,9 @@ public class PaymentService {
                 .orElseThrow(
                         () -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 예약입니다.", "존재하지 않는 예약입니다.")
                 );
+    }
+
+    public List<CouponEntity> getAvailableCoupon(UserProjection user, Long placeId) {
+        return couponService.getAvailableCoupon(user,placeId);
     }
 }

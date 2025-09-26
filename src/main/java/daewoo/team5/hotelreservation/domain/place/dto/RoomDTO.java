@@ -3,6 +3,7 @@ package daewoo.team5.hotelreservation.domain.place.dto;
 import daewoo.team5.hotelreservation.domain.place.dto.BedDTO;
 import lombok.*;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Getter
@@ -11,20 +12,22 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class RoomDTO {
+
     private int roomNumber;
-
-    private int price;
-
-    private int maxCount;
-
-    private int extraPrice;
 
     private String roomType;
 
-    private String checkIn;
+    private int capacityPeople;
 
-    private String checkOut;
+    private int minPrice;
 
-    private List<BedDTO> beds;
+    private int extraPrice;
+
+    private String bedType;
+
+    private boolean isPublic;
+
+    private Integer capacityRoom;
+
 
 }

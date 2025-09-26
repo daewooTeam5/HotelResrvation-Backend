@@ -3,6 +3,7 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 
 import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.ReviewableReservationResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -129,5 +131,66 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             nativeQuery = true)
     List<Object[]> findMonthlyConfirmedPaidReservations(@Param("ownerId") Long ownerId,
                                                         @Param("sixMonthsAgo") LocalDate sixMonthsAgo);
+    /**
+     * ✅ [추가] 특정 사용자가 특정 숙소에 대해 '리뷰 작성 가능한' 예약 목록을 조회하는 쿼리
+     * 조건: 1. 체크아웃 상태일 것
+     * 2. 아직 리뷰가 작성되지 않았을 것
+     * @param guestId 사용자(게스트) ID
+     * @param placeId 숙소 ID
+     * @return 리뷰 작성 가능한 예약 목록
+     */
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ReviewableReservationResponse(r.reservationId, r.room.roomType, r.resevStart) " +
+            "FROM Reservation r " +
+            "WHERE r.guest.id = :guestId " +
+            "AND r.room.place.id = :placeId " +
+            "AND r.status = daewoo.team5.hotelreservation.domain.payment.entity.Reservation$ReservationStatus.checked_out " +
+            "AND NOT EXISTS (SELECT rv FROM Review rv WHERE rv.reservation.reservationId = r.reservationId)")
+    List<ReviewableReservationResponse> findReviewableReservations(@Param("guestId") Long guestId, @Param("placeId") Long placeId);
 
+    @Query("SELECT COUNT(r) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND YEAR(r.createdAt) = :year " +
+            "AND MONTH(r.createdAt) = :month")
+    long countByOwnerIdAndMonth(@Param("ownerId") Long ownerId,
+                                @Param("year") int year,
+                                @Param("month") int month);
+
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND YEAR(r.resevStart) = :year " +
+            "AND MONTH(r.resevStart) = :month")
+    long countTotalReservationsByOwnerAndMonth(@Param("ownerId") Long ownerId,
+                                               @Param("year") int year,
+                                               @Param("month") int month);
+
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND YEAR(r.resevStart) = :year " +
+            "AND MONTH(r.resevStart) = :month " +
+            "AND (r.status = 'cancelled' OR r.paymentStatus IN ('cancelled', 'refunded'))")
+    long countCancelledOrRefundedReservationsByOwnerAndMonth(@Param("ownerId") Long ownerId,
+                                                             @Param("year") int year,
+                                                             @Param("month") int month);
+
+    @Query("SELECT r.room.roomType, COUNT(r), SUM(r.finalAmount) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.status = 'confirmed' " +
+            "AND r.paymentStatus = 'paid' " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "GROUP BY r.room.roomType")
+    List<Object[]> findRoomRevenueByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                   @Param("startDate") LocalDate startDate,
+                                                   @Param("endDate") LocalDate endDate);
+
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

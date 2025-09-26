@@ -1,9 +1,7 @@
 package daewoo.team5.hotelreservation.domain.auth.controller;
 
 import daewoo.team5.hotelreservation.domain.auth.controller.swagger.AuthSwagger;
-import daewoo.team5.hotelreservation.domain.auth.dto.AuthCodeDto;
-import daewoo.team5.hotelreservation.domain.auth.dto.EmailLoginDto;
-import daewoo.team5.hotelreservation.domain.auth.dto.LoginSuccessDto;
+import daewoo.team5.hotelreservation.domain.auth.dto.*;
 import daewoo.team5.hotelreservation.domain.auth.service.AuthService;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
@@ -42,14 +40,12 @@ public class AuthController implements AuthSwagger {
     public ApiResult<Boolean> logout(
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
-    ){
+    ) {
         // refreshToken 쿠키 삭제
-        cookieProvider.removeCookie("refreshToken",response);
+        cookieProvider.removeCookie("refreshToken", response);
 
         authService.logout(refreshToken);
         return ApiResult.ok(true, "로그아웃 되었습니다.");
-
-
     }
 
     @PostMapping("/auth/code")
@@ -73,14 +69,14 @@ public class AuthController implements AuthSwagger {
     }
 
     @PostMapping("auth/token")
-    public ApiResult<Map<String,String>> reissueToken(
+    public ApiResult<Map<String, String>> reissueToken(
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
         if (refreshToken == null) {
             throw new ApiException(HttpStatus.UNAUTHORIZED.value(), "토큰 재발급 실패", "리프레시 토큰이 없습니다. 다시 로그인 해주세요.");
         }
-        String accessToken = authService.reissueToken(refreshToken,response);
+        String accessToken = authService.reissueToken(refreshToken, response);
         return ApiResult.ok(Map.of("accessToken", accessToken), "토큰 재발급 성공");
     }
 
@@ -92,5 +88,19 @@ public class AuthController implements AuthSwagger {
         return ApiResult.ok(user, "테스트 성공");
     }
 
+    @PostMapping("/signup")
+    public ApiResult<Users> signUp(@RequestBody SignUpRequest signUpRequest) {
+        Users data = authService.adminSignUp(signUpRequest);
+        data.setPassword(null);
+        return ApiResult.ok(data, "회원가입 성공");
+    }
 
+    @PostMapping("/admin/login")
+    public ApiResult<LoginSuccessDto> adminLogin(
+            @RequestBody @Valid AdminLoginDto adminLoginDto,
+            HttpServletResponse response
+    ) {
+        LoginSuccessDto loginSuccessDto = authService.adminLogin(adminLoginDto, response);
+        return ApiResult.ok(loginSuccessDto, "관리자 로그인 성공");
+    }
 }

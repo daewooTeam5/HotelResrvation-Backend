@@ -9,18 +9,16 @@ import lombok.*;
 @Builder
 public class AddressDTO {    //주소 추가 입력
 
-    private String province;    //주,도
+    private String sigungu;
 
-    private String city;    //시,군,구
+    private String sido;
 
-    private String town;    //동,읍,면
+    private String town;
 
-    private String road;    //도로명
+    private String roadName;
 
-    private String roadNumber;  //도로명 숫자
+    private String postalCode;
 
-    private String postNumber;  //우편번호
-
-    private String detailPost;    //상세주소
+    private String detailAddress;
 
 }

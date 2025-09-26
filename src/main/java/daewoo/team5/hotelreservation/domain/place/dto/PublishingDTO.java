@@ -17,19 +17,30 @@ import java.util.List;
 @Builder
 public class PublishingDTO {
 
-    private String hotelName;   //숙소 이름
+    private String hotelName;
 
-    private List<AddressDTO> addressList;    //주소 가져오기
+    private String hotelType;
 
-    private List<String> images; //이미지
+    private String description;
 
-    private List<RoomDTO> rooms;    //숙소 여러개 넣을거라 리스트로 숙소 기본 정보 제공받기
+    private String checkIn;
 
-    private List<String> amenities; //편의시설 리스트
+    private String checkOut;
 
-    private String description;   //설명
+    private List<AddressDTO> addressList;
 
+    private List<String> images; // Base64 인코딩된 문자열 리스트
 
-    public PublishingDTO(String hotelName, List<PlaceAddress> addresses, List<ImageList> images, List<Room> rooms, String introduction, List<PlaceService> placeServices) {
-    }//따로 쓸 객체
+    private List<String> amenities; // 편의시설 이름 리스트
+
+    private List<DiscountDTO> discounts;
+
+    private List<RoomDTO> rooms;
+
+    private int CategoryId;
+
+    private Integer capacityRoom;
+
+    private boolean isPublic;
+
 }

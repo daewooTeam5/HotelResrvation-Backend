@@ -61,7 +61,10 @@ public class Places extends BaseTimeEntity {
     private LocalTime checkIn;   // 체크인 시간
 
     @Column(name = "check_out")
-    private LocalTime checkOut;  // 체크아웃 시간
+    private LocalTime checkOut;// 체크아웃 시간
+
+    @Column(name = "capacity_room")
+    private Integer capacityRoom;
 
     public enum Status {
         PENDING,

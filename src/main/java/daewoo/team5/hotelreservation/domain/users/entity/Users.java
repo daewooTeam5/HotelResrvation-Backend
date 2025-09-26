@@ -23,7 +23,7 @@ public class Users extends BaseTimeEntity {
     @Column(nullable = false, unique = true)
     private String userId;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String email;
 
     @Column(nullable = true, length = 255)
@@ -36,15 +36,13 @@ public class Users extends BaseTimeEntity {
     private String phone;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "ENUM('customer', 'hotel_owner', 'admin') DEFAULT 'customer'")
+    @Column(nullable = false, columnDefinition = "ENUM('customer', 'hotel_owner', 'admin', 'hotel_admin', 'user_admin') DEFAULT 'customer'")
     private Role role;
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('active', 'inactive', 'banned') DEFAULT 'active'")
     private Status status;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 
     @Column(nullable = false)
     @UpdateTimestamp
