@@ -22,16 +22,6 @@ import java.util.Optional;
 public interface ReservationRepository extends JpaRepository<Reservation, Long>,
         JpaSpecificationExecutor<Reservation> {
 
-    // 예약 + 결제 조인 단건 조회
-
-    Optional<Reservation> findTop1ByRoom_Place_IdAndGuest_IdOrderByCreatedAtDesc(Long placeId, Long guestId);
-
-    // 기존 결제 포함 단건 조회
-    @Query("SELECT r FROM Reservation r " +
-            "LEFT JOIN FETCH Payment p ON p.reservation = r " +
-            "WHERE r.reservationId = :reservationId")
-    Optional<Reservation> findByIdWithPayments(@Param("reservationId") Long reservationId);
-
     // 소유자 단건 조회
     @Query("SELECT r FROM Reservation r " +
             "JOIN r.room rm " +

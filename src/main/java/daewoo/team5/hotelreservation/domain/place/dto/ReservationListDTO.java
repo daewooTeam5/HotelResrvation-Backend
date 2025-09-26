@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ReservationListDTO {
     private Long reservationId;
+    private String orderId;
     private String guestName;       // 예약자 이름 (회원 or 비회원)
     private String roomType;        // 객실 유형
     private String status;          // 예약 상태

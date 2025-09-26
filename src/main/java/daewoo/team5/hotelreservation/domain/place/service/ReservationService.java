@@ -55,6 +55,7 @@ public class ReservationService {
     private ReservationListDTO toListDTO(Reservation r) {
         return ReservationListDTO.builder()
                 .reservationId(r.getReservationId())
+                .orderId(r.getOrderId())
                 .guestName(r.getGuest() != null
                         ? (r.getGuest().getUsers() != null
                         ? r.getGuest().getUsers().getName()
