@@ -100,4 +100,24 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getPaymentMethodStats(ownerId, startDate, endDate));
     }
 
+    @GetMapping("/customers/new/today")
+    @AuthUser
+    public ResponseEntity<TodayNewGuestDTO> getTodayNewGuests(UserProjection projection) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getTodayNewGuests(ownerId));
+    }
+
+    @GetMapping("/customers/return/today")
+    @AuthUser
+    public ResponseEntity<TodayReturnGuestDTO> getTodayReturnGuests(UserProjection projection) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getTodayReturnGuests(ownerId));
+    }
+
+    @GetMapping("/customers/stay-duration/monthly")
+    @AuthUser
+    public ResponseEntity<StayDurationDTO> getAvgStayDuration(UserProjection projection) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getAvgStayDuration(ownerId));
+    }
 }

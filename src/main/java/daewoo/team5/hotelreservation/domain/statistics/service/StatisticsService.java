@@ -163,4 +163,61 @@ public class StatisticsService {
                 .toList();
     }
 
+    public TodayNewGuestDTO getTodayNewGuests(Long ownerId) {
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+
+        long todayNewGuests = reservationRepository.countNewGuestsByOwnerAndCreatedAtBetween(
+                ownerId, startOfDay, endOfDay
+        );
+
+        LocalDate yesterday = today.minusDays(1);
+        LocalDateTime yesterdayStart = yesterday.atStartOfDay();
+        LocalDateTime yesterdayEnd = yesterday.atTime(23, 59, 59);
+
+        long yesterdayNewGuests = reservationRepository.countNewGuestsByOwnerAndCreatedAtBetween(
+                ownerId, yesterdayStart, yesterdayEnd
+        );
+
+        double growthRate = yesterdayNewGuests > 0
+                ? ((double)(todayNewGuests - yesterdayNewGuests) / yesterdayNewGuests) * 100
+                : (todayNewGuests > 0 ? 100.0 : 0.0);
+
+        return new TodayNewGuestDTO(todayNewGuests, growthRate);
+    }
+
+    public TodayReturnGuestDTO getTodayReturnGuests(Long ownerId) {
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+
+        long todayReturn = reservationRepository.countTodayReturnGuests(ownerId, today);
+        long yesterdayReturn = reservationRepository.countTodayReturnGuests(ownerId, yesterday);
+
+        double growthRate = yesterdayReturn > 0
+                ? ((double)(todayReturn - yesterdayReturn) / yesterdayReturn) * 100
+                : (todayReturn > 0 ? 100.0 : 0.0);
+
+        return new TodayReturnGuestDTO(todayReturn, growthRate);
+    }
+
+    public StayDurationDTO getAvgStayDuration(Long ownerId) {
+        LocalDate now = LocalDate.now();
+        int thisYear = now.getYear();
+        int thisMonth = now.getMonthValue();
+
+        // 이번 달 평균
+        Double thisMonthAvg = reservationRepository.findAvgStayDurationByOwnerAndMonth(ownerId, thisYear, thisMonth);
+        if (thisMonthAvg == null) thisMonthAvg = 0.0;
+
+        // 전월 평균
+        LocalDate lastMonth = now.minusMonths(1);
+        Double lastMonthAvg = reservationRepository.findAvgStayDurationByOwnerAndMonth(ownerId, lastMonth.getYear(), lastMonth.getMonthValue());
+        if (lastMonthAvg == null) lastMonthAvg = 0.0;
+
+        // 증감률 계산
+        double growthRate = (lastMonthAvg == 0) ? 0 : ((thisMonthAvg - lastMonthAvg) / lastMonthAvg) * 100;
+
+        return new StayDurationDTO(thisMonthAvg, growthRate);
+    }
 }

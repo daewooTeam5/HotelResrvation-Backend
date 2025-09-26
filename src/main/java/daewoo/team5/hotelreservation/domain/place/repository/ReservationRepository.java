@@ -280,4 +280,47 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
                                            @Param("startDate") LocalDate startDate,
                                            @Param("endDate") LocalDate endDate);
 
+    /**
+     * 특정 숙소(ownerId) 기준, targetDate 날짜에 최초 예약한 신규 고객 수
+     * - 해당 날짜에 예약을 한 고객 중
+     * - targetDate 이전에는 예약한 적이 없는 고객만 카운트
+     */
+    @Query("SELECT COUNT(r) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place pl " +
+            "WHERE pl.owner.id = :ownerId " +
+            "AND r.createdAt BETWEEN :start AND :end")
+    long countNewGuestsByOwnerAndCreatedAtBetween(
+            @Param("ownerId") Long ownerId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    // ✅ 오늘 재방문 고객 수
+    @Query("SELECT COUNT(DISTINCT r.guest.id) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND FUNCTION('DATE', r.createdAt) = :date " +
+            "AND (SELECT COUNT(r2) FROM Reservation r2 " +
+            "     WHERE r2.guest.id = r.guest.id " +
+            "     AND r2.room.place.id = p.id " +
+            "     AND r2.createdAt < r.createdAt) > 0")
+    long countTodayReturnGuests(@Param("ownerId") Long ownerId,
+                                @Param("date") LocalDate date);
+
+    @Query("SELECT AVG(DATEDIFF(r.resevEnd, r.resevStart)) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND YEAR(r.resevStart) = :year " +
+            "AND MONTH(r.resevStart) = :month " +
+            "AND r.status = 'confirmed' " +
+            "AND r.paymentStatus = 'paid'")
+    Double findAvgStayDurationByOwnerAndMonth(@Param("ownerId") Long ownerId,
+                                              @Param("year") int year,
+                                              @Param("month") int month);
+
 }
