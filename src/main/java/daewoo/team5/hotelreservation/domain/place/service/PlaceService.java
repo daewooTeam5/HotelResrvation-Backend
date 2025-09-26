@@ -1,15 +1,16 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
 import daewoo.team5.hotelreservation.domain.place.dto.PlaceDetailResponse;
-import daewoo.team5.hotelreservation.domain.place.projection.PlaceDetailProjection;
-import daewoo.team5.hotelreservation.domain.place.projection.PlaceItemInfomation;
-import daewoo.team5.hotelreservation.domain.place.projection.PlaceServiceProjection;
-import daewoo.team5.hotelreservation.domain.place.projection.RoomInfo;
+import daewoo.team5.hotelreservation.domain.place.dto.PlaceInfoProjection;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
+import daewoo.team5.hotelreservation.domain.place.projection.*;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +44,36 @@ public class PlaceService {
         List<RoomInfo> rooms = placeRepository.findRoomsByPlace(placeId, startDate, endDate);
         List<PlaceServiceProjection> services = placeRepository.findPlaceServices(placeId);
         return new PlaceDetailResponse(detail, images, rooms, services);
+    }
+
+    public Page<AdminPlaceProjection> getAdminPlace(
+            String sido,
+            String sigungu,
+            String approvalStatus,
+            String ownerName,
+            String placeName,
+            int start
+    ) {
+        Pageable pageable = PageRequest.of(start, 10);
+
+        Places.Status status = null;
+        if (approvalStatus != null && !approvalStatus.isEmpty()) {
+            status = Places.Status.valueOf(approvalStatus.toUpperCase());
+        }
+
+        return placeRepository.searchAdminPlaces(sido, sigungu, status, ownerName, placeName, pageable);
+    }
+
+    @Transactional
+    public void updatePlaceStatus(Long placeId, Places.Status status) {
+        Places place = placeRepository.findById(placeId)
+                .orElseThrow(() -> new IllegalArgumentException("숙소를 찾을 수 없습니다. ID=" + placeId));
+        place.setStatus(status);
+        placeRepository.save(place);
+    }
+
+    public PlaceInfoProjection getPlaceInfo(Long placeId) {
+        return placeRepository.findPlaceInfo(placeId);
     }
 
 }

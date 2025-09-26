@@ -1,10 +1,8 @@
 package daewoo.team5.hotelreservation.domain.place.repository;
 
+import daewoo.team5.hotelreservation.domain.place.dto.PlaceInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
-import daewoo.team5.hotelreservation.domain.place.projection.PlaceDetailProjection;
-import daewoo.team5.hotelreservation.domain.place.projection.PlaceItemInfomation;
-import daewoo.team5.hotelreservation.domain.place.projection.PlaceServiceProjection;
-import daewoo.team5.hotelreservation.domain.place.projection.RoomInfo;
+import daewoo.team5.hotelreservation.domain.place.projection.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -57,6 +55,14 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                 AND (:address IS NULL OR pa.sido = :address)
                 AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
                 AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+                AND COALESCE(
+                        (SELECT MIN(dpr.available_room)
+                         FROM daily_place_reservation dpr
+                         WHERE dpr.room_id = r.id
+                           AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
+                        ),
+                        r.capacity_room
+                    ) >= :room
                 AND (:placeCategory IS NULL OR pc.name = :placeCategory)
                 AND (:minRating IS NULL OR p.avg_rating >= :minRating)
                 AND NOT EXISTS (
@@ -76,33 +82,41 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             GROUP BY p.id, p.name, p.avg_rating, pa.sido, pc.name
             """,
             countQuery = """
-    WITH RECURSIVE date_range AS (
-        SELECT CAST(:checkIn AS DATE) AS date
-        UNION ALL
-        SELECT DATE_ADD(date, INTERVAL 1 DAY) 
-        FROM date_range 
-        WHERE date < CAST(:checkOut AS DATE)
-    )
-    SELECT COUNT(DISTINCT p.id)
-    FROM places p
-    INNER JOIN place_address pa ON p.id = pa.place_id
-    INNER JOIN place_category pc ON p.category_id = pc.id
-    INNER JOIN room r ON r.place_id = p.id
-    WHERE
-        (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
-        AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
-        AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
-        AND (:placeCategory IS NULL OR pc.name = :placeCategory)
-        AND (:minRating IS NULL OR p.avg_rating >= :minRating)
-        AND NOT EXISTS (
-            SELECT 1
-            FROM date_range d
-            JOIN daily_place_reservation dpr 
-                 ON dpr.room_id = r.id 
-                AND dpr.date = d.date
-            WHERE dpr.available_room <= 0
-        )
-    """,
+                    WITH RECURSIVE date_range AS (
+                        SELECT CAST(:checkIn AS DATE) AS date
+                        UNION ALL
+                        SELECT DATE_ADD(date, INTERVAL 1 DAY) 
+                        FROM date_range 
+                        WHERE date < CAST(:checkOut AS DATE)
+                    )
+                    SELECT COUNT(DISTINCT p.id)
+                    FROM places p
+                    INNER JOIN place_address pa ON p.id = pa.place_id
+                    INNER JOIN place_category pc ON p.category_id = pc.id
+                    INNER JOIN room r ON r.place_id = p.id
+                    WHERE
+                        (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
+                        AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
+                        AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+                        AND (:placeCategory IS NULL OR pc.name = :placeCategory)
+                        AND (:minRating IS NULL OR p.avg_rating >= :minRating)
+                        AND COALESCE(
+                                (SELECT MIN(dpr.available_room)
+                                 FROM daily_place_reservation dpr
+                                 WHERE dpr.room_id = r.id
+                                   AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
+                                ),
+                                r.capacity_room
+                            ) >= :room
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM date_range d
+                            JOIN daily_place_reservation dpr 
+                                 ON dpr.room_id = r.id 
+                                AND dpr.date = d.date
+                            WHERE dpr.available_room <= 0
+                        )
+                    """,
             nativeQuery = true)
     Page<PlaceItemInfomation> findAllSearchPlaceInfo(
             @Param("name") String name,
@@ -144,9 +158,9 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
               WHERE f.domain = 'place'
                 AND f.domain_file_id = :placeId
                 AND f.filetype = 'image'
-
+            
               UNION ALL
-
+            
               SELECT f.url
               FROM file f
               JOIN room r ON f.domain = 'room' AND f.domain_file_id = r.id
@@ -156,46 +170,88 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
     List<String> findPlaceImages(@Param("placeId") Long placeId);
 
     @Query(value = """
-        SELECT
-          r.id AS roomId,
-          r.room_type AS roomType,
-          r.bed_type AS bedType,
-          r.capacity_people AS capacityPeople,
-          r.capacity_room AS capacityRoom,
-          r.price AS price,
-          r.status AS status,
-          COALESCE(MIN(dpr.available_room), r.capacity_room) AS availableRoom,
-          GROUP_CONCAT(f.url SEPARATOR ',') AS images
-      FROM room r
-      LEFT JOIN file f
-             ON f.domain = 'room'
-            AND f.domain_file_id = r.id
-            AND f.filetype = 'image'
-      LEFT JOIN daily_place_reservation dpr
-             ON dpr.room_id = r.id
-            AND dpr.date BETWEEN :startDate AND :endDate
-      WHERE r.place_id = :placeId
-      GROUP BY r.id, r.room_type, r.bed_type, r.capacity_people,
-               r.capacity_room, r.price, r.status;
-    """, nativeQuery = true)
+                SELECT
+                  r.id AS roomId,
+                  r.room_type AS roomType,
+                  r.bed_type AS bedType,
+                  r.capacity_people AS capacityPeople,
+                  r.capacity_room AS capacityRoom,
+                  r.price AS price,
+                  r.status AS status,
+                  COALESCE(MIN(dpr.available_room), r.capacity_room) AS availableRoom,
+                  GROUP_CONCAT(f.url SEPARATOR ',') AS images
+              FROM room r
+              LEFT JOIN file f
+                     ON f.domain = 'room'
+                    AND f.domain_file_id = r.id
+                    AND f.filetype = 'image'
+              LEFT JOIN daily_place_reservation dpr
+                     ON dpr.room_id = r.id
+                    AND dpr.date BETWEEN :startDate AND :endDate
+              WHERE r.place_id = :placeId
+              GROUP BY r.id, r.room_type, r.bed_type, r.capacity_people,
+                       r.capacity_room, r.price, r.status;
+            """, nativeQuery = true)
     List<RoomInfo> findRoomsByPlace(
             @Param("placeId") Long placeId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
     @Query(value = """
-        SELECT s.id AS id,
-               s.name AS name,
-               s.icon AS icon
-        FROM place_amenity ps
-        INNER JOIN amenity s ON ps.amenity_id = s.id
-        WHERE ps.place_id = :placeId
-        """, nativeQuery = true)
+            SELECT s.id AS id,
+                   s.name AS name,
+                   s.icon AS icon
+            FROM place_amenity ps
+            INNER JOIN amenity s ON ps.amenity_id = s.id
+            WHERE ps.place_id = :placeId
+            """, nativeQuery = true)
     List<PlaceServiceProjection> findPlaceServices(@Param("placeId") Long placeId);
+
 
     List<Places> findByOwnerId(Long ownerId);
     Optional<Places> findByOwner_Id(Long ownerId);
+
+    Optional<Places> findByOwnerId(Long ownerId);
+
+    @Query("""
+        SELECT p.id AS id,
+               p.name AS name,
+               u.id AS ownerId,
+               u.name AS ownerName,
+               a.sido AS sido,
+               a.sigungu AS sigungu,
+               c.name AS categoryName,
+               p.status AS status
+        FROM Places p
+        JOIN p.owner u
+        JOIN PlaceAddress a ON a.place = p
+        JOIN p.category c
+        WHERE (:sido IS NULL OR a.sido = :sido)
+          AND (:sigungu IS NULL OR a.sigungu = :sigungu)
+          AND (:approvalStatus IS NULL OR p.status = :approvalStatus)
+          AND (:ownerName IS NULL OR u.name LIKE %:ownerName%)
+          AND (:placeName IS NULL OR p.name LIKE %:placeName%)
+        """)
+    Page<AdminPlaceProjection> searchAdminPlaces(
+            @Param("sido") String sido,
+            @Param("sigungu") String sigungu,
+            @Param("approvalStatus") Places.Status approvalStatus,
+            @Param("ownerName") String ownerName,
+            @Param("placeName") String placeName,
+            Pageable pageable
+    );
+
+    @Query("SELECT p.id as placeId, p.name as placeName, p.description as description, " +
+            "p.status as status, p.isPublic as isPublic, p.avgRating as avgRating, p.reviewCount as reviewCount, p.minPrice as minPrice, " +
+            "pa.sido as sido, pa.sigungu as sigungu, pa.roadName as roadName, pa.detailAddress as detailAddress, f.url as fileUrl " +
+            "FROM Places p " +
+            "LEFT JOIN PlaceAddress pa ON pa.place.id = p.id " +
+            "LEFT JOIN File f ON f.domain = 'place' AND f.domainFileId = p.id " +
+            "WHERE p.id = :placeId")
+    PlaceInfoProjection findPlaceInfo(@Param("placeId") Long placeId);
+
 }
+
 
 
 

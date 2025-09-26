@@ -3,6 +3,7 @@ package daewoo.team5.hotelreservation.domain.place.service;
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
+import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
 import daewoo.team5.hotelreservation.domain.place.dto.*;
@@ -24,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -36,12 +38,25 @@ public class ReservationService {
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     private final TossPaymentService tossPaymentService;
     private final GuestRepository guestRepository;
+    /**
+     * ✅ [추가] 리뷰 작성 가능한 예약 목록을 조회하는 서비스 로직
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<ReviewableReservationResponse> getReviewableReservations(Long placeId, UserProjection user) {
+        if (user == null) {
+            return List.of(); // 비로그인 시 빈 목록 반환
+        }
+        GuestEntity guest = guestRepository.findByUsersId(user.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "투숙객 정보를 찾을 수 없습니다.","투숙객 정보를 찾을 수 없습니다."));
 
+        return reservationRepository.findReviewableReservations(guest.getId(), placeId);
+    }
     // ===================== 변환 메서드 =====================
 
     private ReservationListDTO toListDTO(Reservation r) {
         return ReservationListDTO.builder()
                 .reservationId(r.getReservationId())
+                .orderId(r.getOrderId())
                 .guestName(r.getGuest() != null
                         ? (r.getGuest().getUsers() != null
                         ? r.getGuest().getUsers().getName()
@@ -307,4 +322,9 @@ public class ReservationService {
                 Reservation.ReservationStatus.checked_out
         );
     }
+
+    public List<ReservationInfoProjection> getReservationsByPlaceId(Long placeId) {
+        return reservationRepository.findByRoom_Place_Id(placeId);
+    }
+
 }
