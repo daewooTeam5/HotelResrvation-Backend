@@ -8,10 +8,14 @@ import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
 import daewoo.team5.hotelreservation.domain.payment.dto.DashboardSummary;
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
+import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.service.DashboardService;
 import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
+import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
+import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
+import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
@@ -35,6 +39,9 @@ public class PaymentController {
     private final UsersRepository usersRepository;
     private final PaymentService paymentService;
     private final DashboardService dashboardService;
+    private final TossPaymentService tossPaymentService;
+    private final PaymentRepository paymentRepository;
+    private final ReservationRepository reservationRepository;
 
 
     @GetMapping("/reservation/{id}")
@@ -50,6 +57,21 @@ public class PaymentController {
             PaymentConfirmRequestDto dto
     ) {
         return ApiResult.created(paymentService.confirmPayment(dto), "결제 완료");
+    }
+    // cancel
+    @PostMapping("/{id}/cancel")
+    public ApiResult<Boolean> cancelPayment(
+            @PathVariable("id") String paymentKey
+    ) {
+        TossCancelResponse response = tossPaymentService.cancelPayment(paymentKey, "고객 예약 취소");
+        Payment payment = paymentRepository.findByPaymentKey(paymentKey).orElseThrow();
+        payment.setStatus(Payment.PaymentStatus.cancelled);
+        Reservation reservation = reservationRepository.findByOrderId(payment.getOrderId()).orElseThrow();
+        reservation.setStatus(Reservation.ReservationStatus.cancelled);
+        reservation.setPaymentStatus(Reservation.ReservationPaymentStatus.refunded);
+        reservationRepository.save(reservation);
+        paymentRepository.save(payment);
+        return ApiResult.ok(true, "결제 취소 완료");
     }
 
     @PostMapping("/process")

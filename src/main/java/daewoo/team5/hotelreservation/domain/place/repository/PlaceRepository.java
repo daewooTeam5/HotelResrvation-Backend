@@ -54,6 +54,14 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                 AND (:address IS NULL OR pa.sido = :address)
                 AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
                 AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+                AND COALESCE(
+                        (SELECT MIN(dpr.available_room)
+                         FROM daily_place_reservation dpr
+                         WHERE dpr.room_id = r.id
+                           AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
+                        ),
+                        r.capacity_room
+                    ) >= :room
                 AND (:placeCategory IS NULL OR pc.name = :placeCategory)
                 AND (:minRating IS NULL OR p.avg_rating >= :minRating)
                 AND NOT EXISTS (
@@ -91,6 +99,14 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                         AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
                         AND (:placeCategory IS NULL OR pc.name = :placeCategory)
                         AND (:minRating IS NULL OR p.avg_rating >= :minRating)
+                        AND COALESCE(
+                                (SELECT MIN(dpr.available_room)
+                                 FROM daily_place_reservation dpr
+                                 WHERE dpr.room_id = r.id
+                                   AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
+                                ),
+                                r.capacity_room
+                            ) >= :room
                         AND NOT EXISTS (
                             SELECT 1
                             FROM date_range d

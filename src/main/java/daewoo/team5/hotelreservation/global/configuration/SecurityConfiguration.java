@@ -65,7 +65,9 @@ public class SecurityConfiguration {
                                 "/api/v1/autocomplete",
                                 "/api/v1/statistics/**",
                                 "/api/v1/payment/**",
-                                "/images/**"
+                                "/images/**",
+                                "/first",
+                                "/bye"
                         ).permitAll()  // 허용 경로
                         .anyRequest().authenticated()
                 )

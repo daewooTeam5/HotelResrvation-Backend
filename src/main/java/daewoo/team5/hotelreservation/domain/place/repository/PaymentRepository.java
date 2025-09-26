@@ -3,6 +3,9 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment.PaymentStatus;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
+import daewoo.team5.hotelreservation.domain.place.repository.projection.PaymentSummaryProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +15,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
+
+    Optional<Payment> findByPaymentKey(String paymentKey);
+
+    Page<Payment> findAllByReservation_Guest_Id(Long guestId, Pageable pageable);
 
     @Modifying
     @Transactional
@@ -104,4 +111,59 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "ORDER BY COUNT(r) DESC")
     List<Object[]> getTop5HotelsByReservations();
 
+    // 결제 요약 Projection: 게스트 기준 + 숙소 첫 번째 이미지
+    @Query(value = """
+        SELECT 
+            p.id                            AS paymentId,
+            p.payment_key                   AS paymentKey,
+            p.order_id                      AS orderId,
+            p.status                        AS status,
+            p.method                        AS method,
+            p.amount                        AS amount,
+            p.transaction_date              AS transactionDate,
+
+            r.reservation_id                AS reservationId,
+            r.resev_start                   AS resevStart,
+            r.resev_end                     AS resevEnd,
+
+            g.id                            AS guestId,
+            g.first_name                    AS guestFirstName,
+            g.last_name                     AS guestLastName,
+
+            pl.id                           AS placeId,
+            pl.name                         AS placeName,
+
+            rm.id                           AS roomId,
+            rm.room_number                  AS roomNumber,
+            rm.room_type                    AS roomType,
+
+            img.image_url                   AS firstImageUrl
+        FROM payments p
+        JOIN reservations r ON p.reservation_id = r.reservation_id
+        JOIN guest g         ON r.user_id = g.id
+        JOIN room rm         ON r.room_id = rm.id
+        JOIN places pl       ON rm.place_id = pl.id
+        LEFT JOIN (
+            SELECT f.domain_file_id AS room_id, f.url AS image_url
+            FROM file f
+            JOIN (
+                SELECT domain_file_id, MIN(id) AS min_id
+                FROM file
+                WHERE domain = 'room' AND filetype = 'image'
+                GROUP BY domain_file_id
+            ) first_file ON first_file.domain_file_id = f.domain_file_id AND f.id = first_file.min_id
+            WHERE f.domain = 'room' AND f.filetype = 'image'
+        ) img ON img.room_id = rm.id
+        WHERE g.id = :guestId
+        ORDER BY p.transaction_date DESC
+    """,
+    countQuery = """
+        SELECT COUNT(*)
+        FROM payments p
+        JOIN reservations r ON p.reservation_id = r.reservation_id
+        JOIN guest g         ON r.user_id = g.id
+        WHERE g.id = :guestId
+    """,
+    nativeQuery = true)
+    Page<PaymentSummaryProjection> findPaymentSummariesByGuestId(@Param("guestId") Long guestId, Pageable pageable);
 }

@@ -190,19 +190,19 @@ public class ReservationService {
         r.setStatus(Reservation.ReservationStatus.cancelled);
         r.setPaymentStatus(Reservation.ReservationPaymentStatus.refunded);
 
-        payment.setStatus(Payment.PaymentStatus.refunded);
+        payment.setStatus(Payment.PaymentStatus.cancelled);
         if (response != null && response.getCancels() != null && !response.getCancels().isEmpty()) {
             TossCancelResponse.CancelHistory lastCancel = response.getCancels().get(response.getCancels().size() - 1);
             payment.setAmount(lastCancel.getCancelAmount()); // 환불 금액 반영
-            payment.setTransactionDate(lastCancel.getCanceledAt().toLocalDateTime()); // 환불 시각 반영
+//            payment.setTransactionDate(lastCancel.getCanceledAt().toLocalDateTime()); // 환불 시각 반영
         }
         paymentRepository.save(payment);
 
-        // ✅ 재고 복구
-        if (r.getRoom() != null && r.getResevStart() != null && r.getResevEnd() != null) {
-            adjustInventory(r.getRoom().getId(), r.getResevStart(), r.getResevEnd(), +1);
-        }
-
+//        // ✅ 재고 복구
+//        if (r.getRoom() != null && r.getResevStart() != null && r.getResevEnd() != null) {
+//            adjustInventory(r.getRoom().getId(), r.getResevStart(), r.getResevEnd(), +1);
+//        }
+//
         Reservation saved = reservationRepository.save(r);
         return toDetailDTO(saved);
     }

@@ -25,4 +25,5 @@ public class ReservationRequestDto {
     private Long paymentAmount;
     private String request;
     private Long roomId;
+    private Integer roomCount;
 }
