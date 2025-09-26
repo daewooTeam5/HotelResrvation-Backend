@@ -228,4 +228,56 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
                                                    @Param("startDate") LocalDate startDate,
                                                    @Param("endDate") LocalDate endDate);
 
+    // 일별
+    @Query(value = "SELECT DATE(r.resev_start) AS label, COUNT(*) " +
+            "FROM reservations r " +
+            "JOIN room rm ON r.room_id = rm.id " +
+            "JOIN places pl ON rm.place_id = pl.id " +
+            "WHERE pl.owner_id = :ownerId " +
+            "AND r.resev_start BETWEEN :startDate AND :endDate " +
+            "GROUP BY DATE(r.resev_start) " +
+            "ORDER BY DATE(r.resev_start)", nativeQuery = true)
+    List<Object[]> countDailyReservations(@Param("ownerId") Long ownerId,
+                                          @Param("startDate") LocalDate startDate,
+                                          @Param("endDate") LocalDate endDate);
+
+    // 주별 (연-주차 기준)
+    @Query(value = "SELECT DATE_FORMAT(r.resev_start, '%x-%v') AS label, COUNT(*) " +
+            "FROM reservations r " +
+            "JOIN room rm ON r.room_id = rm.id " +
+            "JOIN places pl ON rm.place_id = pl.id " +
+            "WHERE pl.owner_id = :ownerId " +
+            "AND r.resev_start BETWEEN :startDate AND :endDate " +
+            "GROUP BY DATE_FORMAT(r.resev_start, '%x-%v') " +
+            "ORDER BY label", nativeQuery = true)
+    List<Object[]> countWeeklyReservations(@Param("ownerId") Long ownerId,
+                                           @Param("startDate") LocalDate startDate,
+                                           @Param("endDate") LocalDate endDate);
+
+    // 월별
+    @Query(value = "SELECT DATE_FORMAT(r.resev_start, '%Y-%m') AS label, COUNT(*) " +
+            "FROM reservations r " +
+            "JOIN room rm ON r.room_id = rm.id " +
+            "JOIN places pl ON rm.place_id = pl.id " +
+            "WHERE pl.owner_id = :ownerId " +
+            "AND r.resev_start BETWEEN :startDate AND :endDate " +
+            "GROUP BY DATE_FORMAT(r.resev_start, '%Y-%m') " +
+            "ORDER BY label", nativeQuery = true)
+    List<Object[]> countMonthlyReservations(@Param("ownerId") Long ownerId,
+                                            @Param("startDate") LocalDate startDate,
+                                            @Param("endDate") LocalDate endDate);
+
+    // 연도별
+    @Query(value = "SELECT YEAR(r.resev_start) AS label, COUNT(*) " +
+            "FROM reservations r " +
+            "JOIN room rm ON r.room_id = rm.id " +
+            "JOIN places pl ON rm.place_id = pl.id " +
+            "WHERE pl.owner_id = :ownerId " +
+            "AND r.resev_start BETWEEN :startDate AND :endDate " +
+            "GROUP BY YEAR(r.resev_start) " +
+            "ORDER BY label", nativeQuery = true)
+    List<Object[]> countYearlyReservations(@Param("ownerId") Long ownerId,
+                                           @Param("startDate") LocalDate startDate,
+                                           @Param("endDate") LocalDate endDate);
+
 }

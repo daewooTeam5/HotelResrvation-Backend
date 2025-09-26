@@ -65,4 +65,39 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getCancelBreakdown(ownerId, startDate, endDate));
     }
 
+    @GetMapping("/reservation/trend")
+    @AuthUser
+    public ResponseEntity<List<ReservationTrendDTO>> getReservationTrend(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate,
+            @RequestParam String period // daily, weekly, monthly, yearly
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getReservationTrend(ownerId, startDate, endDate, period));
+    }
+
+    @GetMapping("/revenue/trend")
+    @AuthUser
+    public ResponseEntity<List<RevenueTrendDTO>> getRevenueTrend(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate,
+            @RequestParam(defaultValue = "daily") String period
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getRevenueTrend(ownerId, startDate, endDate, period));
+    }
+
+    @GetMapping("/payment/methods")
+    @AuthUser
+    public ResponseEntity<List<PaymentMethodStatsDTO>> getPaymentMethodStats(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getPaymentMethodStats(ownerId, startDate, endDate));
+    }
+
 }
