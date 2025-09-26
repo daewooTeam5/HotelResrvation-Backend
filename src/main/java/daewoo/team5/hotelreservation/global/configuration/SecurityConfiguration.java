@@ -61,12 +61,16 @@ public class SecurityConfiguration {
                                 "/images/**",
                                 "/hotel/publishing/register",
                                 "/api/v1/owner/rooms/**",
-                                "/api/v1/dashboard/**",
                                 "/api/v1/autocomplete",
                                 "/api/v1/statistics/**",
-                                "/api/v1/payment/**",
                                 "/images/**"
-                        ).permitAll()  // 허용 경로
+                        ).permitAll()
+                        .requestMatchers("/api/v1/payment/dashboard/**")
+                        .hasAnyRole("admin", "user_admin", "place_admin")
+                        .requestMatchers("/api/v1/admin/places/**")
+                        .hasAnyRole("admin", "place_admin")
+                        .requestMatchers("/api/v1/admin/**")
+                        .hasAnyRole("admin", "user_admin")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
