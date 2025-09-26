@@ -6,7 +6,11 @@ import daewoo.team5.hotelreservation.domain.place.dto.RoomDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.SearchDTO;
 import daewoo.team5.hotelreservation.domain.place.entity.*;
 import daewoo.team5.hotelreservation.domain.place.repository.*;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import daewoo.team5.hotelreservation.global.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -27,13 +31,15 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
     private final RoomRepository roomRepository;
     private final PlaceAddressRepository placeAddressRepository;
     private final ImageListRepository imageListRepository;
+    private final UsersRepository usersRepository;
 
     // 등록
-    public Places registerHotel(PublishingDTO dto) {
+    public Places registerHotel(PublishingDTO dto, UserProjection user) {
         // 1. 카테고리 조회
         PlaceCategory placeCategory = placeCategoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
-
+        // 유저 조회
+        Users users = usersRepository.findById(user.getId()).orElseThrow(UserNotFoundException::new);
         // 2. Places 엔티티 생성 및 저장
         Places place = Places.builder()
                 .name(dto.getHotelName())
@@ -42,6 +48,7 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
                 .checkIn(LocalTime.parse(dto.getCheckIn()))
                 .category(placeCategory)
                 .isPublic(dto.isPublic())
+                .owner(users)
                 .capacityRoom(dto.getCapacityRoom() != null ? dto.getCapacityRoom() : 1)
                 .build();
 

@@ -3,6 +3,8 @@ package daewoo.team5.hotelreservation.domain.place.controller;
 import daewoo.team5.hotelreservation.domain.place.dto.PublishingDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.SearchDTO;
 import daewoo.team5.hotelreservation.domain.place.service.PublishingService;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -23,8 +25,10 @@ public class PublishingController {//api리설트는 컨트롤러를 바꿔주�
 
     // 숙소 등록
     @PostMapping("/register")
-    public ApiResult<String> registerHotel(@RequestBody PublishingDTO publishingDTO) {
-        publishingService.registerHotel(publishingDTO);
+    @AuthUser
+    public ApiResult<String> registerHotel(@RequestBody PublishingDTO publishingDTO,
+                                           UserProjection user) {
+        publishingService.registerHotel(publishingDTO,user);
         return ApiResult.created(publishingDTO.getHotelName(),"숙소 등록 성공");
     }
 
