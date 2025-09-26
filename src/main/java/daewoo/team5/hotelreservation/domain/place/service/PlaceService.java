@@ -1,6 +1,7 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
 import daewoo.team5.hotelreservation.domain.place.dto.PlaceDetailResponse;
+import daewoo.team5.hotelreservation.domain.place.dto.PlaceInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.projection.*;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
@@ -70,5 +71,10 @@ public class PlaceService {
         place.setStatus(status);
         placeRepository.save(place);
     }
+
+    public PlaceInfoProjection getPlaceInfo(Long placeId) {
+        return placeRepository.findPlaceInfo(placeId);
+    }
+
 }
 

@@ -3,6 +3,7 @@ package daewoo.team5.hotelreservation.domain.place.service;
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
+import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
 import daewoo.team5.hotelreservation.domain.place.dto.*;
@@ -55,6 +56,7 @@ public class ReservationService {
     private ReservationListDTO toListDTO(Reservation r) {
         return ReservationListDTO.builder()
                 .reservationId(r.getReservationId())
+                .orderId(r.getOrderId())
                 .guestName(r.getGuest() != null
                         ? (r.getGuest().getUsers() != null
                         ? r.getGuest().getUsers().getName()
@@ -319,6 +321,10 @@ public class ReservationService {
                 placeId,
                 Reservation.ReservationStatus.checked_out
         );
+    }
+
+    public List<ReservationInfoProjection> getReservationsByPlaceId(Long placeId) {
+        return reservationRepository.findByRoom_Place_Id(placeId);
     }
 
 }

@@ -55,7 +55,7 @@ public class JwtProvider {
         log.info("Claims: {}", claims);
         Long userId = Long.valueOf(String.valueOf(subMap.get("id")));
 
-        return new UsernamePasswordAuthenticationToken(userId, null, List.of(new SimpleGrantedAuthority(role)));
+        return new UsernamePasswordAuthenticationToken(userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
     }
     // JWT 토큰 발급
     public <T> String generateToken(T data,long expirationTime) {

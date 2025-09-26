@@ -1,12 +1,13 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
 import daewoo.team5.hotelreservation.domain.payment.projection.RoomInfoProjection;
+import daewoo.team5.hotelreservation.domain.place.projection.AdminRoomInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -28,6 +29,10 @@ public class RoomService {
             e.printStackTrace();
             throw e; // 필요하면 다시 던지기
         }
+    }
+
+    public List<AdminRoomInfoProjection> getRoomsByPlaceId(Long placeId) {
+        return roomRepository.findByPlace_Id(placeId);
     }
 
 }

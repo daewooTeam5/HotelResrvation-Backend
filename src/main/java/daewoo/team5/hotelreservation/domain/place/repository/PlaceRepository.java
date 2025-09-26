@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.place.repository;
 
+import daewoo.team5.hotelreservation.domain.place.dto.PlaceInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.projection.*;
 import org.springframework.data.domain.Page;
@@ -235,6 +236,17 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             @Param("placeName") String placeName,
             Pageable pageable
     );
+
+    @Query("SELECT p.id as placeId, p.name as placeName, p.description as description, " +
+            "p.status as status, p.isPublic as isPublic, p.avgRating as avgRating, p.reviewCount as reviewCount, p.minPrice as minPrice, " +
+            "pa.sido as sido, pa.sigungu as sigungu, pa.roadName as roadName, pa.detailAddress as detailAddress, f.url as fileUrl " +
+            "FROM Places p " +
+            "LEFT JOIN PlaceAddress pa ON pa.place.id = p.id " +
+            "LEFT JOIN File f ON f.domain = 'place' AND f.domainFileId = p.id " +
+            "WHERE p.id = :placeId")
+    PlaceInfoProjection findPlaceInfo(@Param("placeId") Long placeId);
+
+
 }
 
 

@@ -6,4 +6,5 @@ public interface UserProjection {
     String getUserId();
     Long getId();
     String getRole();
+    String getStatus();
 }

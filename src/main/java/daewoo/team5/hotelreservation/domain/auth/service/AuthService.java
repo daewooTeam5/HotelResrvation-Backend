@@ -48,7 +48,7 @@ public class AuthService {
     public Users adminSignUp(SignUpRequest signUpRequest){
         signUpRequest.setAdminPassword(passwordEncoder.encode(signUpRequest.getAdminPassword()));
         return userRepository.save(Users.builder()
-                .email(null)
+                .email(signUpRequest.getAdminId() + "@daewoo.ac.kr")
                 .name(signUpRequest.getAdminName())
                 .userId(signUpRequest.getAdminId())
                 .password(signUpRequest.getAdminPassword())

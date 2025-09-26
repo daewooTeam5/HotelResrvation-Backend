@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment.PaymentStatus;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.repository.projection.PaymentSummaryProjection;
 import org.springframework.data.domain.Page;
@@ -166,4 +167,92 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     """,
     nativeQuery = true)
     Page<PaymentSummaryProjection> findPaymentSummariesByGuestId(@Param("guestId") Long guestId, Pageable pageable);
+           
+    List<PaymentInfoProjection> findByReservation_Room_Place_Id(Long placeId);
+    // ✅ 일별 매출
+    @Query(value = """
+    SELECT DATE(p.transaction_date) AS label, COALESCE(SUM(p.amount), 0) as revenue
+    FROM payments p
+    JOIN reservations r ON p.reservation_id = r.reservation_id
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    WHERE pl.owner_id = :ownerId
+      AND p.status = 'paid'
+      AND p.transaction_date BETWEEN :startDate AND :endDate
+    GROUP BY DATE(p.transaction_date)
+    ORDER BY DATE(p.transaction_date)
+    """, nativeQuery = true)
+    List<Object[]> findDailyRevenue(@Param("ownerId") Long ownerId,
+                                    @Param("startDate") LocalDateTime startDate,
+                                    @Param("endDate") LocalDateTime endDate);
+
+    // ✅ 주별 매출
+    @Query(value = """
+    SELECT YEARWEEK(p.transaction_date, 1) AS label, COALESCE(SUM(p.amount), 0) as revenue
+    FROM payments p
+    JOIN reservations r ON p.reservation_id = r.reservation_id
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    WHERE pl.owner_id = :ownerId
+      AND p.status = 'paid'
+      AND p.transaction_date BETWEEN :startDate AND :endDate
+    GROUP BY YEARWEEK(p.transaction_date, 1)
+    ORDER BY YEARWEEK(p.transaction_date, 1)
+    """, nativeQuery = true)
+    List<Object[]> findWeeklyRevenue(@Param("ownerId") Long ownerId,
+                                     @Param("startDate") LocalDateTime startDate,
+                                     @Param("endDate") LocalDateTime endDate);
+
+    // ✅ 월별 매출
+    @Query(value = """
+    SELECT DATE_FORMAT(p.transaction_date, '%Y-%m') AS label, COALESCE(SUM(p.amount), 0) as revenue
+    FROM payments p
+    JOIN reservations r ON p.reservation_id = r.reservation_id
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    WHERE pl.owner_id = :ownerId
+      AND p.status = 'paid'
+      AND p.transaction_date BETWEEN :startDate AND :endDate
+    GROUP BY DATE_FORMAT(p.transaction_date, '%Y-%m')
+    ORDER BY DATE_FORMAT(p.transaction_date, '%Y-%m')
+    """, nativeQuery = true)
+    List<Object[]> findMonthlyRevenue(@Param("ownerId") Long ownerId,
+                                      @Param("startDate") LocalDateTime startDate,
+                                      @Param("endDate") LocalDateTime endDate);
+
+    // ✅ 연도별 매출
+    @Query(value = """
+    SELECT YEAR(p.transaction_date) AS label, COALESCE(SUM(p.amount), 0) as revenue
+    FROM payments p
+    JOIN reservations r ON p.reservation_id = r.reservation_id
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    WHERE pl.owner_id = :ownerId
+      AND p.status = 'paid'
+      AND p.transaction_date BETWEEN :startDate AND :endDate
+    GROUP BY YEAR(p.transaction_date)
+    ORDER BY YEAR(p.transaction_date)
+    """, nativeQuery = true)
+    List<Object[]> findYearlyRevenue(@Param("ownerId") Long ownerId,
+                                     @Param("startDate") LocalDateTime startDate,
+                                     @Param("endDate") LocalDateTime endDate);
+
+    // ✅ 결제 수단별 매출/건수 통계
+    @Query(value = """
+    SELECT p.method AS method,
+           COUNT(*) AS count,
+           COALESCE(SUM(p.amount), 0) AS totalAmount
+    FROM payments p
+    JOIN reservations r ON p.reservation_id = r.reservation_id
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    WHERE pl.owner_id = :ownerId
+      AND p.status = 'paid'
+      AND p.transaction_date BETWEEN :startDate AND :endDate
+    GROUP BY p.method
+    """, nativeQuery = true)
+    List<Object[]> findPaymentMethodStats(@Param("ownerId") Long ownerId,
+                                          @Param("startDate") LocalDateTime startDate,
+                                          @Param("endDate") LocalDateTime endDate);
+
 }
