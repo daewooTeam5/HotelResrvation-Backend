@@ -1,9 +1,6 @@
 package daewoo.team5.hotelreservation.domain.statistics.controller;
 
-import daewoo.team5.hotelreservation.domain.statistics.dto.CancelRateDTO;
-import daewoo.team5.hotelreservation.domain.statistics.dto.MonthlyReservationDTO;
-import daewoo.team5.hotelreservation.domain.statistics.dto.RoomRevenueDTO;
-import daewoo.team5.hotelreservation.domain.statistics.dto.TodayReservationDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.*;
 import daewoo.team5.hotelreservation.domain.statistics.service.StatisticsService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
@@ -57,4 +54,104 @@ public class StatisticsController {
         return ResponseEntity.ok(statisticsService.getRoomRevenue(ownerId, startDate, endDate));
     }
 
+    @GetMapping("/reservation/cancel-rate/breakdown")
+    @AuthUser
+    public ResponseEntity<CancelBreakdownDTO> getCancelBreakdown(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getCancelBreakdown(ownerId, startDate, endDate));
+    }
+
+    @GetMapping("/reservation/trend")
+    @AuthUser
+    public ResponseEntity<List<ReservationTrendDTO>> getReservationTrend(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate,
+            @RequestParam String period // daily, weekly, monthly, yearly
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getReservationTrend(ownerId, startDate, endDate, period));
+    }
+
+    @GetMapping("/revenue/trend")
+    @AuthUser
+    public ResponseEntity<List<RevenueTrendDTO>> getRevenueTrend(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate,
+            @RequestParam(defaultValue = "daily") String period
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getRevenueTrend(ownerId, startDate, endDate, period));
+    }
+
+    @GetMapping("/payment/methods")
+    @AuthUser
+    public ResponseEntity<List<PaymentMethodStatsDTO>> getPaymentMethodStats(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getPaymentMethodStats(ownerId, startDate, endDate));
+    }
+
+    @GetMapping("/customers/new/today")
+    @AuthUser
+    public ResponseEntity<TodayNewGuestDTO> getTodayNewGuests(UserProjection projection) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getTodayNewGuests(ownerId));
+    }
+
+    @GetMapping("/customers/return/today")
+    @AuthUser
+    public ResponseEntity<TodayReturnGuestDTO> getTodayReturnGuests(UserProjection projection) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getTodayReturnGuests(ownerId));
+    }
+
+    @GetMapping("/customers/stay-duration/monthly")
+    @AuthUser
+    public ResponseEntity<StayDurationDTO> getAvgStayDuration(UserProjection projection) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getAvgStayDuration(ownerId));
+    }
+
+    @GetMapping("/customers/ratio")
+    @AuthUser
+    public ResponseEntity<GuestRatioDTO> getGuestRatio(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getGuestRatio(ownerId, startDate, endDate));
+    }
+
+    @GetMapping("/customers/stay-duration/distribution")
+    @AuthUser
+    public ResponseEntity<List<StayDurationDistributionDTO>> getStayDurationDistribution(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getStayDurationDistribution(ownerId, startDate, endDate));
+    }
+
+    @GetMapping("/customers/member-ratio")
+    @AuthUser
+    public ResponseEntity<MemberRatioDTO> getMemberRatio(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        MemberRatioDTO dto = statisticsService.getMemberRatio(ownerId, startDate, endDate);
+        return ResponseEntity.ok(dto);
+    }
 }
