@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.payment.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
@@ -9,10 +10,12 @@ import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.TossPaymentDto;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
+import daewoo.team5.hotelreservation.domain.payment.entity.PaymentHistoryEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.infrastructure.TossPayClient;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentInfoProjection;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
+import daewoo.team5.hotelreservation.domain.payment.repository.PaymentHistoryRepository;
 import daewoo.team5.hotelreservation.domain.place.entity.DailyPlaceReservation;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
 import daewoo.team5.hotelreservation.domain.place.repository.DailyPlaceReservationRepository;
@@ -52,9 +55,11 @@ public class PaymentService {
     private final TossPayClient tossPayClient;
     private final PaymentRepository paymentRepository;
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
+    private final PaymentHistoryRepository paymentHistoryRepository;
     private final CouponService couponService;
     @PersistenceContext
     private EntityManager entityManager;
+
     private Payment.PaymentStatus mapStatus(String status) {
         /**
          *   READY: 결제를 생성하면 가지게 되는 초기 상태입니다. 인증 전까지는 READY 상태를 유지합니다.
@@ -95,6 +100,14 @@ public class PaymentService {
                             .build()
             );
             Payment payment = paymentRepository.findByOrderId(savePayment.getOrderId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "결제 정보가 존재하지 않습니다.", "결제 정보가 존재하지 않습니다."));
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            paymentHistoryRepository.save(
+                    PaymentHistoryEntity.builder()
+                            .paymentInfo(objectMapper.writeValueAsString(tossPaymentDto))
+                            .payment(payment)
+                            .build()
+            );
             // TODO : Room 양방향 제거후 영속성 유지
             entityManager.detach(payment);
             Reservation reservationUpdate = reservationRepository.findByOrderId(savePayment.getOrderId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "예약 정보가 존재하지 않습니다.", "예약 정보가 존재하지 않습니다."));
@@ -115,8 +128,9 @@ public class PaymentService {
                     errorMessage = response; // JSON 파싱 실패하면 그냥 raw
                 }
             }
-
             throw new ApiException(HttpStatus.BAD_REQUEST, "결제 승인 실패", errorMessage);
+        } catch (JsonProcessingException e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "결제 승인 실패", "결제 승인 중 내부 오류가 발생했습니다.");
         }
 
     }
@@ -172,20 +186,20 @@ public class PaymentService {
         // 날짜별로 객실수가 0개가 있는지 확인 -> 있으면 예약 불가
         for (LocalDate date = checkin; !date.isAfter(checkout.minusDays(1)); date = date.plusDays(1)) {
             Optional<DailyPlaceReservation> byRoomIdAndDate = dailyPlaceReservationRepository.findByRoomIdAndDate(dto.getRoomId(), date);
-            if(byRoomIdAndDate.isEmpty()){
+            if (byRoomIdAndDate.isEmpty()) {
                 dailyPlaceReservationRepository.save(
                         DailyPlaceReservation.builder()
                                 .room(room)
                                 .date(date)
-                                .availableRoom(room.getCapacityRoom()-1)
+                                .availableRoom(room.getCapacityRoom() - 1)
                                 .build()
                 );
                 continue;
             }
-            if(byRoomIdAndDate.get().getAvailableRoom()==0){
+            if (byRoomIdAndDate.get().getAvailableRoom() == 0) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "예약 불가", "이미 예약이 완료된 날짜가 포함되어 있습니다. 날짜를 확인해주세요.");
-            }else{
-                byRoomIdAndDate.get().setAvailableRoom(byRoomIdAndDate.get().getAvailableRoom()-1);
+            } else {
+                byRoomIdAndDate.get().setAvailableRoom(byRoomIdAndDate.get().getAvailableRoom() - 1);
             }
         }
         // 예약

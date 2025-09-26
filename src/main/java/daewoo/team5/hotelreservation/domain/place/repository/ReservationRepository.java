@@ -23,16 +23,6 @@ import java.util.Optional;
 public interface ReservationRepository extends JpaRepository<Reservation, Long>,
         JpaSpecificationExecutor<Reservation> {
 
-    // 예약 + 결제 조인 단건 조회
-
-    Optional<Reservation> findTop1ByRoom_Place_IdAndGuest_IdOrderByCreatedAtDesc(Long placeId, Long guestId);
-
-    // 기존 결제 포함 단건 조회
-    @Query("SELECT r FROM Reservation r " +
-            "LEFT JOIN FETCH Payment p ON p.reservation = r " +
-            "WHERE r.reservationId = :reservationId")
-    Optional<Reservation> findByIdWithPayments(@Param("reservationId") Long reservationId);
-
     // 소유자 단건 조회
     @Query("SELECT r FROM Reservation r " +
             "JOIN r.room rm " +
@@ -196,4 +186,215 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     List<ReservationInfoProjection> findByRoom_Place_Id(Long placeId);
+    // ✅ 정상 예약 (confirmed + paid)
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND r.status = 'confirmed' " +
+            "AND r.paymentStatus = 'paid'")
+    long countNormalReservationsByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                 @Param("startDate") LocalDate startDate,
+                                                 @Param("endDate") LocalDate endDate);
+
+    // ✅ 취소 예약
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND r.status = 'cancelled'")
+    long countCancelledReservationsByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                    @Param("startDate") LocalDate startDate,
+                                                    @Param("endDate") LocalDate endDate);
+
+    // ✅ 환불 예약
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND r.paymentStatus = 'refunded'")
+    long countRefundedReservationsByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                   @Param("startDate") LocalDate startDate,
+                                                   @Param("endDate") LocalDate endDate);
+
+    // 일별
+    @Query(value = "SELECT DATE(r.resev_start) AS label, COUNT(*) " +
+            "FROM reservations r " +
+            "JOIN room rm ON r.room_id = rm.id " +
+            "JOIN places pl ON rm.place_id = pl.id " +
+            "WHERE pl.owner_id = :ownerId " +
+            "AND r.resev_start BETWEEN :startDate AND :endDate " +
+            "GROUP BY DATE(r.resev_start) " +
+            "ORDER BY DATE(r.resev_start)", nativeQuery = true)
+    List<Object[]> countDailyReservations(@Param("ownerId") Long ownerId,
+                                          @Param("startDate") LocalDate startDate,
+                                          @Param("endDate") LocalDate endDate);
+
+    // 주별 (연-주차 기준)
+    @Query(value = "SELECT DATE_FORMAT(r.resev_start, '%x-%v') AS label, COUNT(*) " +
+            "FROM reservations r " +
+            "JOIN room rm ON r.room_id = rm.id " +
+            "JOIN places pl ON rm.place_id = pl.id " +
+            "WHERE pl.owner_id = :ownerId " +
+            "AND r.resev_start BETWEEN :startDate AND :endDate " +
+            "GROUP BY DATE_FORMAT(r.resev_start, '%x-%v') " +
+            "ORDER BY label", nativeQuery = true)
+    List<Object[]> countWeeklyReservations(@Param("ownerId") Long ownerId,
+                                           @Param("startDate") LocalDate startDate,
+                                           @Param("endDate") LocalDate endDate);
+
+    // 월별
+    @Query(value = "SELECT DATE_FORMAT(r.resev_start, '%Y-%m') AS label, COUNT(*) " +
+            "FROM reservations r " +
+            "JOIN room rm ON r.room_id = rm.id " +
+            "JOIN places pl ON rm.place_id = pl.id " +
+            "WHERE pl.owner_id = :ownerId " +
+            "AND r.resev_start BETWEEN :startDate AND :endDate " +
+            "GROUP BY DATE_FORMAT(r.resev_start, '%Y-%m') " +
+            "ORDER BY label", nativeQuery = true)
+    List<Object[]> countMonthlyReservations(@Param("ownerId") Long ownerId,
+                                            @Param("startDate") LocalDate startDate,
+                                            @Param("endDate") LocalDate endDate);
+
+    // 연도별
+    @Query(value = "SELECT YEAR(r.resev_start) AS label, COUNT(*) " +
+            "FROM reservations r " +
+            "JOIN room rm ON r.room_id = rm.id " +
+            "JOIN places pl ON rm.place_id = pl.id " +
+            "WHERE pl.owner_id = :ownerId " +
+            "AND r.resev_start BETWEEN :startDate AND :endDate " +
+            "GROUP BY YEAR(r.resev_start) " +
+            "ORDER BY label", nativeQuery = true)
+    List<Object[]> countYearlyReservations(@Param("ownerId") Long ownerId,
+                                           @Param("startDate") LocalDate startDate,
+                                           @Param("endDate") LocalDate endDate);
+
+    /**
+     * 특정 숙소(ownerId) 기준, targetDate 날짜에 최초 예약한 신규 고객 수
+     * - 해당 날짜에 예약을 한 고객 중
+     * - targetDate 이전에는 예약한 적이 없는 고객만 카운트
+     */
+    @Query("SELECT COUNT(r) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place pl " +
+            "WHERE pl.owner.id = :ownerId " +
+            "AND r.createdAt BETWEEN :start AND :end")
+    long countNewGuestsByOwnerAndCreatedAtBetween(
+            @Param("ownerId") Long ownerId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    // ✅ 오늘 재방문 고객 수
+    @Query("SELECT COUNT(DISTINCT r.guest.id) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND FUNCTION('DATE', r.createdAt) = :date " +
+            "AND (SELECT COUNT(r2) FROM Reservation r2 " +
+            "     WHERE r2.guest.id = r.guest.id " +
+            "     AND r2.room.place.id = p.id " +
+            "     AND r2.createdAt < r.createdAt) > 0")
+    long countTodayReturnGuests(@Param("ownerId") Long ownerId,
+                                @Param("date") LocalDate date);
+
+    @Query("SELECT AVG(DATEDIFF(r.resevEnd, r.resevStart)) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND YEAR(r.resevStart) = :year " +
+            "AND MONTH(r.resevStart) = :month " +
+            "AND r.status = 'confirmed' " +
+            "AND r.paymentStatus = 'paid'")
+    Double findAvgStayDurationByOwnerAndMonth(@Param("ownerId") Long ownerId,
+                                              @Param("year") int year,
+                                              @Param("month") int month);
+
+    // 신규 고객 수
+    @Query("SELECT COUNT(DISTINCT r.guest.id) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.createdAt BETWEEN :startDateTime AND :endDateTime " +
+            "AND NOT EXISTS (" +
+            "   SELECT 1 FROM Reservation r2 " +
+            "   WHERE r2.guest.id = r.guest.id " +
+            "   AND r2.room.place.id = p.id " +
+            "   AND r2.createdAt < :startDateTime)")
+    long countNewGuestsByPeriod(@Param("ownerId") Long ownerId,
+                                @Param("startDateTime") LocalDateTime startDateTime,
+                                @Param("endDateTime") LocalDateTime endDateTime);
+
+    // 재방문 고객 수
+    @Query("SELECT COUNT(DISTINCT r.guest.id) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.createdAt BETWEEN :startDateTime AND :endDateTime " +
+            "AND EXISTS (" +
+            "   SELECT 1 FROM Reservation r2 " +
+            "   WHERE r2.guest.id = r.guest.id " +
+            "   AND r2.room.place.id = p.id " +
+            "   AND r2.createdAt < :startDateTime)")
+    long countReturnGuestsByPeriod(@Param("ownerId") Long ownerId,
+                                   @Param("startDateTime") LocalDateTime startDateTime,
+                                   @Param("endDateTime") LocalDateTime endDateTime);
+
+    // 체류 기간별 분포
+    @Query(value =
+            "SELECT " +
+                    "  CASE " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 1 THEN '1일' " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 2 THEN '2일' " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 3 THEN '3일' " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 4 THEN '4일' " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 5 THEN '5일' " +
+                    "    ELSE '6일+' END AS stay_label, " +
+                    "  COUNT(*) AS cnt " +
+                    "FROM reservations r " +
+                    "JOIN room rm ON r.room_id = rm.id " +
+                    "JOIN places pl ON rm.place_id = pl.id " +
+                    "WHERE pl.owner_id = :ownerId " +
+                    "AND r.resev_start BETWEEN :startDate AND :endDate " +
+                    "AND r.status = 'confirmed' " +
+                    "AND r.payment_status = 'paid' " +
+                    "GROUP BY stay_label " +
+                    "ORDER BY stay_label",
+            nativeQuery = true)
+    List<Object[]> findStayDurationDistribution(@Param("ownerId") Long ownerId,
+                                                @Param("startDate") LocalDate startDate,
+                                                @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT COUNT(DISTINCT g.users.id) " +
+            "FROM Reservation r " +
+            "JOIN r.guest g " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND g.users IS NOT NULL")
+    long countDistinctMembers(@Param("ownerId") Long ownerId,
+                              @Param("startDate") LocalDate startDate,
+                              @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT COUNT(DISTINCT g.id) " +
+            "FROM Reservation r " +
+            "JOIN r.guest g " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND g.users IS NULL")
+    long countDistinctNonMembers(@Param("ownerId") Long ownerId,
+                                 @Param("startDate") LocalDate startDate,
+                                 @Param("endDate") LocalDate endDate);
+
+
 }
