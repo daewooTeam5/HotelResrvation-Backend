@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.place.repository;
 
+import daewoo.team5.hotelreservation.domain.place.dto.PlaceInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.projection.*;
 import org.springframework.data.domain.Page;
@@ -54,6 +55,14 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                 AND (:address IS NULL OR pa.sido = :address)
                 AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
                 AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+                AND COALESCE(
+                        (SELECT MIN(dpr.available_room)
+                         FROM daily_place_reservation dpr
+                         WHERE dpr.room_id = r.id
+                           AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
+                        ),
+                        r.capacity_room
+                    ) >= :room
                 AND (:placeCategory IS NULL OR pc.name = :placeCategory)
                 AND (:minRating IS NULL OR p.avg_rating >= :minRating)
                 AND NOT EXISTS (
@@ -91,6 +100,14 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                         AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
                         AND (:placeCategory IS NULL OR pc.name = :placeCategory)
                         AND (:minRating IS NULL OR p.avg_rating >= :minRating)
+                        AND COALESCE(
+                                (SELECT MIN(dpr.available_room)
+                                 FROM daily_place_reservation dpr
+                                 WHERE dpr.room_id = r.id
+                                   AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
+                                ),
+                                r.capacity_room
+                            ) >= :room
                         AND NOT EXISTS (
                             SELECT 1
                             FROM date_range d
@@ -219,6 +236,17 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             @Param("placeName") String placeName,
             Pageable pageable
     );
+
+    @Query("SELECT p.id as placeId, p.name as placeName, p.description as description, " +
+            "p.status as status, p.isPublic as isPublic, p.avgRating as avgRating, p.reviewCount as reviewCount, p.minPrice as minPrice, " +
+            "pa.sido as sido, pa.sigungu as sigungu, pa.roadName as roadName, pa.detailAddress as detailAddress, f.url as fileUrl " +
+            "FROM Places p " +
+            "LEFT JOIN PlaceAddress pa ON pa.place.id = p.id " +
+            "LEFT JOIN File f ON f.domain = 'place' AND f.domainFileId = p.id " +
+            "WHERE p.id = :placeId")
+    PlaceInfoProjection findPlaceInfo(@Param("placeId") Long placeId);
+
+
 }
 
 

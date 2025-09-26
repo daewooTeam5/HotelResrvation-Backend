@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment.PaymentStatus;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
@@ -104,4 +105,5 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "ORDER BY COUNT(r) DESC")
     List<Object[]> getTop5HotelsByReservations();
 
+    List<PaymentInfoProjection> findByReservation_Room_Place_Id(Long placeId);
 }

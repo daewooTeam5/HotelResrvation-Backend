@@ -8,6 +8,7 @@ import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -75,5 +76,26 @@ public class UsersService {
                         u.getStatus(),
                         u.getPoint()
                 ));
+    }
+
+    @Transactional
+    public void allowUser(Long id) {
+        Users user = usersRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 ID: " + id));
+        if (user.getStatus() == Users.Status.inactive) {
+            user.setStatus(Users.Status.active);
+            usersRepository.save(user);
+        }
+    }
+
+    // 취소
+    @Transactional
+    public void cancelUser(Long id) {
+        Users user = usersRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 ID: " + id));
+        if (user.getStatus() == Users.Status.inactive) {
+            user.setStatus(Users.Status.banned);
+            usersRepository.save(user);
+        }
     }
 }

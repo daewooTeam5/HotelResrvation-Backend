@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 
+import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.ReviewableReservationResponse;
 import org.springframework.data.domain.Page;
@@ -193,4 +194,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
                                                    @Param("endDate") LocalDate endDate);
 
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    List<ReservationInfoProjection> findByRoom_Place_Id(Long placeId);
 }

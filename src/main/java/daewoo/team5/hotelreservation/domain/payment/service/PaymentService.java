@@ -11,6 +11,7 @@ import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.infrastructure.TossPayClient;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentInfoProjection;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.place.entity.DailyPlaceReservation;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
@@ -214,5 +215,9 @@ public class PaymentService {
 
     public List<CouponEntity> getAvailableCoupon(UserProjection user, Long placeId) {
         return couponService.getAvailableCoupon(user,placeId);
+    }
+
+    public List<PaymentInfoProjection> getPaymentsByPlaceId(Long placeId) {
+        return paymentRepository.findByReservation_Room_Place_Id(placeId);
     }
 }
