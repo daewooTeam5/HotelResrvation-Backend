@@ -1,9 +1,6 @@
 package daewoo.team5.hotelreservation.domain.statistics.controller;
 
-import daewoo.team5.hotelreservation.domain.statistics.dto.CancelRateDTO;
-import daewoo.team5.hotelreservation.domain.statistics.dto.MonthlyReservationDTO;
-import daewoo.team5.hotelreservation.domain.statistics.dto.RoomRevenueDTO;
-import daewoo.team5.hotelreservation.domain.statistics.dto.TodayReservationDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.*;
 import daewoo.team5.hotelreservation.domain.statistics.service.StatisticsService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
@@ -55,6 +52,17 @@ public class StatisticsController {
     ) {
         Long ownerId = projection.getId();
         return ResponseEntity.ok(statisticsService.getRoomRevenue(ownerId, startDate, endDate));
+    }
+
+    @GetMapping("/reservation/cancel-rate/breakdown")
+    @AuthUser
+    public ResponseEntity<CancelBreakdownDTO> getCancelBreakdown(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getCancelBreakdown(ownerId, startDate, endDate));
     }
 
 }

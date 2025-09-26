@@ -193,4 +193,39 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
                                                    @Param("endDate") LocalDate endDate);
 
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    // ✅ 정상 예약 (confirmed + paid)
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND r.status = 'confirmed' " +
+            "AND r.paymentStatus = 'paid'")
+    long countNormalReservationsByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                 @Param("startDate") LocalDate startDate,
+                                                 @Param("endDate") LocalDate endDate);
+
+    // ✅ 취소 예약
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND r.status = 'cancelled'")
+    long countCancelledReservationsByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                    @Param("startDate") LocalDate startDate,
+                                                    @Param("endDate") LocalDate endDate);
+
+    // ✅ 환불 예약
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.resevStart BETWEEN :startDate AND :endDate " +
+            "AND r.paymentStatus = 'refunded'")
+    long countRefundedReservationsByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                   @Param("startDate") LocalDate startDate,
+                                                   @Param("endDate") LocalDate endDate);
+
 }

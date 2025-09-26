@@ -3,10 +3,7 @@ package daewoo.team5.hotelreservation.domain.statistics.service;
 import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.service.DashboardOwnerService;
-import daewoo.team5.hotelreservation.domain.statistics.dto.CancelRateDTO;
-import daewoo.team5.hotelreservation.domain.statistics.dto.MonthlyReservationDTO;
-import daewoo.team5.hotelreservation.domain.statistics.dto.RoomRevenueDTO;
-import daewoo.team5.hotelreservation.domain.statistics.dto.TodayReservationDTO;
+import daewoo.team5.hotelreservation.domain.statistics.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -85,5 +82,14 @@ public class StatisticsService {
                 ))
                 .toList();
     }
+
+    public CancelBreakdownDTO getCancelBreakdown(Long ownerId, LocalDate startDate, LocalDate endDate) {
+        long normal = reservationRepository.countNormalReservationsByOwnerAndPeriod(ownerId, startDate, endDate);
+        long cancelled = reservationRepository.countCancelledReservationsByOwnerAndPeriod(ownerId, startDate, endDate);
+        long refunded = reservationRepository.countRefundedReservationsByOwnerAndPeriod(ownerId, startDate, endDate);
+
+        return new CancelBreakdownDTO(normal, cancelled, refunded);
+    }
+
 
 }
