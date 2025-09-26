@@ -27,7 +27,7 @@ public class PublishingDTO {
 
     private String checkOut;
 
-    private List<AddressDTO> addressList;
+    private AddressDTO address;
 
     private List<String> images; // Base64 인코딩된 문자열 리스트
 

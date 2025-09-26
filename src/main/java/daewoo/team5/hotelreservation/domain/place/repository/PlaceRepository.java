@@ -193,7 +193,8 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
         """, nativeQuery = true)
     List<PlaceServiceProjection> findPlaceServices(@Param("placeId") Long placeId);
 
-    Optional<Places> findByOwnerId(Long ownerId);
+    List<Places> findByOwnerId(Long ownerId);
+    Optional<Places> findByOwner_Id(Long ownerId);
 }
 
 
