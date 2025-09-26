@@ -25,7 +25,6 @@ public class TossPaymentService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set(HttpHeaders.AUTHORIZATION, authHeader);
-        headers.set("Idempotency-Key", UUID.randomUUID().toString());
 
         // ✅ 요청 Body
         Map<String, String> body = Map.of("cancelReason", cancelReason);

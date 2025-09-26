@@ -24,11 +24,11 @@ public class Reservation extends BaseTimeEntity {
     private Long reservationId;
 
     // 예약자 (User 연관관계)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private GuestEntity guest;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "room_id", referencedColumnName = "id")
     private Room room;
 
