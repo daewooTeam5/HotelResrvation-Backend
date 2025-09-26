@@ -323,4 +323,62 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
                                               @Param("year") int year,
                                               @Param("month") int month);
 
+    // 신규 고객 수
+    @Query("SELECT COUNT(DISTINCT r.guest.id) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.createdAt BETWEEN :startDateTime AND :endDateTime " +
+            "AND NOT EXISTS (" +
+            "   SELECT 1 FROM Reservation r2 " +
+            "   WHERE r2.guest.id = r.guest.id " +
+            "   AND r2.room.place.id = p.id " +
+            "   AND r2.createdAt < :startDateTime)")
+    long countNewGuestsByPeriod(@Param("ownerId") Long ownerId,
+                                @Param("startDateTime") LocalDateTime startDateTime,
+                                @Param("endDateTime") LocalDateTime endDateTime);
+
+    // 재방문 고객 수
+    @Query("SELECT COUNT(DISTINCT r.guest.id) " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "AND r.createdAt BETWEEN :startDateTime AND :endDateTime " +
+            "AND EXISTS (" +
+            "   SELECT 1 FROM Reservation r2 " +
+            "   WHERE r2.guest.id = r.guest.id " +
+            "   AND r2.room.place.id = p.id " +
+            "   AND r2.createdAt < :startDateTime)")
+    long countReturnGuestsByPeriod(@Param("ownerId") Long ownerId,
+                                   @Param("startDateTime") LocalDateTime startDateTime,
+                                   @Param("endDateTime") LocalDateTime endDateTime);
+
+    // 체류 기간별 분포
+    @Query(value =
+            "SELECT " +
+                    "  CASE " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 1 THEN '1일' " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 2 THEN '2일' " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 3 THEN '3일' " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 4 THEN '4일' " +
+                    "    WHEN DATEDIFF(r.resev_end, r.resev_start) = 5 THEN '5일' " +
+                    "    ELSE '6일+' END AS stay_label, " +
+                    "  COUNT(*) AS cnt " +
+                    "FROM reservations r " +
+                    "JOIN room rm ON r.room_id = rm.id " +
+                    "JOIN places pl ON rm.place_id = pl.id " +
+                    "WHERE pl.owner_id = :ownerId " +
+                    "AND r.resev_start BETWEEN :startDate AND :endDate " +
+                    "AND r.status = 'confirmed' " +
+                    "AND r.payment_status = 'paid' " +
+                    "GROUP BY stay_label " +
+                    "ORDER BY stay_label",
+            nativeQuery = true)
+    List<Object[]> findStayDurationDistribution(@Param("ownerId") Long ownerId,
+                                                @Param("startDate") LocalDate startDate,
+                                                @Param("endDate") LocalDate endDate);
+
+
 }

@@ -120,4 +120,26 @@ public class StatisticsController {
         Long ownerId = projection.getId();
         return ResponseEntity.ok(statisticsService.getAvgStayDuration(ownerId));
     }
+
+    @GetMapping("/customers/ratio")
+    @AuthUser
+    public ResponseEntity<GuestRatioDTO> getGuestRatio(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getGuestRatio(ownerId, startDate, endDate));
+    }
+
+    @GetMapping("/customers/stay-duration/distribution")
+    @AuthUser
+    public ResponseEntity<List<StayDurationDistributionDTO>> getStayDurationDistribution(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getStayDurationDistribution(ownerId, startDate, endDate));
+    }
 }

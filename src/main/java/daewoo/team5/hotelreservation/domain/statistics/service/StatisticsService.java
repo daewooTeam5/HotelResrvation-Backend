@@ -220,4 +220,26 @@ public class StatisticsService {
 
         return new StayDurationDTO(thisMonthAvg, growthRate);
     }
+
+    public GuestRatioDTO getGuestRatio(Long ownerId, LocalDate startDate, LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+
+        long newGuests = reservationRepository.countNewGuestsByPeriod(ownerId, startDateTime, endDateTime);
+        long returnGuests = reservationRepository.countReturnGuestsByPeriod(ownerId, startDateTime, endDateTime);
+
+        return new GuestRatioDTO(newGuests, returnGuests);
+    }
+
+    public List<StayDurationDistributionDTO> getStayDurationDistribution(Long ownerId, LocalDate startDate, LocalDate endDate) {
+        List<Object[]> results = reservationRepository.findStayDurationDistribution(ownerId, startDate, endDate);
+
+        return results.stream()
+                .map(row -> new StayDurationDistributionDTO(
+                        row[0].toString(),
+                        ((Number) row[1]).longValue()
+                ))
+                .toList();
+    }
+
 }
