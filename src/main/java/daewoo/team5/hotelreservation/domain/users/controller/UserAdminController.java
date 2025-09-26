@@ -7,11 +7,9 @@ import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -42,5 +40,18 @@ public class UserAdminController {
         Page<UserResponse> responsePage = usersService.getAllUsers(start, size);
         return ApiResult.ok(responsePage, "전체 유저 조회 성공");
     }
+
+    @PatchMapping("/users/{id}/allow")
+    public ResponseEntity<Void> allowUser(@PathVariable Long id) {
+        usersService.allowUser(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/users/{id}/cancel")
+    public ResponseEntity<Void> cancelUser(@PathVariable Long id) {
+        usersService.cancelUser(id);
+        return ResponseEntity.ok().build();
+    }
+
 
 }

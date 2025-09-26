@@ -1,8 +1,8 @@
 package daewoo.team5.hotelreservation.domain.place.controller;
 
-
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.projection.AdminPlaceProjection;
+import daewoo.team5.hotelreservation.domain.place.service.PlaceDetailService;
 import daewoo.team5.hotelreservation.domain.place.service.PlaceService;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminPlaceController {
     private final PlaceService placeService;
     private final UsersRepository usersRepository;
+    private final PlaceDetailService placeDetailService;
 
     @GetMapping("")
     public ApiResult<Page<AdminPlaceProjection>> getAdminPlace(
@@ -59,6 +60,11 @@ public class AdminPlaceController {
     public ApiResult<?> rejectPlace(@PathVariable Long placeId) {
         placeService.updatePlaceStatus(placeId, Places.Status.REJECTED);
         return ApiResult.ok(null, "숙소 거절 성공!!");
+    }
+
+    @GetMapping("/{placeId}")
+    public ApiResult<?> getDetail(@PathVariable Long placeId) {
+        return ApiResult.ok(placeDetailService.getPlaceDetail(placeId), "숙소 상세 조회 성공");
     }
 }
 

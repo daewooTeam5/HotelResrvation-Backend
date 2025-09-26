@@ -8,6 +8,7 @@ import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.review.dto.CreateReviewRequest;
 import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponse;
+import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponseDto;
 import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
 import daewoo.team5.hotelreservation.domain.place.review.entity.ReviewImage;
 import daewoo.team5.hotelreservation.domain.place.review.repository.ReviewImageRepository;
@@ -109,5 +110,9 @@ public class ReviewService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "잘못된 정렬 기준입니다.", "허용되지 않은 정렬 속성입니다: " + property);
         }
         return Sort.by(direction, property);
+    }
+
+    public List<ReviewResponseDto> getAllReviews() {
+        return reviewRepository.findAllReviewsWithDetails();
     }
 }
