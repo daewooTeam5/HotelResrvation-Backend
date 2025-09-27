@@ -1,5 +1,10 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
+import daewoo.team5.hotelreservation.domain.coupon.entity.CouponHistoryEntity;
+import daewoo.team5.hotelreservation.domain.coupon.entity.UserCouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.repository.CouponHistoryRepository;
+import daewoo.team5.hotelreservation.domain.coupon.repository.CouponRepository;
+import daewoo.team5.hotelreservation.domain.coupon.repository.UserCouponRepository;
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
@@ -38,6 +43,10 @@ public class ReservationService {
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     private final TossPaymentService tossPaymentService;
     private final GuestRepository guestRepository;
+    private final CouponHistoryRepository couponHistoryRepository;
+    private final UserCouponRepository userCouponRepository;
+    private final CouponRepository couponRepository;
+
     /**
      * ✅ [추가] 리뷰 작성 가능한 예약 목록을 조회하는 서비스 로직
      */
@@ -165,17 +174,8 @@ public class ReservationService {
                 "해당 소유자의 예약을 찾을 수 없습니다."
         ));
     }
-
-    // 소유자 기반 예약 취소
     @Transactional
-    public ReservationDetailDTO cancel(Long reservationId, Long ownerId) {
-        Reservation r = reservationRepository.findByIdAndOwnerId(reservationId, ownerId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "Not Found",
-                        "해당 소유자의 예약을 찾을 수 없습니다."
-                ));
-
+    public ReservationDetailDTO cancel(Reservation r) {
         // ✅ 결제 정보 확인
         Payment payment = paymentRepository
                 .findTop1ByReservation_ReservationIdOrderByTransactionDateDesc(r.getReservationId())
@@ -206,8 +206,33 @@ public class ReservationService {
 //            adjustInventory(r.getRoom().getId(), r.getResevStart(), r.getResevEnd(), +1);
 //        }
 //
+        //
+        // 쿠폰 조회후 쿠폰 상태 복구
+        couponHistoryRepository.findByReservation_id(r.getReservationId()).ifPresent(ch -> {
+            ch.setStatus(CouponHistoryEntity.CouponStatus.canceled);
+            UserCouponEntity userCouponEntity = userCouponRepository.findByCouponId(ch.getUserCoupon().getCoupon().getId()).orElseThrow(() -> new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "UserCoupon Not Found",
+                    "해당 쿠폰을 찾을 수 없습니다."
+            ));
+            userCouponEntity.setUsed(false);
+        });
         Reservation saved = reservationRepository.save(r);
         return toDetailDTO(saved);
+
+    }
+
+    // 소유자 기반 예약 취소
+    @Transactional
+    public ReservationDetailDTO cancelOwner(Long reservationId, Long ownerId) {
+        Reservation r = reservationRepository.findByIdAndOwnerId(reservationId, ownerId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "Not Found",
+                        "해당 소유자의 예약을 찾을 수 없습니다."
+                ));
+        return cancel(r);
+
     }
 
     // 소유자 기반 검색
