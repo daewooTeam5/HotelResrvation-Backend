@@ -4,6 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.entity.CouponHistoryEntity;
+import daewoo.team5.hotelreservation.domain.coupon.entity.UserCouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.repository.CouponHistoryRepository;
+import daewoo.team5.hotelreservation.domain.coupon.repository.CouponRepository;
+import daewoo.team5.hotelreservation.domain.coupon.repository.UserCouponRepository;
 import daewoo.team5.hotelreservation.domain.coupon.service.CouponService;
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
@@ -13,15 +18,14 @@ import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.PaymentHistoryEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.infrastructure.TossPayClient;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentInfoProjection;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.payment.repository.PaymentHistoryRepository;
 import daewoo.team5.hotelreservation.domain.place.entity.DailyPlaceReservation;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
-import daewoo.team5.hotelreservation.domain.place.repository.DailyPlaceReservationRepository;
-import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
-import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
-import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
+import daewoo.team5.hotelreservation.domain.place.repository.*;
 import daewoo.team5.hotelreservation.domain.place.repository.projection.PaymentSummaryProjection;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
@@ -60,6 +64,10 @@ public class PaymentService {
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final CouponService couponService;
+    private final PlaceRepository placeRepository;
+    private final CouponRepository couponRepository;
+    private final CouponHistoryRepository couponHistoryRepository;
+    private final UserCouponRepository userCouponRepository;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -185,10 +193,10 @@ public class PaymentService {
 
     @Transactional
     public Reservation reservationPlace(UserProjection user, ReservationRequestDto dto) {
-        log.info("payment userproj" + user+","+ dto);
         GuestEntity guest = getGuest(user, dto.getEmail(), dto.getFirstName(), dto.getLastName(), dto.getPhone());
         Room room = roomRepository.findById(dto.getRoomId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재 하지 않는 방입니다.", "존재하지 않는 방입니다."));
+        Places places = placeRepository.findById(room.getPlace().getId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재 하지 않는 숙소입니다.", "존재하지 않는 숙소입니다."));
         LocalDate checkin = dto.getCheckIn();
         LocalDate checkout = dto.getCheckOut();
 
@@ -218,22 +226,65 @@ public class PaymentService {
                 byRoomIdAndDate.get().setAvailableRoom(byRoomIdAndDate.get().getAvailableRoom()-dto.getRoomCount());
             }
         }
-        // 예약
+        // TODO: DISCOUNT 할인 적용
+        BigDecimal baseAmount = room.getPrice()
+                .multiply(BigDecimal.valueOf(dto.getNights()))
+                .multiply(BigDecimal.valueOf(dto.getRoomCount()));     // 예약
+
         Reservation reservation = Reservation.builder()
                 .guest(guest)
                 .orderId(dto.getRoomId() + "_" + guest.getId() + "_" + System.currentTimeMillis())
                 .paymentStatus(Reservation.ReservationPaymentStatus.unpaid)
                 .status(Reservation.ReservationStatus.pending)
-                .baseAmount(BigDecimal.valueOf(dto.getPaymentAmount()))
-                .finalAmount(BigDecimal.valueOf(dto.getPaymentAmount()))
+                .baseAmount(baseAmount)
+                .finalAmount(baseAmount)
                 .resevStart(dto.getCheckIn())
                 .resevEnd(dto.getCheckOut())
                 .request(dto.getRequest())
                 .resevAmount(Long.valueOf(dto.getRoomCount()))
+                .couponDiscountAmount(0)
+                .fixedDiscountAmount(0)
+                .pointDiscountAmount(0)
                 .room(room)
                 .build();
-        log.info("1reservation"+reservation);
-        return reservationRepository.save(reservation);
+        Reservation save = reservationRepository.save(reservation);
+        // 쿠폰 적용
+        int discountAmount = 0;
+        if(dto.getCouponId()!=null){
+            CouponEntity couponEntity = couponRepository.findById(dto.getCouponId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 쿠폰입니다.", "couponId를 확인해주세요."));
+            // 사용가능한 쿠폰일경우
+            if(couponService.validateCouponWithPlace(guest.getUsers().getId(),couponEntity,places,baseAmount.toBigInteger().intValue())){
+                UserCouponEntity userCouponEntity = userCouponRepository.findByUserIdAndCouponId(guest.getUsers().getId(), couponEntity.getId())
+                        .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "해당 유저가 발급받지 않은 쿠폰입니다.", "userId와 couponId를 확인해주세요."));
+                userCouponEntity.setUsed(true);
+                Integer couponDiscount = couponService.calculateDiscountAmount(couponEntity, baseAmount.toBigInteger().intValue());
+                save.setCouponDiscountAmount(couponDiscount);
+                discountAmount += couponDiscount;
+                couponHistoryRepository.save(
+                        CouponHistoryEntity.builder()
+                                .userCoupon(userCouponEntity)
+                                .used_at(LocalDateTime.now())
+                                .status(CouponHistoryEntity.CouponStatus.used)
+                                .reservation_id(save)
+                                .discount_amount(discountAmount)
+                                .build()
+                );
+
+
+            }
+
+        }
+        // 포인트 적용
+        // TODO 포인트 차감 및 가격 차감
+        save.setFinalAmount(baseAmount.subtract(BigDecimal.valueOf(discountAmount)));
+        return save;
+    }
+
+    public PaymentDetailProjection getPaymentDetail(Long id,Long userId) {
+        // TODO : 결제아이도로 해당 유저가 결제한 내역인지 확인 하는 로직
+
+        return paymentRepository.findPaymentDetailById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 결제 정보입니다.", "존재하지 않는 결제 정보입니다."));
     }
 
     public Reservation getReservationById(Long reservationId) {
