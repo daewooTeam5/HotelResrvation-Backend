@@ -61,7 +61,6 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
         // (실제로는 Room 엔티티와 빌더가 미리 정의되어 있어야 합니다)
         List<Room> rooms = dto.getRooms().stream()
                 .map(roomDto -> Room.builder()
-                        .roomNumber(roomDto.getRoomNumber())
                         .roomType(roomDto.getRoomType() != null && !roomDto.getRoomType().isEmpty()
                                 ? roomDto.getRoomType()
                                 : "single")
