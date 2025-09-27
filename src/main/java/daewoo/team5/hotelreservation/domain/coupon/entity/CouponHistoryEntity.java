@@ -16,7 +16,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Entity
+@Entity(name = "CouponHistory")
+@Table(
+        name = "coupon_history",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_coupon_history_user_coupon_used_at",
+                        columnNames = {"user_coupon_id", "used_at"}
+                )
+        }
+)
 public class CouponHistoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
