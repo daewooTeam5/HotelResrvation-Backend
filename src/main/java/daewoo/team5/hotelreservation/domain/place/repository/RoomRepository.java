@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -86,7 +87,10 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             "AND p.owner.id = :ownerId")
     Optional<Room> findByIdAndOwnerId(@Param("roomId") Long roomId,
                                       @Param("ownerId") Long ownerId);
+    void deleteByPlaceId(Long placeId);//삭제용
 
-    List<Room> findAdminRoomInfoByPlaceId(Long placeId);
+
+    List<Room> findByPlaceId(Long placeId);
+
 
 }

@@ -34,7 +34,7 @@ public class PublishingService {
 
     @Transactional
     public Places registerHotel(PublishingDTO dto) {
-        PlaceCategory placeCategory = placeCategoryRepository.findById(dto.getCategoryId())
+        PlaceCategory placeCategory = placeCategoryRepository.findById(Math.toIntExact(dto.getCategoryId()))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
 
         Places place = Places.builder()
@@ -61,7 +61,6 @@ public class PublishingService {
                         .url(url)
                         .userId(dto.getUserId())
                         .build());
-
             });
         }
 
@@ -121,9 +120,85 @@ public class PublishingService {
         return place;
     }
 
+    @Transactional
+    public Places updateHotel(Long placeId, PublishingDTO dto) {
+        Places place = repository.findById(placeId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "수정할 숙소를 찾을 수 없습니다.", "ID: " + placeId));
+
+        PlaceCategory placeCategory = placeCategoryRepository.findById(Math.toIntExact(dto.getCategoryId()))
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
+
+        place.updateDetails(
+                dto.getHotelName(),
+                dto.getDescription(),
+                LocalTime.parse(dto.getCheckIn()),
+                LocalTime.parse(dto.getCheckOut()),
+                placeCategory
+        );
+
+        List<Long> existingRoomIds = roomRepository.findByPlaceId(placeId).stream()
+                .map(Room::getId).collect(Collectors.toList());
+
+        if (!existingRoomIds.isEmpty()) {
+            fileRepository.deleteByDomainAndDomainFileIdIn("room", existingRoomIds);
+        }
+        fileRepository.deleteByDomainAndDomainFileId("place", placeId);
+        roomRepository.deleteByPlaceId(placeId);
+        placeAddressRepository.deleteByPlaceId(placeId);
+
+        List<File> allFilesToSave = new ArrayList<>();
+        if (dto.getHotelImages() != null) {
+            dto.getHotelImages().forEach(imgDto -> {
+                String url = imgDto.getUrl();
+                allFilesToSave.add(File.builder()
+                        .domain("place").domainFileId(place.getId())
+                        .filename(UUID.randomUUID().toString()).extension(extractExtensionFromDataUrl(url))
+                        .filetype("image").url(url).userId(dto.getUserId()).build());
+            });
+        }
+
+        List<Room> rooms = dto.getRooms().stream()
+                .map(roomDto -> Room.builder()
+                        .roomNumber(roomDto.getRoomNumber()).roomType(roomDto.getRoomType())
+                        .bedType(roomDto.getBedType()).price(BigDecimal.valueOf(roomDto.getMinPrice()))
+                        .capacityPeople(roomDto.getCapacityPeople()).status(Room.Status.AVAILABLE)
+                        .place(place).build())
+                .collect(Collectors.toList());
+        List<Room> savedRooms = roomRepository.saveAll(rooms);
+
+        for (int i = 0; i < dto.getRooms().size(); i++) {
+            RoomDTO roomDto = dto.getRooms().get(i);
+            Room savedRoom = savedRooms.get(i);
+            if (roomDto.getImages() != null) {
+                roomDto.getImages().forEach(imgDto -> {
+                    String url = imgDto.getUrl();
+                    allFilesToSave.add(File.builder()
+                            .domain("room").domainFileId(savedRoom.getId())
+                            .filename(UUID.randomUUID().toString()).extension(extractExtensionFromDataUrl(url))
+                            .filetype("image").url(url).userId(dto.getUserId()).build());
+                });
+            }
+        }
+
+        if (!allFilesToSave.isEmpty()) {
+            fileRepository.saveAll(allFilesToSave);
+        }
+
+        List<PlaceAddress> addresses = dto.getAddressList().stream()
+                .map(addressDto -> PlaceAddress.builder()
+                        .place(place).sido(addressDto.getSido()).sigungu(addressDto.getSigungu())
+                        .town(addressDto.getTown()).roadName(addressDto.getRoadName())
+                        .postalCode(addressDto.getPostalCode()).detailAddress(addressDto.getDetailAddress())
+                        .lat(BigDecimal.valueOf(221)).lng(BigDecimal.valueOf(213)).build())
+                .collect(Collectors.toList());
+        placeAddressRepository.saveAll(addresses);
+
+        return place;
+    }
+
     private String extractExtensionFromDataUrl(String dataUrl) {
         if (dataUrl == null || !dataUrl.startsWith("data:image/")) {
-            return "jpg"; // 기본값 또는 예외 처리
+            return "jpg";
         }
         Pattern pattern = Pattern.compile("data:image/(\\w+);base64,.*");
         Matcher matcher = pattern.matcher(dataUrl);
@@ -133,12 +208,31 @@ public class PublishingService {
         return "jpg";
     }
 
-    public List<PublishingDTO> getAllHotels() {
-        return repository.findAll().stream()
-                .map(p -> PublishingDTO.builder()
-                        .hotelName(p.getName())
-                        .description(p.getDescription())
-                        .build())
+    public List<PublishingDTO> getAllHotels(Long ownerId) {
+        return repository.findAllByOwnerId(ownerId).stream()
+                .map(p -> {
+                    String imageUrl = fileRepository.findFirstByDomainAndDomainFileId("place", p.getId())
+                            .map(File::getUrl)
+                            .orElse(null);
+                    AddressDTO addressDto = placeAddressRepository.findFirstByPlaceId(p.getId())
+                            .map(addr -> AddressDTO.builder()
+                                    .sido(addr.getSido())
+                                    .sigungu(addr.getSigungu())
+                                    .town(addr.getTown())
+                                    .build())
+                            .orElse(null);
+
+                    return PublishingDTO.builder()
+                            .id(p.getId())
+                            .hotelName(p.getName())
+                            .description(p.getDescription())
+                            .minPrice(p.getMinPrice())
+                            .checkIn(p.getCheckIn().toString())
+                            .checkOut(p.getCheckOut().toString())
+                            .address(addressDto)
+                            .images(imageUrl != null ? List.of(imageUrl) : List.of())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -147,7 +241,7 @@ public class PublishingService {
                 .orElseThrow(() -> new RuntimeException("해당 숙소를 찾을 수 없습니다. id=" + id));
 
         List<PlaceAddress> addresses = placeAddressRepository.findByPlaceId(id);
-        List<Room> rooms = roomRepository.findAdminRoomInfoByPlaceId(id);
+        List<Room> rooms = roomRepository.findByPlaceId(id);
 
         List<File> hotelImages = fileRepository.findByDomainAndDomainFileId("place", id);
         List<Long> roomIds = rooms.stream().map(Room::getId).collect(Collectors.toList());
@@ -190,7 +284,7 @@ public class PublishingService {
                 .checkIn(place.getCheckIn().toString())
                 .checkOut(place.getCheckOut().toString())
                 .capacityRoom(place.getCapacityRoom())
-                .CategoryId(Math.toIntExact(place.getCategory().getId()))
+                .CategoryId(place.getCategory().getId())
                 .addressList(addressDTOs)
                 .hotelImages(hotelImageDTOs)
                 .rooms(roomDTOs)

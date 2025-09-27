@@ -69,7 +69,13 @@ public class Places extends BaseTimeEntity {
 
    // 기본값을 true로 설정
 
-
+    public void updateDetails(String name, String description, LocalTime checkIn, LocalTime checkOut, PlaceCategory category) {
+        this.name = name;
+        this.description = description;
+        this.checkIn = checkIn;
+        this.checkOut = checkOut;
+        this.category = category;
+    }
 
     public enum Status {
         PENDING,

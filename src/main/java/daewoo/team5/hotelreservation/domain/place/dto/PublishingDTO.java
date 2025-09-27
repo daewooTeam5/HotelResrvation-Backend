@@ -8,6 +8,7 @@ import daewoo.team5.hotelreservation.domain.place.entity.PlaceService;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -16,6 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class PublishingDTO {
+
+    private Long id;
 
     private String hotelName;
 
@@ -39,7 +42,11 @@ public class PublishingDTO {
 
     private List<RoomDTO> rooms;
 
-    private int CategoryId;
+    private BigDecimal minPrice;
+
+    private AddressDTO address; // 💡 대표 주소 (목록 표시에 사용)
+
+    private Long CategoryId;
 
     private Integer capacityRoom;
 

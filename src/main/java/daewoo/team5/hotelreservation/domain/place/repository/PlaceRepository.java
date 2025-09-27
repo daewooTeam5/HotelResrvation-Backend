@@ -245,7 +245,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             "LEFT JOIN File f ON f.domain = 'place' AND f.domainFileId = p.id " +
             "WHERE p.id = :placeId")
     PlaceInfoProjection findPlaceInfo(@Param("placeId") Long placeId);
-
+    List<Places> findAllByOwnerId(Long ownerId);
 
 }
 
