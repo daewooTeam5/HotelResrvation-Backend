@@ -7,10 +7,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Long> {
+
     boolean existsByUserIdAndCoupon_CouponCode(Long userId, String couponCode);
+
     List<UserCouponEntity> findAllByUserId(Long userId);
+
+    Optional<UserCouponEntity> findByUserIdAndCouponId(Long userId, Long couponId);
+
+    Optional<UserCouponEntity> findByCouponId(Long couponId);
+
     @Query("""
             select uc.user.id as userId,uc.isUsed as isUsed,
                     uc.coupon.couponName as couponName,
