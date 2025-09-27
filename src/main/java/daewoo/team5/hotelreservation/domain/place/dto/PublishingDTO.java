@@ -27,6 +27,8 @@ public class PublishingDTO {
 
     private String checkOut;
 
+    private List<FileDTO> hotelImages;
+
     private List<AddressDTO> addressList;
 
     private List<String> images; // Base64 인코딩된 문자열 리스트
@@ -42,5 +44,7 @@ public class PublishingDTO {
     private Integer capacityRoom;
 
     private boolean isPublic;
+
+    private Long userId;
 
 }

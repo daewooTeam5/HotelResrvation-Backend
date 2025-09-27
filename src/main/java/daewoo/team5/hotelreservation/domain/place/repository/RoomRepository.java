@@ -1,6 +1,7 @@
 package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.projection.RoomInfoProjection;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
 
 import daewoo.team5.hotelreservation.domain.place.projection.AdminRoomInfoProjection;
@@ -86,5 +87,6 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     Optional<Room> findByIdAndOwnerId(@Param("roomId") Long roomId,
                                       @Param("ownerId") Long ownerId);
 
+    List<Room> findAdminRoomInfoByPlaceId(Long placeId);
 
 }

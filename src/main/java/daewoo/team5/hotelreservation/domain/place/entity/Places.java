@@ -63,8 +63,13 @@ public class Places extends BaseTimeEntity {
     @Column(name = "check_out")
     private LocalTime checkOut;// 체크아웃 시간
 
-    @Column(name = "capacity_room")
-    private Integer capacityRoom;
+    @Builder.Default
+    @Column(name = "capacity_room", nullable = false) // DB에 NOT NULL 제약조건이 있음을 명시
+    private Integer capacityRoom = 1;
+
+   // 기본값을 true로 설정
+
+
 
     public enum Status {
         PENDING,

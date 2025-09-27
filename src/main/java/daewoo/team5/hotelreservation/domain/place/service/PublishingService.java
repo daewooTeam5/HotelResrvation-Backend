@@ -1,11 +1,11 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
+import daewoo.team5.hotelreservation.domain.place.dto.AddressDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.FileDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.PublishingDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.RoomDTO;
 import daewoo.team5.hotelreservation.domain.place.entity.*;
-import daewoo.team5.hotelreservation.domain.place.repository.PlaceAddressRepository;
-import daewoo.team5.hotelreservation.domain.place.repository.PlaceCategoryRepository;
-import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
-import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
+import daewoo.team5.hotelreservation.domain.place.repository.*;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,25 +14,28 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
-public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없어도 됨
+@Transactional(readOnly = true)
+public class PublishingService {
 
-    private final PlaceCategoryRepository  placeCategoryRepository;
+    private final PlaceCategoryRepository placeCategoryRepository;
     private final PlaceRepository repository;
     private final RoomRepository roomRepository;
     private final PlaceAddressRepository placeAddressRepository;
+    private final FileRepository fileRepository;
 
-    // 등록
+    @Transactional
     public Places registerHotel(PublishingDTO dto) {
-        // 1. DTO -> Places Entity 변환
-        PlaceCategory placeCategory = placeCategoryRepository.findById(dto.getCategoryId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
-        int capacityRoom = dto.getCapacityRoom() != null ? dto.getCapacityRoom() : 1; // 1 또는 기본값
-
+        PlaceCategory placeCategory = placeCategoryRepository.findById(dto.getCategoryId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
 
         Places place = Places.builder()
                 .name(dto.getHotelName())
@@ -40,62 +43,96 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
                 .checkOut(LocalTime.parse(dto.getCheckOut()))
                 .checkIn(LocalTime.parse(dto.getCheckIn()))
                 .category(placeCategory)
-                .isPublic(dto.isPublic())
-                .capacityRoom(capacityRoom)
                 .build();
 
-// 먼저 place 저장
-        Places save = repository.save(place);
-/*        for(){
+        repository.save(place);
 
+        List<File> allFilesToSave = new ArrayList<>();
+
+        if (dto.getHotelImages() != null) {
+            dto.getHotelImages().forEach(imgDto -> {
+                String url = imgDto.getUrl();
+                allFilesToSave.add(File.builder()
+                        .domain("place")
+                        .domainFileId(place.getId())
+                        .filename(UUID.randomUUID().toString())
+                        .extension(extractExtensionFromDataUrl(url))
+                        .filetype("image")
+                        .url(url)
+                        .userId(dto.getUserId())
+                        .build());
+
+            });
         }
-        File.builder()
-                .filename(i)
-                .domainFileId(save.getId())
-                .filetype("place")
-                .build();*/
-        // domain file id save.getId();
-        // file_type = place
 
-        // 2. DTO에 포함된 Room 정보들을 Room Entity로 변환
-        // (실제로는 Room 엔티티와 빌더가 미리 정의되어 있어야 합니다)
         List<Room> rooms = dto.getRooms().stream()
                 .map(roomDto -> Room.builder()
                         .roomNumber(roomDto.getRoomNumber())
-                        .roomType(roomDto.getRoomType() != null && !roomDto.getRoomType().isEmpty()
-                                ? roomDto.getRoomType()
-                                : "single")
+                        .roomType(roomDto.getRoomType())
                         .bedType(roomDto.getBedType())
                         .price(BigDecimal.valueOf(roomDto.getMinPrice()))
                         .capacityPeople(roomDto.getCapacityPeople())
                         .status(Room.Status.AVAILABLE)
-                        .capacityRoom(roomDto.getCapacityRoom() != null ? roomDto.getCapacityRoom() : 1) // null 대비
                         .place(place)
-                        .build()
-                ).collect(Collectors.toList());
+                        .build())
+                .collect(Collectors.toList());
 
-        roomRepository.saveAll(rooms);
+        List<Room> savedRooms = roomRepository.saveAll(rooms);
 
-        dto.getAddressList().forEach(addressDto -> {
-            PlaceAddress address = PlaceAddress.builder()
-                    .place(place)
-                    .sido(addressDto.getSido())
-                    .sigungu(addressDto.getSigungu())
-                    .town(addressDto.getTown())
-                    .roadName(addressDto.getRoadName())
-                    .postalCode(addressDto.getPostalCode())
-                    .detailAddress(addressDto.getDetailAddress())
-                    .lat(BigDecimal.valueOf(221))   //하드 코딩
-                    .lng(BigDecimal.valueOf(213))
-                    .build();
-            placeAddressRepository.save(address);
-        });
+        for (int i = 0; i < dto.getRooms().size(); i++) {
+            RoomDTO roomDto = dto.getRooms().get(i);
+            Room savedRoom = savedRooms.get(i);
+            if (roomDto.getImages() != null) {
+                roomDto.getImages().forEach(imgDto -> {
+                    String url = imgDto.getUrl();
+                    allFilesToSave.add(File.builder()
+                            .domain("room")
+                            .domainFileId(savedRoom.getId())
+                            .filename(UUID.randomUUID().toString())
+                            .extension(extractExtensionFromDataUrl(url))
+                            .filetype("image")
+                            .url(url)
+                            .userId(dto.getUserId())
+                            .build());
+                });
+            }
+        }
 
+        if (!allFilesToSave.isEmpty()) {
+            fileRepository.saveAll(allFilesToSave);
+        }
+
+        List<PlaceAddress> addresses = dto.getAddressList().stream()
+                .map(addressDto -> PlaceAddress.builder()
+                        .place(place)
+                        .sido(addressDto.getSido())
+                        .sigungu(addressDto.getSigungu())
+                        .town(addressDto.getTown())
+                        .roadName(addressDto.getRoadName())
+                        .postalCode(addressDto.getPostalCode())
+                        .detailAddress(addressDto.getDetailAddress())
+                        .lat(BigDecimal.valueOf(221))
+                        .lng(BigDecimal.valueOf(213))
+                        .build())
+                .collect(Collectors.toList());
+
+        placeAddressRepository.saveAll(addresses);
 
         return place;
     }
 
-    // 전체 조회
+    private String extractExtensionFromDataUrl(String dataUrl) {
+        if (dataUrl == null || !dataUrl.startsWith("data:image/")) {
+            return "jpg"; // 기본값 또는 예외 처리
+        }
+        Pattern pattern = Pattern.compile("data:image/(\\w+);base64,.*");
+        Matcher matcher = pattern.matcher(dataUrl);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return "jpg";
+    }
+
     public List<PublishingDTO> getAllHotels() {
         return repository.findAll().stream()
                 .map(p -> PublishingDTO.builder()
@@ -105,13 +142,58 @@ public class PublishingService {//리콰이어드가 있으면 AUTOWIRED가 없�
                 .collect(Collectors.toList());
     }
 
-    // 숙소 하나 조회
     public PublishingDTO getHotel(Long id) {
-    Places place  = repository.findById(id)
-            .orElseThrow(() -> new RuntimeException("해당 숙소 없음"));
-        return new PublishingDTO(//dto 모든 내용
+        Places place = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("해당 숙소를 찾을 수 없습니다. id=" + id));
 
+        List<PlaceAddress> addresses = placeAddressRepository.findByPlaceId(id);
+        List<Room> rooms = roomRepository.findAdminRoomInfoByPlaceId(id);
 
-        );
+        List<File> hotelImages = fileRepository.findByDomainAndDomainFileId("place", id);
+        List<Long> roomIds = rooms.stream().map(Room::getId).collect(Collectors.toList());
+        List<File> roomImages = fileRepository.findByDomainAndDomainFileIdIn("room", roomIds);
+
+        List<AddressDTO> addressDTOs = addresses.stream()
+                .map(addr -> AddressDTO.builder()
+                        .sido(addr.getSido())
+                        .sigungu(addr.getSigungu())
+                        .town(addr.getTown())
+                        .roadName(addr.getRoadName())
+                        .postalCode(addr.getPostalCode())
+                        .detailAddress(addr.getDetailAddress())
+                        .build())
+                .collect(Collectors.toList());
+
+        List<FileDTO> hotelImageDTOs = hotelImages.stream()
+                .map(file -> new FileDTO(file.getFilename(), file.getExtension(), file.getUrl()))
+                .collect(Collectors.toList());
+
+        List<RoomDTO> roomDTOs = rooms.stream().map(room -> {
+            List<FileDTO> currentRoomImages = roomImages.stream()
+                    .filter(img -> img.getDomainFileId().equals(room.getId()))
+                    .map(file -> new FileDTO(file.getFilename(), file.getExtension(), file.getUrl()))
+                    .collect(Collectors.toList());
+
+            return RoomDTO.builder()
+                    .roomNumber(room.getRoomNumber())
+                    .roomType(room.getRoomType())
+                    .capacityPeople(room.getCapacityPeople())
+                    .minPrice(room.getPrice().intValue())
+                    .bedType(room.getBedType())
+                    .images(currentRoomImages)
+                    .build();
+        }).collect(Collectors.toList());
+
+        return PublishingDTO.builder()
+                .hotelName(place.getName())
+                .description(place.getDescription())
+                .checkIn(place.getCheckIn().toString())
+                .checkOut(place.getCheckOut().toString())
+                .capacityRoom(place.getCapacityRoom())
+                .CategoryId(Math.toIntExact(place.getCategory().getId()))
+                .addressList(addressDTOs)
+                .hotelImages(hotelImageDTOs)
+                .rooms(roomDTOs)
+                .build();
     }
 }

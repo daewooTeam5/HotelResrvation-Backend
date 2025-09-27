@@ -1,9 +1,11 @@
 // daewooteam5/hotelreservation-backend/HotelReservation-Backend-feature-review3/src/main/java/daewoo/team5/hotelreservation/domain/place/controller/FileController.java
 package daewoo.team5.hotelreservation.domain.place.controller;
 
+import daewoo.team5.hotelreservation.domain.place.service.FileUploadService;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,8 +24,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FileController {
 
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+
     // 실제 서비스에서는 @Value 등을 통해 외부 설정 파일에서 경로를 관리하는 것이 좋습니다.
-    private final String uploadDir = Paths.get(System.getProperty("user.dir"), "uploads").toString();
+  //  private final String uploadDir = Paths.get(System.getProperty("user.dir"), "uploads").toString();
 
     /**
      * 주석: 여러 이미지 파일을 서버에 업로드하고, 각 파일에 접근할 수 있는 URL 목록을 반환합니다.
