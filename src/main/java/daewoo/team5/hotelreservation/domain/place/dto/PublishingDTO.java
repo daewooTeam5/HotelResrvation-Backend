@@ -1,11 +1,8 @@
 package daewoo.team5.hotelreservation.domain.place.dto;
 
 
-import daewoo.team5.hotelreservation.domain.place.entity.ImageList;
+import daewoo.team5.hotelreservation.domain.place.entity.*;
 
-import daewoo.team5.hotelreservation.domain.place.entity.PlaceAddress;
-import daewoo.team5.hotelreservation.domain.place.entity.PlaceService;
-import daewoo.team5.hotelreservation.domain.place.entity.Room;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -36,7 +33,7 @@ public class PublishingDTO {
 
     private List<String> images; // Base64 인코딩된 문자열 리스트
 
-    private List<String> amenities; // 편의시설 이름 리스트
+    private List<Long> amenityIds; // 편의시설 이름 리스트
 
     private List<DiscountDTO> discounts;
 

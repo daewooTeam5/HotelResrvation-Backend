@@ -9,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Entity
 @Table(name = "places")   // 실제 DB 테이블명
@@ -67,6 +68,15 @@ public class Places extends BaseTimeEntity {
     @Column(name = "capacity_room", nullable = false) // DB에 NOT NULL 제약조건이 있음을 명시
     private Integer capacityRoom = 1;
 
+    @ManyToMany
+    @JoinTable(
+            name = "place_amenities",
+            joinColumns = @JoinColumn(name = "place_id"),
+            inverseJoinColumns = @JoinColumn(name = "amenity_id")
+    )
+    private List<Amenity> amenities;
+
+    
    // 기본값을 true로 설정
 
     public void updateDetails(String name, String description, LocalTime checkIn, LocalTime checkOut, PlaceCategory category) {

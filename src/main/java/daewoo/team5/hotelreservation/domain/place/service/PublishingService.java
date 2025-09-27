@@ -31,17 +31,25 @@ public class PublishingService {
     private final RoomRepository roomRepository;
     private final PlaceAddressRepository placeAddressRepository;
     private final FileRepository fileRepository;
+    private final AmentiesRepository amentiesRepository;
+
 
     @Transactional
     public Places registerHotel(PublishingDTO dto) {
         PlaceCategory placeCategory = placeCategoryRepository.findById(Math.toIntExact(dto.getCategoryId()))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
 
+
+        List<Amenity> amenityList = new ArrayList<>();
+        if (dto.getAmenityIds() != null && !dto.getAmenityIds().isEmpty()) {
+            amenityList = amentiesRepository.findAllById(dto.getAmenityIds());
+        }
         Places place = Places.builder()
                 .name(dto.getHotelName())
                 .description(dto.getDescription())
                 .checkOut(LocalTime.parse(dto.getCheckOut()))
                 .checkIn(LocalTime.parse(dto.getCheckIn()))
+                .amenities(amenityList)
                 .category(placeCategory)
                 .build();
 
@@ -58,6 +66,7 @@ public class PublishingService {
                         .filename(UUID.randomUUID().toString())
                         .extension(extractExtensionFromDataUrl(url))
                         .filetype("image")
+
                         .url(url)
                         .userId(dto.getUserId())
                         .build());
@@ -290,4 +299,6 @@ public class PublishingService {
                 .rooms(roomDTOs)
                 .build();
     }
+
+
 }

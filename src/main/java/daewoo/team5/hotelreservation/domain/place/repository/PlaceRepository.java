@@ -246,7 +246,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             "WHERE p.id = :placeId")
     PlaceInfoProjection findPlaceInfo(@Param("placeId") Long placeId);
     List<Places> findAllByOwnerId(Long ownerId);
-
+    List<Places> findByAmenities_Id(Long amenityId);
 }
 
 
