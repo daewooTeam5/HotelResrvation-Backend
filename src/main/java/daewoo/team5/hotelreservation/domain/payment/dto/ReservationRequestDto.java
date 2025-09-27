@@ -22,8 +22,9 @@ public class ReservationRequestDto {
     private String phone;
     private LocalDate checkIn;
     private LocalDate checkOut;
-    private Long paymentAmount;
+    private Integer nights;
     private String request;
     private Long roomId;
     private Integer roomCount;
+    private Long couponId;
 }
