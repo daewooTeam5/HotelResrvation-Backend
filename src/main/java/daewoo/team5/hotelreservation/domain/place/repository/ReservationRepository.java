@@ -396,5 +396,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
                                  @Param("startDate") LocalDate startDate,
                                  @Param("endDate") LocalDate endDate);
 
-
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId")
+    long countByOwner(@Param("ownerId") Long ownerId);
 }

@@ -4,6 +4,7 @@ import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
 import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
+import daewoo.team5.hotelreservation.domain.place.review.repository.ReviewRepository;
 import daewoo.team5.hotelreservation.domain.place.service.DashboardOwnerService;
 import daewoo.team5.hotelreservation.domain.statistics.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class StatisticsService {
 
     private static final String[] WEEK_DAYS = {"일", "월", "화", "수", "목", "금", "토"};
     private final PaymentRepository paymentRepository;
+    private final ReviewRepository reviewRepository;
 
     public TodayReservationDTO getTodayReservationSummary(Long ownerId) {
         ReservationStatsDTO stats = dashboardOwnerService.getTodayStats(ownerId);
@@ -247,6 +249,63 @@ public class StatisticsService {
         long nonMembers = reservationRepository.countDistinctNonMembers(ownerId, startDate, endDate);
 
         return new MemberRatioDTO(members, nonMembers);
+    }
+
+    public ReviewSummaryDTO getReviewSummary(Long ownerId) {
+        // 전체 평균 평점
+        Double avgRating = reviewRepository.findAvgRatingByOwner(ownerId);
+        if (avgRating == null) avgRating = 0.0;
+
+        // 전체 리뷰 수
+        long totalReviews = reviewRepository.countByOwner(ownerId);
+
+        // 전체 예약 수
+        long totalReservations = reservationRepository.countByOwner(ownerId);
+
+        // 리뷰 작성률
+        double reviewRate = totalReservations > 0
+                ? ((double) totalReviews / totalReservations) * 100
+                : 0.0;
+
+        return new ReviewSummaryDTO(avgRating, totalReviews, reviewRate);
+    }
+
+    public Map<Integer, Long> getRatingDistribution(Long ownerId, LocalDate startDate, LocalDate endDate) {
+        List<Object[]> results = reviewRepository.findRatingDistribution(ownerId, startDate.atStartOfDay(), endDate.atTime(23,59,59));
+
+        Map<Integer, Long> distribution = new HashMap<>();
+        for (Object[] row : results) {
+            Integer rating = (Integer) row[0];
+            Long count = ((Number) row[1]).longValue();
+            distribution.put(rating, count);
+        }
+
+        // 1~5점까지 빠진 값은 0으로 채워줌
+        for (int i = 1; i <= 5; i++) {
+            distribution.putIfAbsent(i, 0L);
+        }
+
+        return distribution;
+    }
+
+    public List<ReviewTrendDTO> getReviewTrend(Long ownerId, LocalDate startDate, LocalDate endDate, String period) {
+        List<Object[]> results;
+
+        switch (period.toLowerCase()) {
+            case "daily" ->
+                    results = reviewRepository.countDailyReviews(ownerId, startDate, endDate);
+            case "weekly" ->
+                    results = reviewRepository.countWeeklyReviews(ownerId, startDate, endDate);
+            case "monthly" ->
+                    results = reviewRepository.countMonthlyReviews(ownerId, startDate, endDate);
+            case "yearly" ->
+                    results = reviewRepository.countYearlyReviews(ownerId, startDate, endDate);
+            default -> throw new IllegalArgumentException("Invalid period: " + period);
+        }
+
+        return results.stream()
+                .map(r -> new ReviewTrendDTO(r[0].toString(), ((Number) r[1]).longValue()))
+                .toList();
     }
 
 }

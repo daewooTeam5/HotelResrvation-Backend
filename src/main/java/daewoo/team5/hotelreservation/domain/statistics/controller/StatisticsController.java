@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/statistics")
@@ -154,4 +155,35 @@ public class StatisticsController {
         MemberRatioDTO dto = statisticsService.getMemberRatio(ownerId, startDate, endDate);
         return ResponseEntity.ok(dto);
     }
+
+    @GetMapping("/reviews/summary")
+    @AuthUser
+    public ResponseEntity<ReviewSummaryDTO> getReviewSummary(UserProjection projection) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getReviewSummary(ownerId));
+    }
+
+    @GetMapping("/reviews/distribution")
+    @AuthUser
+    public ResponseEntity<Map<Integer, Long>> getRatingDistribution(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getRatingDistribution(ownerId, startDate, endDate));
+    }
+
+    @GetMapping("/reviews/trend")
+    @AuthUser
+    public ResponseEntity<List<ReviewTrendDTO>> getReviewTrend(
+            UserProjection projection,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate,
+            @RequestParam(defaultValue = "daily") String period // daily, weekly, monthly, yearly
+    ) {
+        Long ownerId = projection.getId();
+        return ResponseEntity.ok(statisticsService.getReviewTrend(ownerId, startDate, endDate, period));
+    }
+
 }
