@@ -34,17 +34,19 @@ public class PublishingController {//api리설트는 컨트롤러를 바꿔주�
         return ApiResult.ok(updatedPlace.getId(), "숙소 정보가 성공적으로 수정되었습니다.");
     }
 
+
+    @GetMapping("/get/{placeId}")
+    public ApiResult<PublishingDTO> getHotel(@PathVariable Long placeId) {
+        PublishingDTO hotelDetails = publishingService.getHotel(placeId);
+        return ApiResult.ok(hotelDetails);
+    }
+
     // 숙소 전체 조회
     @GetMapping("/my-list")
     public ApiResult<List<PublishingDTO>> getAllHotels(@RequestParam Long ownerId) {  //ApiResult<>이걸로 여기만 묶어주기
         return ApiResult.ok(publishingService.getAllHotels(ownerId));
     }
 
-    // 특정 숙소 조회(지금은 더미데이터)
-    @GetMapping("/list/{id}")
-    public ApiResult<PublishingDTO> getHotel(@PathVariable Long id) {
-        return ApiResult.ok(publishingService.getHotel(id)) ;
-    }
 
     @DeleteMapping("/delete/{placeId}") // 💡 프론트엔드 호출 경로와 일치하는지 확인!
     public ApiResult<String> deleteHotel(@PathVariable Long placeId) {
