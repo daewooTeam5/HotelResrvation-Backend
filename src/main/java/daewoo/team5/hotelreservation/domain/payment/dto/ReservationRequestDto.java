@@ -27,4 +27,5 @@ public class ReservationRequestDto {
     private Long roomId;
     private Integer roomCount;
     private Long couponId;
+    private Long usedPoints;
 }

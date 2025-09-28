@@ -8,8 +8,10 @@ import daewoo.team5.hotelreservation.domain.coupon.repository.UserCouponReposito
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
+import daewoo.team5.hotelreservation.domain.payment.entity.PointHistoryEntity;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
+import daewoo.team5.hotelreservation.domain.payment.repository.PointHistoryRepository;
 import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
 import daewoo.team5.hotelreservation.domain.place.dto.*;
 import daewoo.team5.hotelreservation.domain.place.entity.DailyPlaceReservation;
@@ -20,8 +22,11 @@ import daewoo.team5.hotelreservation.domain.place.repository.ReservationReposito
 import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
 import daewoo.team5.hotelreservation.domain.place.specification.ReservationSpecification;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import daewoo.team5.hotelreservation.global.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,6 +35,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,6 +52,8 @@ public class ReservationService {
     private final CouponHistoryRepository couponHistoryRepository;
     private final UserCouponRepository userCouponRepository;
     private final CouponRepository couponRepository;
+    private final PointHistoryRepository pointHistoryRepository;
+    private final UsersRepository usersRepository;
 
     /**
      * ✅ [추가] 리뷰 작성 가능한 예약 목록을 조회하는 서비스 로직
@@ -196,7 +204,7 @@ public class ReservationService {
         if (response != null && response.getCancels() != null && !response.getCancels().isEmpty()) {
             TossCancelResponse.CancelHistory lastCancel = response.getCancels().get(response.getCancels().size() - 1);
             payment.setAmount(lastCancel.getCancelAmount()); // 환불 금액 반영
-//            payment.setTransactionDate(lastCancel.getCanceledAt().toLocalDateTime()); // 환불 시각 반영
+            payment.setTransactionDate(lastCancel.getCanceledAt().toLocalDateTime()); // 환불 시각 반영
         }
         paymentRepository.save(payment);
 
@@ -218,7 +226,45 @@ public class ReservationService {
             userCouponEntity.setUsed(false);
         });
         Reservation saved = reservationRepository.save(r);
+        backupPoint(r, r.getGuest() != null && r.getGuest().getUsers() != null ? r.getGuest().getUsers() : null);
         return toDetailDTO(saved);
+
+    }
+    public void backupPoint(Reservation r,Users users){
+        // 로그인 안한 유저면 패스
+        // 포인트 적립된값 차감
+        PointHistoryEntity pointHistory = pointHistoryRepository.findByReservationAndType(r,PointHistoryEntity.PointType.EARN).orElseThrow(() -> new ApiException(
+                HttpStatus.NOT_FOUND,
+                "Point History Not Found",
+                "해당 예약의 포인트 내역이 존재하지 않습니다."
+        ));
+        long balanceAfter = users.getPoint() - pointHistory.getAmount();
+        pointHistoryRepository.save(
+                PointHistoryEntity.builder()
+                        .user(users)
+                        .type(PointHistoryEntity.PointType.USE)
+                        .amount(pointHistory.getAmount())
+                        .balanceAfter(balanceAfter)
+                        .description("예약 취소로 인한 포인트 차감 주문 번호 :"+r.getOrderId())
+                        .createdAt(LocalDateTime.now())
+                        .build()
+        );
+        users.setPoint(balanceAfter);
+        // 예약 에 사용한 포인트는 다시 적립
+        if(r.getPointDiscountAmount()!=null && r.getPointDiscountAmount()>0){
+            long pointAfter = users.getPoint() + r.getPointDiscountAmount();
+            pointHistoryRepository.save(
+                    PointHistoryEntity.builder()
+                            .user(users)
+                            .type(PointHistoryEntity.PointType.EARN)
+                            .amount(r.getPointDiscountAmount().longValue())
+                            .balanceAfter(pointAfter)
+                            .description("예약 취소로 인한 사용포인트 복원 주문 번호 :"+r.getOrderId())
+                            .createdAt(LocalDateTime.now())
+                            .build()
+            );
+            users.setPoint(pointAfter);
+        }
 
     }
 
