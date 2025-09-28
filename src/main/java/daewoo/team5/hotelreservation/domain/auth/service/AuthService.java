@@ -96,6 +96,7 @@ public class AuthService {
         Users users = findUser.orElseGet(() -> userRepository.save(
                 Users.builder()
                         .email(email)
+                        .point(0L)
                         .name("Guest" + random.nextInt())
                         .userId(UUID.randomUUID().toString())
                         .role(Users.Role.customer)
