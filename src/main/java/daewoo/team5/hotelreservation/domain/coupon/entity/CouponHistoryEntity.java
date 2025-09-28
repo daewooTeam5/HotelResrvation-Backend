@@ -35,7 +35,7 @@ public class CouponHistoryEntity {
     @ManyToOne
     private Reservation reservation_id; // 예약 ID
 
-    @OneToOne()
+    @ManyToOne()
     private UserCouponEntity userCoupon; // 발급 받은 유저 쿠폰 ID
 
     @Column(nullable = false)
