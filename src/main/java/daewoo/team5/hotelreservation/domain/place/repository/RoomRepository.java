@@ -14,36 +14,7 @@ import java.util.Optional;
 
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
-    @Modifying
-    @Transactional
-    @Query("UPDATE room r SET r.status = :status WHERE r.id = :roomId")
-    int updateRoomStatus(Long roomId, String status);
-
     List<AdminRoomInfoProjection> findByPlace_Id(Long placeId);
-
-    @Query("""
-                SELECT 
-                    r.id AS id,
-                    CONCAT(r.roomType, r.bedType) AS roomName,
-                    MIN(COALESCE(d.availableRoom, r.capacityRoom)) AS availableCount,
-                    r.place.id AS placeId,
-                    r.price AS price,
-                    COALESCE(dc.discountValue, 0) AS discountPercent,
-                    FUNCTION('ROUND', r.price - r.price * COALESCE(dc.discountValue, 0) / 100, 0) AS finalPrice
-                FROM room r
-                LEFT JOIN DailyPlaceReservation d
-                    ON d.date BETWEEN :startDate AND :endDate
-                LEFT JOIN Discount dc
-                    ON r.place.id = dc.place.id
-                WHERE r.place.id = :placeId
-                GROUP BY r.id, r.roomType, r.bedType, r.place.id, r.price, dc.discountValue
-                HAVING MIN(COALESCE(d.availableRoom, r.capacityRoom)) > 0
-            """)
-    List<RoomInfoProjection> findPlacesInRoomAvailability(
-            @Param("placeId") Long placeId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
-    );
 
     @Query(
             value = """
@@ -86,5 +57,17 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     Optional<Room> findByIdAndOwnerId(@Param("roomId") Long roomId,
                                       @Param("ownerId") Long ownerId);
 
+    // 총 객실 수 (capacityRoom 합계)
+    @Query("SELECT COALESCE(SUM(r.capacityRoom), 0) " +
+            "FROM room r JOIN r.place p " +
+            "WHERE p.owner.id = :ownerId")
+    long countTotalRoomsByOwner(@Param("ownerId") Long ownerId);
+
+    // 상태별 + 유형별 카운트
+    @Query("SELECT r.status, r.roomType, COUNT(r) " +
+            "FROM room r JOIN r.place p " +
+            "WHERE p.owner.id = :ownerId " +
+            "GROUP BY r.status, r.roomType")
+    List<Object[]> countRoomStatusWithTypesByOwner(@Param("ownerId") Long ownerId);
 
 }
