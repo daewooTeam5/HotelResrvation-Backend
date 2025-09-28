@@ -1,5 +1,7 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
+import daewoo.team5.hotelreservation.domain.notification.entity.NotificationEntity;
+import daewoo.team5.hotelreservation.domain.notification.repository.NotificationRepository;
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
@@ -19,6 +21,7 @@ import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -30,6 +33,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationService {
 
     private final ReservationRepository reservationRepository;
@@ -38,6 +42,7 @@ public class ReservationService {
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     private final TossPaymentService tossPaymentService;
     private final GuestRepository guestRepository;
+    private final NotificationRepository notificationRepository;
     /**
      * ✅ [추가] 리뷰 작성 가능한 예약 목록을 조회하는 서비스 로직
      */
@@ -166,7 +171,7 @@ public class ReservationService {
         ));
     }
 
-    // 소유자 기반 예약 취소
+    // 예약 취소
     @Transactional
     public ReservationDetailDTO cancel(Long reservationId, Long ownerId) {
         Reservation r = reservationRepository.findByIdAndOwnerId(reservationId, ownerId)
@@ -207,8 +212,20 @@ public class ReservationService {
 //        }
 //
         Reservation saved = reservationRepository.save(r);
+
+        // ✅ 알림 생성 (회원일 경우에만)
+        if (r.getGuest() != null && r.getGuest().getUsers() != null) {
+            NotificationEntity notification = NotificationEntity.builder()
+                    .title("예약이 취소되었습니다")
+                    .content("예약번호 " + r.getReservationId() + "번이 취소 및 환불 처리되었습니다.")
+                    .notificationType(NotificationEntity.NotificationType.RESERVATION)
+                    .user(r.getGuest().getUsers())
+                    .build();
+            notificationRepository.save(notification);
+        }
         return toDetailDTO(saved);
     }
+
 
     // 소유자 기반 검색
     public Page<ReservationListDTO> searchReservations(ReservationSearchRequest req, Long ownerId, Pageable pageable) {
@@ -254,52 +271,6 @@ public class ReservationService {
         }
     }
 
-    @Transactional
-    public ReservationDetailDTO createTestReservation(Long ownerId, ReservationTestRequestDTO dto) {
-        // ✅ 객실 확인
-        Room room = roomRepository.findById(dto.getRoomId())
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "Not Found",
-                        "해당 객실 유형을 찾을 수 없습니다."
-                ));
-
-        // ✅ 소유자 검증
-        if (!room.getPlace().getOwner().getId().equals(ownerId)) {
-            throw new ApiException(
-                    HttpStatus.FORBIDDEN,
-                    "Forbidden",
-                    "해당 객실은 현재 소유자의 소유가 아닙니다."
-            );
-        }
-
-        // ✅ 예약 엔티티 생성
-        Reservation reservation = Reservation.builder()
-                .room(room)
-                .status(Reservation.ReservationStatus.confirmed)   // 테스트니까 바로 확정
-                .paymentStatus(Reservation.ReservationPaymentStatus.paid)
-                .resevStart(dto.getResevStart())
-                .resevEnd(dto.getResevEnd())
-                .baseAmount(dto.getBaseAmount())
-                .finalAmount(dto.getFinalAmount())
-                .request(dto.getRequest())
-                .build();
-
-        Reservation saved = reservationRepository.save(reservation);
-
-        // ✅ 재고 차감
-        if (saved.getRoom() != null && saved.getResevStart() != null && saved.getResevEnd() != null) {
-            adjustInventory(
-                    saved.getRoom().getId(),
-                    saved.getResevStart(),
-                    saved.getResevEnd(),
-                    -1
-            );
-        }
-
-        return toDetailDTO(saved);
-    }
-
     /**
      * 주석: 사용자가 특정 숙소에 대해 리뷰를 작성할 수 있는지 확인합니다.
      * @param placeId 확인할 숙소 ID
@@ -327,5 +298,7 @@ public class ReservationService {
     public List<ReservationInfoProjection> getReservationsByPlaceId(Long placeId) {
         return reservationRepository.findByRoom_Place_Id(placeId);
     }
+
+
 
 }
