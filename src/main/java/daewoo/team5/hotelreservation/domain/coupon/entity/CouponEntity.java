@@ -61,10 +61,7 @@ public class CouponEntity {
         }
         // 고정 값 할인일때 최소 주문 가격과 주문 가격 비교
         if(this.couponType==CouponType.fixed) {
-            if (orderAmount < this.minOrderAmount) {
-                return false;
-            }
-            return false;
+            return orderAmount > this.minOrderAmount;
         }else{
             return true;
         }
