@@ -3,13 +3,13 @@ package daewoo.team5.hotelreservation.domain.payment.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.service.DashboardService;
 import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
+import daewoo.team5.hotelreservation.domain.payment.service.PointService;
 import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
 import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
@@ -41,6 +41,7 @@ public class PaymentController {
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationService reservationService;
+    private final PointService pointService;
 
 
     @GetMapping("/reservation/{id}")
@@ -51,12 +52,20 @@ public class PaymentController {
     }
 
     @PostMapping("/confirm")
+    @AuthUser
     public ApiResult<Payment> paymentConfirm(
             @RequestBody
-            PaymentConfirmRequestDto dto
+            PaymentConfirmRequestDto dto,
+            Authentication authentication,
+            UserProjection user
     ) {
-        return ApiResult.created(paymentService.confirmPayment(dto), "결제 완료");
+        Payment payment = paymentService.confirmPayment(user,dto);
+        if (authentication.isAuthenticated()) {
+            pointService.earnPoint(user.getId(), payment.getAmount(),dto.getOrderId());
+        }
+        return ApiResult.created(payment, "결제 완료");
     }
+
     // cancel
     @PostMapping("/{id}/cancel")
     @AuthUser
