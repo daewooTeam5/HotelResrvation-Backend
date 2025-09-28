@@ -2,8 +2,12 @@ package daewoo.team5.hotelreservation.domain.statistics.service;
 
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
+import daewoo.team5.hotelreservation.domain.place.entity.DailyPlaceReservation;
+import daewoo.team5.hotelreservation.domain.place.entity.Room;
+import daewoo.team5.hotelreservation.domain.place.repository.DailyPlaceReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
+import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
 import daewoo.team5.hotelreservation.domain.place.review.repository.ReviewRepository;
 import daewoo.team5.hotelreservation.domain.place.service.DashboardOwnerService;
 import daewoo.team5.hotelreservation.domain.statistics.dto.*;
@@ -26,6 +30,9 @@ public class StatisticsService {
     private static final String[] WEEK_DAYS = {"일", "월", "화", "수", "목", "금", "토"};
     private final PaymentRepository paymentRepository;
     private final ReviewRepository reviewRepository;
+
+    private final RoomRepository roomRepository;
+    private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
 
     public TodayReservationDTO getTodayReservationSummary(Long ownerId) {
         ReservationStatsDTO stats = dashboardOwnerService.getTodayStats(ownerId);
@@ -305,6 +312,140 @@ public class StatisticsService {
 
         return results.stream()
                 .map(r -> new ReviewTrendDTO(r[0].toString(), ((Number) r[1]).longValue()))
+                .toList();
+    }
+
+    public List<DailyAvailabilityDTO> getAvailability(Long ownerId) {
+        List<Room> rooms = roomRepository.findAllByOwnerId(ownerId);
+
+        // DailyPlaceReservation 전체 조회
+        List<DailyPlaceReservation> reservations = dailyPlaceReservationRepository.findAll();
+
+        // roomId + date 기준으로 map 구성
+        Map<String, DailyPlaceReservation> dprMap = reservations.stream()
+                .collect(Collectors.toMap(
+                        d -> d.getRoom().getId() + "_" + d.getDate(),
+                        d -> d
+                ));
+
+        Map<LocalDate, List<RoomAvailabilityDTO>> availabilityMap = new HashMap<>();
+
+        for (Room room : rooms) {
+            // DailyPlaceReservation이 기록된 모든 날짜 가져오기
+            Set<LocalDate> dates = reservations.stream()
+                    .map(DailyPlaceReservation::getDate)
+                    .collect(Collectors.toSet());
+
+            for (LocalDate date : dates) {
+                String key = room.getId() + "_" + date;
+                DailyPlaceReservation dpr = dprMap.get(key);
+
+                int total = room.getCapacityRoom();
+                int available = (dpr != null) ? dpr.getAvailableRoom() : total;
+
+                RoomAvailabilityDTO roomDTO = RoomAvailabilityDTO.builder()
+                        .date(date)
+                        .roomType(room.getRoomType())
+                        .available(available)
+                        .total(total)
+                        .build();
+
+                availabilityMap
+                        .computeIfAbsent(date, k -> new ArrayList<>())
+                        .add(roomDTO);
+            }
+        }
+
+        return availabilityMap.entrySet().stream()
+                .map(entry -> new DailyAvailabilityDTO(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparing(DailyAvailabilityDTO::getDate))
+                .toList();
+    }
+
+    /**
+     * 전체 객실 수 + 점유율
+     */
+    public RoomSummaryDTO getRoomSummary(Long ownerId) {
+        long totalRooms = roomRepository.countTotalRoomsByOwner(ownerId);
+
+        // 현재 예약된 객실 수 (오늘 기준)
+        long reservedRooms = reservationRepository.countNormalReservationsByOwnerAndPeriod(
+                ownerId,
+                java.time.LocalDate.now(),
+                java.time.LocalDate.now()
+        );
+
+        double occupancyRate = (totalRooms > 0)
+                ? ((double) reservedRooms / totalRooms) * 100
+                : 0.0;
+
+        return new RoomSummaryDTO(totalRooms, occupancyRate);
+    }
+
+    /**
+     * 객실 상태 분포
+     */
+    public RoomStatusDTO getRoomStatus(Long ownerId) {
+        List<Object[]> results = roomRepository.countRoomStatusWithTypesByOwner(ownerId);
+
+        long available = 0, reserved = 0, cleaning = 0;
+        List<String> availableTypes = new ArrayList<>();
+        List<String> reservedTypes = new ArrayList<>();
+        List<String> cleaningTypes = new ArrayList<>();
+
+        for (Object[] row : results) {
+            String status = row[0].toString();
+            String roomType = row[1].toString();
+            long count = ((Number) row[2]).longValue();
+
+            switch (status) {
+                case "AVAILABLE" -> {
+                    available += count;
+                    availableTypes.add(roomType);
+                }
+                case "RESERVED" -> {
+                    reserved += count;
+                    reservedTypes.add(roomType);
+                }
+                case "CLEANING" -> {
+                    cleaning += count;
+                    cleaningTypes.add(roomType);
+                }
+            }
+        }
+
+        return new RoomStatusDTO(
+                available, reserved, cleaning,
+                availableTypes, reservedTypes, cleaningTypes
+        );
+    }
+
+    public List<PeakPatternDTO> getPeakPattern(Long ownerId, String type) {
+        List<Object[]> results;
+
+        switch (type) {
+            case "weekday" -> results = reservationRepository.countReservationsByWeekday(ownerId);
+            case "monthly_pattern" -> results = reservationRepository.countReservationsByMonth(ownerId);
+            case "yearly_pattern" -> results = reservationRepository.countReservationsByYear(ownerId);
+            default -> throw new IllegalArgumentException("Invalid peak pattern type: " + type);
+        }
+
+        return results.stream()
+                .map(r -> {
+                    String label;
+                    if ("weekday".equals(type)) {
+                        int dayNum = ((Number) r[0]).intValue(); // 1~7
+                        label = WEEK_DAYS[dayNum - 1];
+                    } else {
+                        label = r[0].toString();
+                    }
+                    return new PeakPatternDTO(
+                            label,
+                            ((Number) r[1]).longValue(),   // count
+                            ((Number) r[2]).longValue(),   // revenue
+                            ((Number) r[3]).doubleValue()  // occupancy
+                    );
+                })
                 .toList();
     }
 
