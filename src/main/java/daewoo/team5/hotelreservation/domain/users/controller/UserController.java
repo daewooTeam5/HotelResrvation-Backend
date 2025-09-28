@@ -5,11 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import daewoo.team5.hotelreservation.domain.coupon.projection.UserCouponProjection;
 import daewoo.team5.hotelreservation.domain.coupon.service.CouponService;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
+import daewoo.team5.hotelreservation.domain.payment.entity.PointHistoryEntity;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailProjection;
+import daewoo.team5.hotelreservation.domain.payment.projection.PointHistorySummaryProjection;
 import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
+import daewoo.team5.hotelreservation.domain.payment.service.PointService;
 import daewoo.team5.hotelreservation.domain.place.repository.projection.PaymentSummaryProjection;
 import daewoo.team5.hotelreservation.domain.shoppingcart.projection.CartProjection;
 import daewoo.team5.hotelreservation.domain.shoppingcart.service.ShoppingCartService;
+import daewoo.team5.hotelreservation.domain.users.projection.MyInfoProjection;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.service.UsersService;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
@@ -33,6 +37,7 @@ public class UserController {
     private final CouponService couponService;
     private final PaymentService paymentService;
     private final UsersService usersService;
+    private final PointService pointService;
 
     @GetMapping("/my/payments")
     @AuthUser
@@ -50,6 +55,22 @@ public class UserController {
             UserProjection user
     ) {
         return ApiResult.ok(paymentService.getPaymentDetail(paymentId, user.getId()), "사용자 결제 상세 내역 조회 성공");
+    }
+
+    @GetMapping("/my")
+    @AuthUser
+    public ApiResult<MyInfoProjection> getMyInfo(
+            UserProjection user
+    ) {
+        return ApiResult.ok(usersService.getUserById(user.getId()), "사용자 정보 조회 성공");
+    }
+
+    @GetMapping("/my/point-history")
+    @AuthUser
+    public ApiResult<List<PointHistorySummaryProjection>> getMyPointHistory(
+            UserProjection user
+    ) {
+        return ApiResult.ok(pointService.getPointHistoryUser(user.getId()), "사용자 포인트 내역 조회 성공");
     }
 
     @GetMapping("/my/guest")
