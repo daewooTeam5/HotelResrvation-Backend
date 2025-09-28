@@ -46,4 +46,10 @@ public class PublishingController {//api리설트는 컨트롤러를 바꿔주�
         return ApiResult.ok(publishingService.getHotel(id)) ;
     }
 
+    @DeleteMapping("/delete/{placeId}") // 💡 프론트엔드 호출 경로와 일치하는지 확인!
+    public ApiResult<String> deleteHotel(@PathVariable Long placeId) {
+        publishingService.deleteHotel(placeId);
+        return ApiResult.ok("숙소가 성공적으로 삭제되었습니다.");
+    }
+
 }

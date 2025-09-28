@@ -129,14 +129,19 @@ public class PublishingService {
         return place;
     }
 
+    // PublishingService.java
+
     @Transactional
     public Places updateHotel(Long placeId, PublishingDTO dto) {
+        // 1. 수정할 숙소 엔티티를 찾습니다.
         Places place = repository.findById(placeId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "수정할 숙소를 찾을 수 없습니다.", "ID: " + placeId));
 
+        // 2. 카테고리 엔티티를 찾습니다.
         PlaceCategory placeCategory = placeCategoryRepository.findById(Math.toIntExact(dto.getCategoryId()))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
 
+        // 3. 호텔의 기본 정보를 업데이트합니다.
         place.updateDetails(
                 dto.getHotelName(),
                 dto.getDescription(),
@@ -145,9 +150,17 @@ public class PublishingService {
                 placeCategory
         );
 
+        // 4. 편의시설(Amenity) 목록을 업데이트합니다.
+        if (dto.getAmenityIds() != null) {
+            List<Amenity> updatedAmenities = amentiesRepository.findAllById(dto.getAmenityIds());
+            place.setAmenities(updatedAmenities);
+        } else {
+            place.getAmenities().clear();
+        }
+
+        // 5. 기존의 연관 데이터(이미지, 객실, 주소)를 모두 삭제합니다.
         List<Long> existingRoomIds = roomRepository.findByPlaceId(placeId).stream()
                 .map(Room::getId).collect(Collectors.toList());
-
         if (!existingRoomIds.isEmpty()) {
             fileRepository.deleteByDomainAndDomainFileIdIn("room", existingRoomIds);
         }
@@ -155,24 +168,37 @@ public class PublishingService {
         roomRepository.deleteByPlaceId(placeId);
         placeAddressRepository.deleteByPlaceId(placeId);
 
+        // 💡 [추가] 6. DTO에 담겨온 새 정보로 연관 데이터를 다시 생성합니다.
+        // 이 부분은 registerHotel의 로직과 동일합니다.
         List<File> allFilesToSave = new ArrayList<>();
+
         if (dto.getHotelImages() != null) {
             dto.getHotelImages().forEach(imgDto -> {
                 String url = imgDto.getUrl();
                 allFilesToSave.add(File.builder()
-                        .domain("place").domainFileId(place.getId())
-                        .filename(UUID.randomUUID().toString()).extension(extractExtensionFromDataUrl(url))
-                        .filetype("image").url(url).userId(dto.getUserId()).build());
+                        .domain("place")
+                        .domainFileId(place.getId())
+                        .filename(UUID.randomUUID().toString())
+                        .extension(extractExtensionFromDataUrl(url))
+                        .filetype("image")
+                        .url(url)
+                        .userId(dto.getUserId())
+                        .build());
             });
         }
 
         List<Room> rooms = dto.getRooms().stream()
                 .map(roomDto -> Room.builder()
-                        .roomNumber(roomDto.getRoomNumber()).roomType(roomDto.getRoomType())
-                        .bedType(roomDto.getBedType()).price(BigDecimal.valueOf(roomDto.getMinPrice()))
-                        .capacityPeople(roomDto.getCapacityPeople()).status(Room.Status.AVAILABLE)
-                        .place(place).build())
+                        .roomNumber(roomDto.getRoomNumber())
+                        .roomType(roomDto.getRoomType())
+                        .bedType(roomDto.getBedType())
+                        .price(BigDecimal.valueOf(roomDto.getMinPrice()))
+                        .capacityPeople(roomDto.getCapacityPeople())
+                        .status(Room.Status.AVAILABLE)
+                        .place(place)
+                        .build())
                 .collect(Collectors.toList());
+
         List<Room> savedRooms = roomRepository.saveAll(rooms);
 
         for (int i = 0; i < dto.getRooms().size(); i++) {
@@ -182,9 +208,14 @@ public class PublishingService {
                 roomDto.getImages().forEach(imgDto -> {
                     String url = imgDto.getUrl();
                     allFilesToSave.add(File.builder()
-                            .domain("room").domainFileId(savedRoom.getId())
-                            .filename(UUID.randomUUID().toString()).extension(extractExtensionFromDataUrl(url))
-                            .filetype("image").url(url).userId(dto.getUserId()).build());
+                            .domain("room")
+                            .domainFileId(savedRoom.getId())
+                            .filename(UUID.randomUUID().toString())
+                            .extension(extractExtensionFromDataUrl(url))
+                            .filetype("image")
+                            .url(url)
+                            .userId(dto.getUserId())
+                            .build());
                 });
             }
         }
@@ -195,11 +226,18 @@ public class PublishingService {
 
         List<PlaceAddress> addresses = dto.getAddressList().stream()
                 .map(addressDto -> PlaceAddress.builder()
-                        .place(place).sido(addressDto.getSido()).sigungu(addressDto.getSigungu())
-                        .town(addressDto.getTown()).roadName(addressDto.getRoadName())
-                        .postalCode(addressDto.getPostalCode()).detailAddress(addressDto.getDetailAddress())
-                        .lat(BigDecimal.valueOf(221)).lng(BigDecimal.valueOf(213)).build())
+                        .place(place)
+                        .sido(addressDto.getSido())
+                        .sigungu(addressDto.getSigungu())
+                        .town(addressDto.getTown())
+                        .roadName(addressDto.getRoadName())
+                        .postalCode(addressDto.getPostalCode())
+                        .detailAddress(addressDto.getDetailAddress())
+                        .lat(BigDecimal.valueOf(221))
+                        .lng(BigDecimal.valueOf(213))
+                        .build())
                 .collect(Collectors.toList());
+
         placeAddressRepository.saveAll(addresses);
 
         return place;
@@ -231,6 +269,9 @@ public class PublishingService {
                                     .build())
                             .orElse(null);
 
+                    Long categoryId = p.getCategory() != null ? (long)p.getCategory().getId() : null;
+
+
                     return PublishingDTO.builder()
                             .id(p.getId())
                             .hotelName(p.getName())
@@ -240,6 +281,7 @@ public class PublishingService {
                             .checkOut(p.getCheckOut().toString())
                             .address(addressDto)
                             .images(imageUrl != null ? List.of(imageUrl) : List.of())
+                            .CategoryId(categoryId)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -287,6 +329,10 @@ public class PublishingService {
                     .build();
         }).collect(Collectors.toList());
 
+        List<Long> amenityIds = place.getAmenities().stream()
+                .map(Amenity::getId)
+                .collect(Collectors.toList());
+
         return PublishingDTO.builder()
                 .hotelName(place.getName())
                 .description(place.getDescription())
@@ -297,8 +343,38 @@ public class PublishingService {
                 .addressList(addressDTOs)
                 .hotelImages(hotelImageDTOs)
                 .rooms(roomDTOs)
+                .amenityIds(amenityIds)
                 .build();
     }
 
+    @Transactional
+    public void deleteHotel(Long placeId) {
+        // 1. 숙소(Place)가 존재하는지 확인
+        if (!repository.existsById(placeId)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "삭제할 숙소를 찾을 수 없습니다.", "ID: " + placeId);
+        }
 
+        List<Long> roomIds = roomRepository.findByPlaceId(placeId).stream()
+                .map(Room::getId).collect(Collectors.toList());
+        if (!roomIds.isEmpty()) {
+            fileRepository.deleteByDomainAndDomainFileIdIn("room", roomIds);
+        }
+        fileRepository.deleteByDomainAndDomainFileId("place", placeId);
+        roomRepository.deleteByPlaceId(placeId);
+        placeAddressRepository.deleteByPlaceId(placeId);
+
+        /*if (!roomIds.isEmpty()) {
+            // 💡 [추가] Room을 삭제하기 전에, Room을 참조하는 예약(Reservation) 데이터를 먼저 삭제해야 합니다.
+            // 이 라인이 누락되었습니다!
+            dailyPlaceReservationRepository.deleteByRoomIdIn(roomIds);
+ 이거 물어보고 넣기로
+
+            // 그 다음, 기존 로직대로 Room의 이미지와 Room 자체를 삭제합니다.
+            fileRepository.deleteByDomainAndDomainFileIdIn("room", roomIds);
+            roomRepository.deleteByPlaceId(placeId);
+        }*/
+
+        // 3. 마지막으로 숙소(Place) 자체를 삭제
+        repository.deleteById(placeId);
+    }
 }
