@@ -29,5 +29,6 @@ public class RoomDTO {
 
     private Integer capacityRoom;
 
+    private List<FileDTO> images;
 
 }

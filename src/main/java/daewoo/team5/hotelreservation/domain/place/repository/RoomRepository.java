@@ -1,6 +1,7 @@
 package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.projection.RoomInfoProjection;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
 
 import daewoo.team5.hotelreservation.domain.place.projection.AdminRoomInfoProjection;
@@ -9,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,6 +58,10 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             "AND p.owner.id = :ownerId")
     Optional<Room> findByIdAndOwnerId(@Param("roomId") Long roomId,
                                       @Param("ownerId") Long ownerId);
+    void deleteByPlaceId(Long placeId);//삭제용
+
+
+    List<Room> findByPlaceId(Long placeId);
 
     // 총 객실 수 (capacityRoom 합계)
     @Query("SELECT COALESCE(SUM(r.capacityRoom), 0) " +
