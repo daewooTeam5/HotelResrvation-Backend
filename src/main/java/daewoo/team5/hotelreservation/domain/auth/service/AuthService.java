@@ -1,5 +1,8 @@
 package daewoo.team5.hotelreservation.domain.auth.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import daewoo.team5.hotelreservation.domain.auth.dto.AdminLoginDto;
 import daewoo.team5.hotelreservation.domain.auth.dto.LoginSuccessDto;
 import daewoo.team5.hotelreservation.domain.auth.dto.SignUpRequest;
@@ -18,6 +21,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -38,8 +43,28 @@ public class AuthService {
     private final BlackListRepository blackListRepository;
     private final CookieProvider cookieProvider;
     private final JwtProvider jwtProvider;
+    private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    // null 이면 비회원, null 아니면 회원
+    public UserProjection isAuthUser(Authentication auth){
+        UserProjection currentUser = null;
+        if (auth != null
+                && auth.isAuthenticated()
+                && !(auth instanceof AnonymousAuthenticationToken)) {
+            Object principal = auth.getPrincipal();
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = null;
+            try {
+                node = mapper.readTree(principal.toString());
+            } catch (JsonProcessingException e) {
+                throw new ApiException(500, "서버 오류", "서버 오류가 발생했습니다. 개발자에게 문의해주세요");
+            }
+            currentUser = usersRepository.findById(Long.parseLong(node.toString()), UserProjection.class)
+                    .orElseThrow(() -> new ApiException(404, "존재하지 않는 유저", "존재 하지 않는 유저입니다."));
+        }
+        return currentUser;
+    }
     public void logout(String refreshToken) {
         long expirationTime = jwtProvider.parseClaims(refreshToken).getExpiration().getTime();
         blackListRepository.addToBlackList(refreshToken,expirationTime);

@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
+import daewoo.team5.hotelreservation.domain.auth.service.AuthService;
 import daewoo.team5.hotelreservation.domain.coupon.entity.CouponHistoryEntity;
 import daewoo.team5.hotelreservation.domain.coupon.entity.UserCouponEntity;
 import daewoo.team5.hotelreservation.domain.coupon.repository.CouponHistoryRepository;
@@ -26,9 +27,10 @@ import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
-import daewoo.team5.hotelreservation.global.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -43,6 +45,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ReservationService {
 
+    private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
     private final ReservationRepository reservationRepository;
     private final PaymentRepository paymentRepository;
     private final RoomRepository roomRepository;
@@ -54,6 +57,7 @@ public class ReservationService {
     private final CouponRepository couponRepository;
     private final PointHistoryRepository pointHistoryRepository;
     private final UsersRepository usersRepository;
+    private final AuthService authService;
 
     /**
      * ✅ [추가] 리뷰 작성 가능한 예약 목록을 조회하는 서비스 로직
@@ -216,15 +220,19 @@ public class ReservationService {
 //
         //
         // 쿠폰 조회후 쿠폰 상태 복구
-        couponHistoryRepository.findByReservation_id(r.getReservationId()).ifPresent(ch -> {
-            ch.setStatus(CouponHistoryEntity.CouponStatus.canceled);
-            UserCouponEntity userCouponEntity = userCouponRepository.findByCouponId(ch.getUserCoupon().getCoupon().getId()).orElseThrow(() -> new ApiException(
-                    HttpStatus.NOT_FOUND,
-                    "UserCoupon Not Found",
-                    "해당 쿠폰을 찾을 수 없습니다."
-            ));
-            userCouponEntity.setUsed(false);
-        });
+        if(r.getGuest().getUsers()!=null) {
+log.info("Finding coupon history for reservation: {}", r.getReservationId());
+            couponHistoryRepository.findByReservation_idWithUsed(r.getReservationId()).ifPresent(ch -> {
+                log.info("Cancelling coupon history: {}", ch.getId());
+                ch.setStatus(CouponHistoryEntity.CouponStatus.refunded);
+                UserCouponEntity userCouponEntity = userCouponRepository.findByUserIdAndCouponId(r.getGuest().getUsers().getId(), ch.getUserCoupon().getCoupon().getId()).orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "UserCoupon Not Found",
+                        "해당 쿠폰을 찾을 수 없습니다."
+                ));
+                userCouponEntity.setUsed(false);
+            });
+        }
         Reservation saved = reservationRepository.save(r);
         backupPoint(r, r.getGuest() != null && r.getGuest().getUsers() != null ? r.getGuest().getUsers() : null);
         return toDetailDTO(saved);

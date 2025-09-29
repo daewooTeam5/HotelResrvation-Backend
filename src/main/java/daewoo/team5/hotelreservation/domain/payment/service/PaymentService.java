@@ -104,15 +104,26 @@ public class PaymentService {
             // TODO 결제 금액 유효성 검사
 
             TossPaymentDto tossPaymentDto = tossPayClient.confirmPayment(dto);
+            String cleanText = tossPaymentDto
+                    .getRequestedAt().substring(0, 19);
+            LocalDateTime paymentTime = LocalDateTime.parse(cleanText, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             Reservation reservation = reservationRepository
                     .findByOrderId(
                             dto.getOrderId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 예약입니다.", "존재하지 않는 예약입니다.")
                     );
+            if(user!=null){
+                couponHistoryRepository.findByReservation_idWithPending(reservation.getReservationId()).ifPresent(couponHistory -> {
+                    couponHistory.setStatus(CouponHistoryEntity.CouponStatus.used);
+                    couponHistory.setUsed_at(paymentTime);
+                    couponHistoryRepository.save(couponHistory);
+                    UserCouponEntity userCouponEntity = userCouponRepository.findByUserIdAndCouponId(user.getId(), couponHistory.getUserCoupon().getCoupon().getId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 유저 쿠폰입니다.", "존재하지 않는 유저 쿠폰입니다."));
+                    userCouponEntity.setUsed(true);
+                });
+
+            }
             // 로그인 한 유저이면서 포인트 사용 금액이 0원이 아닐경우 포인트 차감기록에 추가
-            if (user != null && reservation.getPointDiscountAmount()!=0) {
+            if (user != null && reservation.getPointDiscountAmount() != 0) {
                 Users users = usersRepository.findById(user.getId()).orElseThrow(UserNotFoundException::new);
-                String cleanText = tossPaymentDto
-                        .getRequestedAt().substring(0, 19);
                 long balanceAfter = users.getPoint() - reservation.getPointDiscountAmount();
                 pointHistoryRepository.save(
                         PointHistoryEntity.builder()
@@ -120,9 +131,9 @@ public class PaymentService {
                                 .user(users)
                                 .reservation(reservation)
                                 .expireAt(null)
-                                .createdAt(LocalDateTime.parse(cleanText, DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                                .createdAt(paymentTime)
                                 .balanceAfter(balanceAfter)
-                                .amount((long)reservation.getPointDiscountAmount())
+                                .amount((long) reservation.getPointDiscountAmount())
                                 .description("결제시 포인트 사용")
                                 .build()
                 );
@@ -180,8 +191,8 @@ public class PaymentService {
     private GuestEntity getGuest(UserProjection user, String email, String firstName, String lastName, String phone) {
         // user 가 null 이면 비회원인 상황 -> GuestEntity 조회 후 생성
         if (user == null) {
-            return guestRepository.findByEmailAndFirstNameAndLastName(
-                    email, firstName, lastName
+            return guestRepository.findByEmailAndFirstNameAndLastNameAndPhone(
+                    email, firstName, lastName, phone
             ).orElseGet(() -> guestRepository.save(
                     GuestEntity
                             .builder()
@@ -272,37 +283,36 @@ public class PaymentService {
                 .room(room)
                 .build();
         Reservation save = reservationRepository.save(reservation);
-        // 쿠폰 적용
+        // 쿠폰 적용 로그인 한 사용자만 해당
         int discountAmount = 0;
-        if (dto.getCouponId() != null) {
+        if (user != null && dto.getCouponId() != null) {
             CouponEntity couponEntity = couponRepository.findById(dto.getCouponId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 쿠폰입니다.", "couponId를 확인해주세요."));
-            // 사용가능한 쿠폰일경우
+            // 사용가능한 쿠폰인지 유효성 검사
             if (couponService.validateCouponWithPlace(guest.getUsers().getId(), couponEntity, places, baseAmount.toBigInteger().intValue())) {
                 UserCouponEntity userCouponEntity = userCouponRepository.findByUserIdAndCouponId(guest.getUsers().getId(), couponEntity.getId())
                         .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "해당 유저가 발급받지 않은 쿠폰입니다.", "userId와 couponId를 확인해주세요."));
-                userCouponEntity.setUsed(true);
                 Integer couponDiscount = couponService.calculateDiscountAmount(couponEntity, baseAmount.toBigInteger().intValue());
-                save.setCouponDiscountAmount(couponDiscount);
-                discountAmount += couponDiscount;
+                // TODO : 이전에 사용 내역이 있다면 취소
+                // 쿠폰 사용 내역 대기 상태로 저장
                 couponHistoryRepository.save(
                         CouponHistoryEntity.builder()
                                 .userCoupon(userCouponEntity)
+                                .reservation_id(reservation)
                                 .used_at(LocalDateTime.now())
-                                .status(CouponHistoryEntity.CouponStatus.used)
-                                .reservation_id(save)
-                                .discount_amount(discountAmount)
+                                .status(CouponHistoryEntity.CouponStatus.pending)
+                                .discount_amount(couponDiscount)
                                 .build()
                 );
-
-
+                save.setCouponDiscountAmount(couponDiscount);
+                discountAmount += couponDiscount;
             }
 
         }
         // 포인트 유효성 검사
-        // 로그인 한 유저만 포인트 차감
-        if (user != null) {
+        // 로그인 한 유저만 포인트 차감 차감된 포인트만 기록하고 결제 완료시 실제 포인트 차감
+        if (user != null && dto.getUsedPoints() != null && dto.getUsedPoints() > 0) {
             MyInfoProjection myInfo = usersRepository.findById(guest.getUsers().getId(), MyInfoProjection.class).orElseThrow(UserNotFoundException::new);
-            if (dto.getUsedPoints()!=null && dto.getUsedPoints() > myInfo.getPoint()) {
+            if (dto.getUsedPoints() != null && dto.getUsedPoints() > myInfo.getPoint()) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "사용자 포인트 부족", "사용자 포인트가 부족합니다.");
             }
             save.setPointDiscountAmount(Math.toIntExact(dto.getUsedPoints()));
@@ -310,7 +320,6 @@ public class PaymentService {
         }
         BigDecimal finalAmount = baseAmount.subtract(BigDecimal.valueOf(discountAmount));
         save.setFinalAmount(finalAmount);
-        // 로그인한 유저만 포인트 적립
         return save;
     }
 

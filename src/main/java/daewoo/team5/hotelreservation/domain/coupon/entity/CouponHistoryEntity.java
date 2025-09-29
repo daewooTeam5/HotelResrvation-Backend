@@ -50,6 +50,8 @@ public class CouponHistoryEntity {
 
     public enum CouponStatus {
         used,
-        canceled
+        canceled, // 예약 취소 (예약만 하고 결제 대기시간 지나서 자동 취소된 경우)
+        pending, // 예약 할때
+        refunded // 결제 취소로 인한 쿠폰 환불
     }
 }

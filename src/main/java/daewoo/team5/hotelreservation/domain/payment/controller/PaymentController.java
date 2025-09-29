@@ -3,6 +3,7 @@ package daewoo.team5.hotelreservation.domain.payment.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import daewoo.team5.hotelreservation.domain.auth.service.AuthService;
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
@@ -21,6 +22,7 @@ import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +44,7 @@ public class PaymentController {
     private final ReservationRepository reservationRepository;
     private final ReservationService reservationService;
     private final PointService pointService;
+    private final AuthService authService;
 
 
     @GetMapping("/reservation/{id}")
@@ -52,15 +55,16 @@ public class PaymentController {
     }
 
     @PostMapping("/confirm")
-    @AuthUser
     public ApiResult<Payment> paymentConfirm(
             @RequestBody
             PaymentConfirmRequestDto dto,
-            Authentication authentication,
-            UserProjection user
+            Authentication auth
     ) {
+        UserProjection user = authService.isAuthUser(auth);
         Payment payment = paymentService.confirmPayment(user,dto);
-        if (authentication.isAuthenticated()) {
+        if (auth != null
+                && auth.isAuthenticated()
+                && !(auth instanceof AnonymousAuthenticationToken)) {
             pointService.earnPoint(user.getId(), payment.getAmount(),dto.getOrderId());
         }
         return ApiResult.created(payment, "결제 완료");
@@ -81,18 +85,10 @@ public class PaymentController {
     @PostMapping("/process")
     public ApiResult<Reservation> processPayment(
             @RequestBody
-            ReservationRequestDto dto
-    ) throws JsonProcessingException {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserProjection currentUser = null;
-        System.out.println(auth);
-        if (auth.isAuthenticated()) {
-            Object principal = auth.getPrincipal();
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode node = mapper.readTree(principal.toString());
-            currentUser = usersRepository.findById(Long.parseLong(node.toString()), UserProjection.class)
-                    .orElseThrow(() -> new ApiException(404, "존재하지 않는 유저", "존재 하지 않는 유저입니다."));
-        }
+            ReservationRequestDto dto,
+            Authentication auth
+    )  {
+        UserProjection currentUser = authService.isAuthUser(auth);
         return ApiResult.ok(paymentService.reservationPlace(currentUser, dto), "예약 성공");
     }
 
