@@ -6,6 +6,7 @@ import daewoo.team5.hotelreservation.domain.question.dto.CreateAnswerRequest;
 import daewoo.team5.hotelreservation.domain.question.dto.CreateQuestionRequest;
 import daewoo.team5.hotelreservation.domain.question.dto.QuestionResponse;
 import daewoo.team5.hotelreservation.domain.question.entity.Question;
+import daewoo.team5.hotelreservation.domain.question.projection.QuestionProjection;
 import daewoo.team5.hotelreservation.domain.question.repository.QuestionRepository;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
@@ -105,6 +106,10 @@ public class QuestionService {
         return questionRepository.findAll(spec).stream()
                 .map(QuestionResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    public List<QuestionProjection> getUserQuestions(Long userId) {
+        return questionRepository.findQuestionsByUserId(userId);
     }
 
 }

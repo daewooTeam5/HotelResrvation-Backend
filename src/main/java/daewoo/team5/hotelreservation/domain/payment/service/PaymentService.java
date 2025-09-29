@@ -345,4 +345,12 @@ public class PaymentService {
     public List<PaymentInfoProjection> getPaymentsByPlaceId(Long placeId) {
         return paymentRepository.findByReservation_Room_Place_Id(placeId);
     }
+
+    public Payment getPaymentDetail(Long paymentId) {
+        return paymentRepository.findById(paymentId).orElseThrow();
+    }
+
+    public List<PaymentHistoryEntity> getPaymentHistory(Long paymentId) {
+        return paymentHistoryRepository.findByPaymentId(paymentId);
+    }
 }

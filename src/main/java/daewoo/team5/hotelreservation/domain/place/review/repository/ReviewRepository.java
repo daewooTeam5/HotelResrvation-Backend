@@ -3,6 +3,7 @@ package daewoo.team5.hotelreservation.domain.place.review.repository;
 
 import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponseDto;
 import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
+import daewoo.team5.hotelreservation.domain.place.review.projection.ReviewProjection;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,6 +34,22 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             "JOIN r.place p " +
             "LEFT JOIN r.commentByOwner rc")
     List<ReviewResponseDto> findAllReviewsWithDetails();
+
+    @Query("SELECT r FROM Review r " +
+            "LEFT JOIN FETCH r.images " +
+            "LEFT JOIN FETCH r.commentByOwner " +
+            "WHERE r.place.id = :placeId")
+    List<Review> findAllByPlaceIdWithDetails(@Param("placeId") Long placeId);
+
+    @Query("SELECT r.reviewId as reviewId, r.rating as rating, r.comment as comment, " +
+            "r.createdAt as createdAt, u.id as user_id, u.name as user_name, " +
+            "p.id as place_id, p.name as place_name, res.reservationId as reservation_reservationId " +
+            "FROM Review r " +
+            "JOIN r.user u " +
+            "JOIN r.place p " +
+            "JOIN r.reservation res " +
+            "WHERE u.id = :userId")
+    List<ReviewProjection> findReviewsByUserId(Long userId);
 
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.place.owner.id = :ownerId")
     Double findAvgRatingByOwner(@Param("ownerId") Long ownerId);

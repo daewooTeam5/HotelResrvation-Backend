@@ -14,8 +14,10 @@ import daewoo.team5.hotelreservation.domain.notification.repository.Notification
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentProjection;
 import daewoo.team5.hotelreservation.domain.payment.entity.PointHistoryEntity;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
+import daewoo.team5.hotelreservation.domain.payment.projection.ReservationProjection;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.payment.repository.PointHistoryRepository;
 import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
@@ -386,6 +388,13 @@ log.info("Finding coupon history for reservation: {}", r.getReservationId());
         return reservationRepository.findByRoom_Place_Id(placeId);
     }
 
+    public List<ReservationProjection> getReservationsByUser(Long userId) {
+        return reservationRepository.findReservationsByUserId(userId);
+    }
+
+    public List<PaymentProjection> getPaymentsByUser(Long userId) {
+        return paymentRepository.findPaymentsByUserId(userId);
+    }
 
 
 }

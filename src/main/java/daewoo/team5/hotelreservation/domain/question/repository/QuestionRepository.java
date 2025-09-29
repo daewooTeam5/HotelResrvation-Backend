@@ -1,6 +1,7 @@
 package daewoo.team5.hotelreservation.domain.question.repository;
 
 import daewoo.team5.hotelreservation.domain.question.entity.Question;
+import daewoo.team5.hotelreservation.domain.question.projection.QuestionProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor; // 👈 추가
 import org.springframework.data.jpa.repository.Query;
@@ -19,4 +20,15 @@ public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSp
 
     @Query("SELECT q FROM Question q JOIN FETCH q.place p JOIN FETCH p.owner WHERE q.id = :id")
     Optional<Question> findByIdWithOwner(@Param("id") Long id);
+
+    @Query("SELECT q.id as id, q.title as title, q.content as content, q.answer as answer, " +
+            "q.createdAt as createdAt, " +
+            "u.id as user_id, u.name as user_name, " +
+            "p.id as place_id, p.name as place_name " +
+            "FROM Question q " +
+            "JOIN q.user u " +
+            "JOIN q.place p " +
+            "WHERE u.id = :userId")
+    List<QuestionProjection> findQuestionsByUserId(Long userId);
+
 }

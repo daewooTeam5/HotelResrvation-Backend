@@ -7,10 +7,14 @@ import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.review.dto.CreateReviewRequest;
+import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewDto;
 import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponse;
 import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponseDto;
 import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
 import daewoo.team5.hotelreservation.domain.place.review.entity.ReviewImage;
+import daewoo.team5.hotelreservation.domain.place.review.projection.ReviewCommentProjection;
+import daewoo.team5.hotelreservation.domain.place.review.projection.ReviewImageProjection;
+import daewoo.team5.hotelreservation.domain.place.review.projection.ReviewProjection;
 import daewoo.team5.hotelreservation.domain.place.review.repository.ReviewImageRepository;
 import daewoo.team5.hotelreservation.domain.place.review.repository.ReviewRepository;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
@@ -115,4 +119,20 @@ public class ReviewService {
     public List<ReviewResponseDto> getAllReviews() {
         return reviewRepository.findAllReviewsWithDetails();
     }
+
+    public List<ReviewDto> getReviewsByPlaceId(Long placeId) {
+        return reviewRepository.findAllByPlaceIdWithDetails(placeId)
+                .stream()
+                .map(ReviewDto::fromEntity)
+                .toList();
+    }
+
+    public List<ReviewProjection> getUserReviews(Long userId) {
+        return reviewRepository.findReviewsByUserId(userId);
+    }
+
+    public List<ReviewImageProjection> getUserReviewImages(Long userId) {
+        return reviewImageRepository.findReviewImagesByUserId(userId);
+    }
+
 }
