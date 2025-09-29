@@ -67,6 +67,8 @@ public class SecurityConfiguration {
                                 "/api/v1/payment/**",
                                 "/images/**"
                         ).permitAll()
+                        .requestMatchers("/api/v1/reservations/**","/api/v1/statistics/**","/api/v1/dashboard/**","/api/v1/owner/coupons/**", "/api/v1/owner/inventory/**", "/api/v1/owner/rooms/**")
+                        .hasAnyRole("admin", "hotel_owner")
                         .requestMatchers("/api/v1/payment/dashboard/**")
                         .hasAnyRole("admin", "user_admin", "place_admin")
                         .requestMatchers("/api/v1/admin/places/**")
