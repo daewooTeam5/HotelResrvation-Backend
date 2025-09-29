@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.global.mail.service;
 
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailProjection;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class MailService {
     private final JavaMailSender javaMailSender;
 
+    @Async
     public void sendOtpCode(String email, String code) {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         try {
@@ -35,6 +38,11 @@ public class MailService {
             log.error("메일 전송 실패: {}", e.getMessage());
             throw new ApiException(HttpStatus.FAILED_DEPENDENCY, "메일 전송 실패", "메일 전송 중 오류가 발생했습니다. 문제가 지속되면 고객센터로 문의해주세요.");
         }
+    }
+
+    @Async
+    public void sendReservationConfirmation(String email, PaymentDetailProjection paymentDetail){
+
     }
 
 }
