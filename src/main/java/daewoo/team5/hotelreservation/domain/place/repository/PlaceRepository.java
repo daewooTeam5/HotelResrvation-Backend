@@ -278,32 +278,45 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
     List<String> findPlaceImages(@Param("placeId") Long placeId);
 
     @Query(value = """
-                SELECT
-                  r.id AS roomId,
-                  r.room_type AS roomType,
-                  r.bed_type AS bedType,
-                  r.capacity_people AS capacityPeople,
-                  r.capacity_room AS capacityRoom,
-                  r.price AS price,
-                  r.status AS status,
-                  COALESCE(MIN(dpr.available_room), r.capacity_room) AS availableRoom,
-                  GROUP_CONCAT(f.url SEPARATOR ',') AS images
-              FROM room r
-              LEFT JOIN file f
-                     ON f.domain = 'room'
-                    AND f.domain_file_id = r.id
-                    AND f.filetype = 'image'
-              LEFT JOIN daily_place_reservation dpr
-                     ON dpr.room_id = r.id
-                    AND dpr.date BETWEEN :startDate AND :endDate
-              WHERE r.place_id = :placeId
-              GROUP BY r.id, r.room_type, r.bed_type, r.capacity_people,
-                       r.capacity_room, r.price, r.status;
+            SELECT
+              r.id AS roomId,
+              r.room_type AS roomType,
+              r.bed_type AS bedType,
+              r.capacity_people AS capacityPeople,
+              r.capacity_room AS capacityRoom,
+              r.price AS price,
+              r.status AS status,
+              COALESCE(MIN(dpr.available_room), r.capacity_room) AS availableRoom,
+              GROUP_CONCAT(f.url SEPARATOR ',') AS images,
+              -- [수정됨] CASE 문을 사용하여 isAvailable 값을 계산
+              CASE
+                  WHEN
+                      -- 조건 1: 객실당 수용 인원
+                      r.capacity_people >= CEIL(CAST(:totalPeople AS DECIMAL) / :roomNum)
+                      AND
+                      -- 조건 2: 요청한 객실 수만큼 재고 존재
+                      COALESCE(MIN(dpr.available_room), r.capacity_room) >= :roomNum
+                  THEN 1 -- 모든 조건을 만족하면 1 (예약 가능)
+                  ELSE 0 -- 하나라도 만족하지 못하면 0 (예약 불가)
+              END AS isAvailable
+            FROM room r
+            LEFT JOIN file f
+                   ON f.domain = 'room'
+                  AND f.domain_file_id = r.id
+                  AND f.filetype = 'image'
+            LEFT JOIN daily_place_reservation dpr
+                   ON dpr.room_id = r.id
+                  AND dpr.date >= :startDate AND dpr.date < :endDate
+            WHERE r.place_id = :placeId -- 숙소 ID로만 필터링
+            GROUP BY r.id, r.room_type, r.bed_type, r.capacity_people,
+                     r.capacity_room, r.price, r.status
             """, nativeQuery = true)
     List<RoomInfo> findRoomsByPlace(
             @Param("placeId") Long placeId,
             @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+            @Param("endDate") LocalDate endDate,
+            @Param("totalPeople") Integer totalPeople,
+            @Param("roomNum") Integer roomNum);
 
     @Query(value = """
             SELECT s.id AS id,
