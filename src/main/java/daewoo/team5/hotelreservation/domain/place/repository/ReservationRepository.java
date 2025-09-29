@@ -528,4 +528,57 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             "FROM Reservation r GROUP BY FUNCTION('DATE_FORMAT', r.resevStart, '%Y')")
     List<Object[]> countYearlyReservations();
 
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE p.owner.id = :ownerId")
+    long countByOwner(@Param("ownerId") Long ownerId);
+
+    // 피크 시즌 분석 - 요일별
+    @Query(value = """
+    SELECT DAYOFWEEK(r.resev_start) AS label,
+           COUNT(*) AS count,
+           COALESCE(SUM(p.amount), 0) AS revenue,
+           (COUNT(*) * 100.0 / NULLIF(SUM(rm.capacity_room), 0)) AS occupancy
+    FROM reservations r
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    LEFT JOIN payments p ON p.reservation_id = r.reservation_id
+    WHERE pl.owner_id = :ownerId
+    GROUP BY DAYOFWEEK(r.resev_start)
+    ORDER BY label
+    """, nativeQuery = true)
+    List<Object[]> countReservationsByWeekday(@Param("ownerId") Long ownerId);
+
+    // 피크 시즌 분석 - 월별
+    @Query(value = """
+    SELECT MONTH(r.resev_start) AS label,
+           COUNT(*) AS count,
+           COALESCE(SUM(p.amount), 0) AS revenue,
+           (COUNT(*) * 100.0 / NULLIF(SUM(rm.capacity_room), 0)) AS occupancy
+    FROM reservations r
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    LEFT JOIN payments p ON p.reservation_id = r.reservation_id
+    WHERE pl.owner_id = :ownerId
+    GROUP BY MONTH(r.resev_start)
+    ORDER BY label
+    """, nativeQuery = true)
+    List<Object[]> countReservationsByMonth(@Param("ownerId") Long ownerId);
+
+    // 피크 시즌 분석 - 연도별
+    @Query(value = """
+    SELECT YEAR(r.resev_start) AS label,
+           COUNT(*) AS count,
+           COALESCE(SUM(p.amount), 0) AS revenue,
+           (COUNT(*) * 100.0 / NULLIF(SUM(rm.capacity_room), 0)) AS occupancy
+    FROM reservations r
+    JOIN room rm ON r.room_id = rm.id
+    JOIN places pl ON rm.place_id = pl.id
+    LEFT JOIN payments p ON p.reservation_id = r.reservation_id
+    WHERE pl.owner_id = :ownerId
+    GROUP BY YEAR(r.resev_start)
+    ORDER BY label
+    """, nativeQuery = true)
+    List<Object[]> countReservationsByYear(@Param("ownerId") Long ownerId);
 }

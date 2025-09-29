@@ -9,10 +9,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Long> {
+
     boolean existsByUserIdAndCoupon_CouponCode(Long userId, String couponCode);
+
     List<UserCouponEntity> findAllByUserId(Long userId);
+
+    Optional<UserCouponEntity> findByUserIdAndCouponId(Long userId, Long couponId);
+
+    Optional<UserCouponEntity> findByCouponId(Long couponId);
+
     @Query("""
             select uc.user.id as userId,uc.isUsed as isUsed,
                     uc.coupon.couponName as couponName,
@@ -23,7 +31,7 @@ public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Lon
                     p.name as placeName,
                     f.url as placeImageUrl,
                     p.id as placeId
-             from UserCouponEntity uc
+             from UserCoupon uc
              join Places p on uc.coupon.place.id = p.id
              join File f on f.id = (
                  select min(f2.id)
@@ -45,7 +53,7 @@ public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Lon
                     p.name as placeName,
                     f.url as placeImageUrl,
                     p.id as placeId
-             from UserCouponEntity uc
+             from UserCoupon uc
              join Places p on uc.coupon.place.id = p.id
              join File f on f.id = (
                  select min(f2.id)
@@ -67,7 +75,7 @@ public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Lon
                     p.name as placeName,
                     f.url as placeImageUrl,
                     p.id as placeId
-             from UserCouponEntity uc
+             from UserCoupon uc
              join Places p on uc.coupon.place.id = p.id
              join File f on f.id = (
                  select min(f2.id)
@@ -79,7 +87,7 @@ public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Lon
 
     @Query("""
             select uc.coupon
-            from UserCouponEntity uc
+            from UserCoupon uc
             where uc.user.id = :userId
             and uc.isUsed = false
             and uc.coupon.expiredAt > current_timestamp

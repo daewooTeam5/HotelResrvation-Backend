@@ -6,6 +6,7 @@ import daewoo.team5.hotelreservation.domain.users.dto.request.CreateUserDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.LogInUserDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.UserResponse;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
+import daewoo.team5.hotelreservation.domain.users.projection.MyInfoProjection;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
@@ -36,6 +37,11 @@ public class UsersService {
 
     public GuestEntity getGuestByUser(UserProjection user) {
         return guestRepository.findByUsersId(user.getId()).orElseThrow(() -> new ApiException(404, "사용자 게스트 정보 없음", "해당 사용자의 게스트 정보가 존재하지 않습니다."));
+    }
+
+    public MyInfoProjection getUserById(Long id){
+        return usersRepository.findById(id, MyInfoProjection.class).orElseThrow(() -> new ApiException(404, "사용자 정보 없음", "해당 사용자의 정보가 존재하지 않습니다."));
+
     }
 
     public Map<String, String> login(LogInUserDto dto) {

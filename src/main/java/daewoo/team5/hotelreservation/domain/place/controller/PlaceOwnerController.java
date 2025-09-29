@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
 
@@ -75,7 +74,8 @@ public class PlaceOwnerController {
     public ResponseEntity<ReservationDetailDTO> cancel(
             @PathVariable Long reservationId,
             UserProjection projection) {
-        ReservationDetailDTO cancelled = reservationService.cancel(reservationId, projection.getId());
+
+        ReservationDetailDTO cancelled = reservationService.cancelOwner(reservationId, projection.getId());
         return ResponseEntity.ok(cancelled);
     }
 
@@ -89,15 +89,6 @@ public class PlaceOwnerController {
             @RequestBody ReservationSearchRequest request,
             Pageable pageable, UserProjection projection) {
         return ResponseEntity.ok(reservationService.searchReservations(request, projection.getId(), pageable));
-    }
-
-    @PostMapping("/test")
-    @AuthUser
-    public ResponseEntity<ReservationDetailDTO> createTestReservation(
-            @RequestBody ReservationTestRequestDTO dto,
-            UserProjection projection
-    ) {
-        return ResponseEntity.ok(reservationService.createTestReservation(projection.getId(), dto));
     }
 
 }

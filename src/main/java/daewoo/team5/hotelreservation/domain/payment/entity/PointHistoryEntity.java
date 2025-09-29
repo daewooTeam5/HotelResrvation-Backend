@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.payment.entity;
 
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,8 +20,8 @@ public class PointHistoryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 포인트 내역 ID
 
-    @Column(nullable = false)
-    private Long userId; // 지급받은 유저 ID
+    @ManyToOne
+    private Users user; // 지급받은 유저 ID
 
     @ManyToOne
     private Reservation reservation; // 예약 ID (null 가능)
@@ -30,10 +31,13 @@ public class PointHistoryEntity {
     private PointType type; // 'earn' 또는 'use'
 
     @Column(nullable = false)
-    private Integer amount; // 변환된 포인트
+    private Long amount; // 변환된 포인트
 
     @Column(name = "balance_after", nullable = false)
-    private Integer balanceAfter; // 거래 후 포인트
+    private Long balanceAfter; // 거래 후 포인트
+
+    @Column
+    private String description; // 설명
 
     @Column(name = "expire_at")
     private LocalDate expireAt; // 만료일
@@ -41,7 +45,7 @@ public class PointHistoryEntity {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt; // 지급일
 
-    enum PointType {
+    public enum PointType {
         EARN, USE
     }
 }

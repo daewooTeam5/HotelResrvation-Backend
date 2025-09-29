@@ -6,6 +6,8 @@ import daewoo.team5.hotelreservation.domain.coupon.projection.CouponIssuedProjec
 import daewoo.team5.hotelreservation.domain.coupon.projection.UserCouponProjection;
 import daewoo.team5.hotelreservation.domain.coupon.repository.CouponRepository;
 import daewoo.team5.hotelreservation.domain.coupon.repository.UserCouponRepository;
+import daewoo.team5.hotelreservation.domain.place.entity.Places;
+import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
@@ -27,6 +29,7 @@ public class CouponService {
     private final UserCouponRepository userCouponRepository;
     private final CouponRepository couponRepository;
     private final UsersRepository usersRepository;
+    private final PlaceRepository placeRepository;
 
     public UserCouponEntity issueCoupon(String couponCode, UserProjection user) {
         Users couponIssuer = usersRepository.findById(user.getId()).orElseThrow(UserNotFoundException::new);
@@ -53,6 +56,37 @@ public class CouponService {
 
 
     }
+    public Integer calculateDiscountAmount(CouponEntity couponEntity, Integer orderAmount) {
+        if (couponEntity.getCouponType() == CouponEntity.CouponType.fixed) {
+            return Math.min(couponEntity.getAmount(), orderAmount);
+        } else if (couponEntity.getCouponType() == CouponEntity.CouponType.rate) {
+            int discount = (int) (orderAmount * (couponEntity.getAmount() / 100.0));
+            // maxOrderAmount 가 -1이면 제한 없음
+            if (couponEntity.getMaxOrderAmount() != -1) {
+                return Math.min(discount, couponEntity.getMaxOrderAmount());
+            } else {
+                return discount;
+            }
+        }
+        return 0;
+    }
+    // 해당 숙박업소에 사용 가능한 쿠폰인지 확인
+    public Boolean validateCouponWithPlace(Long userId,CouponEntity couponEntity,Places places,Integer orderAmount) {
+        UserCouponEntity userCouponEntity = userCouponRepository.findByUserIdAndCouponId(userId, couponEntity.getId()).orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "해당 유저가 발급받지 않은 쿠폰입니다.", "userId와 couponId를 확인해주세요."));
+        // 숙박업소와 쿠폰의 숙박업소가 같은지 확인
+        if(!couponEntity.getPlace().getId().equals(places.getId())){
+            throw new ApiException(HttpStatus.BAD_REQUEST, "해당 숙박업소에 사용 불가능한 쿠폰입니다.", "couponId와 placeId를 확인해주세요.");
+        }
+        if(!couponEntity.isUsable(orderAmount)){
+            log.info(couponEntity.getCouponType().name());
+            throw new ApiException(HttpStatus.BAD_REQUEST, "해당 쿠폰은 사용 불가능한 쿠폰입니다.", "최소 주문금액이 주문금액보다 높습니다.");
+        }
+        // 쿠폰이 사용되었는지 확인
+        if(userCouponEntity.isUsed()){
+            throw new ApiException(HttpStatus.BAD_REQUEST, "이미 사용된 쿠폰입니다.", "couponId를 확인해주세요.");
+        }
+        return true;
+    }
 
     public List<UserCouponProjection> getUserCoupons(Long userId, String type) {
         /**
@@ -70,6 +104,7 @@ public class CouponService {
         }
         return userCouponRepository.findAllByUserIdAndCouponAll(userId);
     }
+
 
     public List<CouponEntity> getAvailableCoupon(UserProjection user,Long placeId) {
         return userCouponRepository.findUsableCouponsByUserIdAndPlaceId(user.getId(),placeId);

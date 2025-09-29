@@ -30,3 +30,5 @@ logging:
 server:
   port: 8080
 
+file:
+  upload-dir: C:\Users\1126a\Pictures\full

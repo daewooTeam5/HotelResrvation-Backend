@@ -1,12 +1,25 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
+
+import daewoo.team5.hotelreservation.domain.auth.service.AuthService;
+import daewoo.team5.hotelreservation.domain.coupon.entity.CouponHistoryEntity;
+import daewoo.team5.hotelreservation.domain.coupon.entity.UserCouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.repository.CouponHistoryRepository;
+import daewoo.team5.hotelreservation.domain.coupon.repository.CouponRepository;
+import daewoo.team5.hotelreservation.domain.coupon.repository.UserCouponRepository;
+
+import daewoo.team5.hotelreservation.domain.notification.entity.NotificationEntity;
+import daewoo.team5.hotelreservation.domain.notification.repository.NotificationRepository;
+
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentProjection;
+import daewoo.team5.hotelreservation.domain.payment.entity.PointHistoryEntity;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationProjection;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
+import daewoo.team5.hotelreservation.domain.payment.repository.PointHistoryRepository;
 import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
 import daewoo.team5.hotelreservation.domain.place.dto.*;
 import daewoo.team5.hotelreservation.domain.place.entity.DailyPlaceReservation;
@@ -17,29 +30,48 @@ import daewoo.team5.hotelreservation.domain.place.repository.ReservationReposito
 import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
 import daewoo.team5.hotelreservation.domain.place.specification.ReservationSpecification;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReservationService {
 
+    private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
     private final ReservationRepository reservationRepository;
     private final PaymentRepository paymentRepository;
     private final RoomRepository roomRepository;
     private final DailyPlaceReservationRepository dailyPlaceReservationRepository;
     private final TossPaymentService tossPaymentService;
     private final GuestRepository guestRepository;
+    private final CouponHistoryRepository couponHistoryRepository;
+    private final UserCouponRepository userCouponRepository;
+    private final CouponRepository couponRepository;
+    private final PointHistoryRepository pointHistoryRepository;
+    private final UsersRepository usersRepository;
+    private final AuthService authService;
+
+    private final NotificationRepository notificationRepository;
+
     /**
      * ✅ [추가] 리뷰 작성 가능한 예약 목록을 조회하는 서비스 로직
      */
@@ -168,16 +200,8 @@ public class ReservationService {
         ));
     }
 
-    // 소유자 기반 예약 취소
     @Transactional
-    public ReservationDetailDTO cancel(Long reservationId, Long ownerId) {
-        Reservation r = reservationRepository.findByIdAndOwnerId(reservationId, ownerId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "Not Found",
-                        "해당 소유자의 예약을 찾을 수 없습니다."
-                ));
-
+    public ReservationDetailDTO cancel(Reservation r) {
         // ✅ 결제 정보 확인
         Payment payment = paymentRepository
                 .findTop1ByReservation_ReservationIdOrderByTransactionDateDesc(r.getReservationId())
@@ -198,7 +222,7 @@ public class ReservationService {
         if (response != null && response.getCancels() != null && !response.getCancels().isEmpty()) {
             TossCancelResponse.CancelHistory lastCancel = response.getCancels().get(response.getCancels().size() - 1);
             payment.setAmount(lastCancel.getCancelAmount()); // 환불 금액 반영
-//            payment.setTransactionDate(lastCancel.getCanceledAt().toLocalDateTime()); // 환불 시각 반영
+            payment.setTransactionDate(lastCancel.getCanceledAt().toLocalDateTime()); // 환불 시각 반영
         }
         paymentRepository.save(payment);
 
@@ -208,9 +232,89 @@ public class ReservationService {
 //            adjustInventory(r.getRoom().getId(), r.getResevStart(), r.getResevEnd(), +1);
 //        }
 //
+        //
+        // 쿠폰 조회후 쿠폰 상태 복구
+        if(r.getGuest().getUsers()!=null) {
+log.info("Finding coupon history for reservation: {}", r.getReservationId());
+            couponHistoryRepository.findByReservation_idWithUsed(r.getReservationId()).ifPresent(ch -> {
+                log.info("Cancelling coupon history: {}", ch.getId());
+                ch.setStatus(CouponHistoryEntity.CouponStatus.refunded);
+                UserCouponEntity userCouponEntity = userCouponRepository.findByUserIdAndCouponId(r.getGuest().getUsers().getId(), ch.getUserCoupon().getCoupon().getId()).orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "UserCoupon Not Found",
+                        "해당 쿠폰을 찾을 수 없습니다."
+                ));
+                userCouponEntity.setUsed(false);
+            });
+        }
         Reservation saved = reservationRepository.save(r);
+        backupPoint(r, r.getGuest() != null && r.getGuest().getUsers() != null ? r.getGuest().getUsers() : null);
+
+
+        // ✅ 알림 생성 (회원일 경우에만)
+        if (r.getGuest() != null && r.getGuest().getUsers() != null) {
+            NotificationEntity notification = NotificationEntity.builder()
+                    .title("예약이 취소되었습니다")
+                    .content("예약번호 " + r.getReservationId() + "번이 취소 및 환불 처리되었습니다.")
+                    .notificationType(NotificationEntity.NotificationType.RESERVATION)
+                    .user(r.getGuest().getUsers())
+                    .build();
+            notificationRepository.save(notification);
+        }
         return toDetailDTO(saved);
+
     }
+    public void backupPoint(Reservation r,Users users){
+        // 로그인 안한 유저면 패스
+        // 포인트 적립된값 차감
+        PointHistoryEntity pointHistory = pointHistoryRepository.findByReservationAndType(r,PointHistoryEntity.PointType.EARN).orElseThrow(() -> new ApiException(
+                HttpStatus.NOT_FOUND,
+                "Point History Not Found",
+                "해당 예약의 포인트 내역이 존재하지 않습니다."
+        ));
+        long balanceAfter = users.getPoint() - pointHistory.getAmount();
+        pointHistoryRepository.save(
+                PointHistoryEntity.builder()
+                        .user(users)
+                        .type(PointHistoryEntity.PointType.USE)
+                        .amount(pointHistory.getAmount())
+                        .balanceAfter(balanceAfter)
+                        .description("예약 취소로 인한 포인트 차감 주문 번호 :"+r.getOrderId())
+                        .createdAt(LocalDateTime.now())
+                        .build()
+        );
+        users.setPoint(balanceAfter);
+        // 예약 에 사용한 포인트는 다시 적립
+        if(r.getPointDiscountAmount()!=null && r.getPointDiscountAmount()>0){
+            long pointAfter = users.getPoint() + r.getPointDiscountAmount();
+            pointHistoryRepository.save(
+                    PointHistoryEntity.builder()
+                            .user(users)
+                            .type(PointHistoryEntity.PointType.EARN)
+                            .amount(r.getPointDiscountAmount().longValue())
+                            .balanceAfter(pointAfter)
+                            .description("예약 취소로 인한 사용포인트 복원 주문 번호 :"+r.getOrderId())
+                            .createdAt(LocalDateTime.now())
+                            .build()
+            );
+            users.setPoint(pointAfter);
+        }
+
+    }
+
+    // 소유자 기반 예약 취소
+    @Transactional
+    public ReservationDetailDTO cancelOwner(Long reservationId, Long ownerId) {
+        Reservation r = reservationRepository.findByIdAndOwnerId(reservationId, ownerId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "Not Found",
+                        "해당 소유자의 예약을 찾을 수 없습니다."
+                ));
+        return cancel(r);
+
+    }
+
 
     // 소유자 기반 검색
     public Page<ReservationListDTO> searchReservations(ReservationSearchRequest req, Long ownerId, Pageable pageable) {
@@ -256,52 +360,6 @@ public class ReservationService {
         }
     }
 
-    @Transactional
-    public ReservationDetailDTO createTestReservation(Long ownerId, ReservationTestRequestDTO dto) {
-        // ✅ 객실 확인
-        Room room = roomRepository.findById(dto.getRoomId())
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "Not Found",
-                        "해당 객실 유형을 찾을 수 없습니다."
-                ));
-
-        // ✅ 소유자 검증
-        if (!room.getPlace().getOwner().getId().equals(ownerId)) {
-            throw new ApiException(
-                    HttpStatus.FORBIDDEN,
-                    "Forbidden",
-                    "해당 객실은 현재 소유자의 소유가 아닙니다."
-            );
-        }
-
-        // ✅ 예약 엔티티 생성
-        Reservation reservation = Reservation.builder()
-                .room(room)
-                .status(Reservation.ReservationStatus.confirmed)   // 테스트니까 바로 확정
-                .paymentStatus(Reservation.ReservationPaymentStatus.paid)
-                .resevStart(dto.getResevStart())
-                .resevEnd(dto.getResevEnd())
-                .baseAmount(dto.getBaseAmount())
-                .finalAmount(dto.getFinalAmount())
-                .request(dto.getRequest())
-                .build();
-
-        Reservation saved = reservationRepository.save(reservation);
-
-        // ✅ 재고 차감
-        if (saved.getRoom() != null && saved.getResevStart() != null && saved.getResevEnd() != null) {
-            adjustInventory(
-                    saved.getRoom().getId(),
-                    saved.getResevStart(),
-                    saved.getResevEnd(),
-                    -1
-            );
-        }
-
-        return toDetailDTO(saved);
-    }
-
     /**
      * 주석: 사용자가 특정 숙소에 대해 리뷰를 작성할 수 있는지 확인합니다.
      * @param placeId 확인할 숙소 ID
@@ -337,5 +395,6 @@ public class ReservationService {
     public List<PaymentProjection> getPaymentsByUser(Long userId) {
         return paymentRepository.findPaymentsByUserId(userId);
     }
+
 
 }

@@ -58,6 +58,7 @@ public class SecurityConfiguration {
                                 "/api/v1/users/login",
                                 "/api/v1/reservations/**",
                                 "/api/v1/places/**",
+                                "/api/v1/rooms/*",
                                 "/images/**",
                                 "/hotel/publishing/register",
                                 "/api/v1/owner/rooms/**",
