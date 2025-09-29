@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.coupon.service;
 
 import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
 import daewoo.team5.hotelreservation.domain.coupon.entity.UserCouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.projection.CouponIssuedProjection;
 import daewoo.team5.hotelreservation.domain.coupon.projection.UserCouponProjection;
 import daewoo.team5.hotelreservation.domain.coupon.repository.CouponRepository;
 import daewoo.team5.hotelreservation.domain.coupon.repository.UserCouponRepository;
@@ -72,5 +73,9 @@ public class CouponService {
 
     public List<CouponEntity> getAvailableCoupon(UserProjection user,Long placeId) {
         return userCouponRepository.findUsableCouponsByUserIdAndPlaceId(user.getId(),placeId);
+    }
+
+    public List<CouponIssuedProjection> getUserCoupons(Long userId) {
+        return userCouponRepository.findCouponsByUserId(userId);
     }
 }

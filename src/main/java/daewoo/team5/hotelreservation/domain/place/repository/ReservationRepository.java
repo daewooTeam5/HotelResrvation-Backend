@@ -3,6 +3,8 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
+import daewoo.team5.hotelreservation.domain.payment.projection.ReservationProjection;
+import daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse;
 import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.ReviewableReservationResponse;
 import org.springframework.data.domain.Page;
@@ -185,7 +187,30 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
 
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
-    List<ReservationInfoProjection> findByRoom_Place_Id(Long placeId);
+    @Query("SELECT DISTINCT r.reservationId AS reservationId, " + // ✅ DISTINCT 추가
+            "       r.room.id AS roomId, " +
+            "       r.createdAt AS createdAt, " +
+            "       r.orderId AS orderId, " +
+            "       r.status AS status, " +
+            "       r.paymentStatus AS paymentStatus, " +
+            "       r.baseAmount AS baseAmount, " +
+            "       r.finalAmount AS finalAmount, " +
+            "       r.resevStart AS resevStart, " +
+            "       r.resevEnd AS resevEnd, " +
+            "       r.request AS request, " +
+            "       COALESCE(g.firstName, u.name) AS userName, " +
+            "       g.lastName AS lastName, " +
+            "       COALESCE(g.phone, u.phone) AS phone, " +
+            "       COALESCE(g.email, u.email) AS email " +
+            "FROM Reservation r " +
+            "LEFT JOIN r.guest g " +
+            // ✅ 요청하신 ON 절 로직을 유지하되, 중복되는 조건만 정리했습니다.
+            "LEFT JOIN Users u ON u.id = g.users.id OR u.id = g.id " +
+            "WHERE r.room.place.id = :placeId")
+    List<ReservationInfoProjection> findByRoom_Place_Id(@Param("placeId") Long placeId);
+
+
+
     // ✅ 정상 예약 (confirmed + paid)
     @Query("SELECT COUNT(r) FROM Reservation r " +
             "JOIN r.room rm " +
@@ -396,5 +421,111 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
                                  @Param("startDate") LocalDate startDate,
                                  @Param("endDate") LocalDate endDate);
 
+    @Query("SELECT r.reservationId as reservationId, r.orderId as orderId, " +
+            "r.status as status, r.paymentStatus as paymentStatus, " +
+            "r.baseAmount as baseAmount, r.finalAmount as finalAmount, " +
+            "r.resevStart as resevStart, r.resevEnd as resevEnd, r.request as request, " +
+            "rm.roomType as room_roomType, rm.bedType as room_bedType, " +
+            "rm.capacityPeople as room_capacityPeople, p.name as room_place_name " +
+            "FROM Reservation r " +
+            "JOIN r.room rm " +
+            "JOIN rm.place p " +
+            "WHERE r.guest.id = :userId")
+    List<ReservationProjection> findReservationsByUserId(Long userId);
+
+    @Query("SELECT COUNT(r) FROM Reservation r WHERE r.resevStart BETWEEN :start AND :end")
+    Long countReservationsBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    // 취소 예약 건수
+    @Query("SELECT COUNT(r) FROM Reservation r WHERE r.status = 'cancelled' AND r.resevStart BETWEEN :start AND :end")
+    Long countCancelledReservationsBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+
+    // 일별 예약 건수
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(CAST(r.resevStart AS string), COUNT(r)) " +
+            "FROM Reservation r " +
+            "WHERE r.resevStart BETWEEN :start AND :end " +
+            "GROUP BY r.resevStart " +
+            "ORDER BY r.resevStart")
+    List<ChartDataResponse> getDailyReservations(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    // 월별 예약 건수
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(" +
+            "CONCAT(CAST(YEAR(r.resevStart) AS string), '-', LPAD(CAST(MONTH(r.resevStart) AS string), 2, '0')), COUNT(r)) " +
+            "FROM Reservation r " +
+            "GROUP BY YEAR(r.resevStart), MONTH(r.resevStart) " +
+            "ORDER BY YEAR(r.resevStart), MONTH(r.resevStart)")
+    List<ChartDataResponse> getMonthlyReservations();
+
+    // 연도별 예약 건수
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(CAST(YEAR(r.resevStart) AS string), COUNT(r)) " +
+            "FROM Reservation r " +
+            "GROUP BY YEAR(r.resevStart) " +
+            "ORDER BY YEAR(r.resevStart)")
+    List<ChartDataResponse> getYearlyReservations();
+
+    // 일별 취소율
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(" +
+            "CAST(r.resevStart AS string), " +
+            "(SUM(CASE WHEN r.status = daewoo.team5.hotelreservation.domain.payment.entity.Reservation.ReservationStatus.cancelled THEN 1 ELSE 0 END) * 1.0 / COUNT(r)) * 100.0) " +
+            "FROM Reservation r " +
+            "WHERE r.resevStart BETWEEN :start AND :end " +
+            "GROUP BY r.resevStart " +
+            "ORDER BY r.resevStart")
+    List<ChartDataResponse> getDailyCancelRate(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    // 월별 취소율
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(" +
+            "CONCAT(CAST(YEAR(r.resevStart) AS string), '-', LPAD(CAST(MONTH(r.resevStart) AS string), 2, '0')), " +
+            "(SUM(CASE WHEN r.status = daewoo.team5.hotelreservation.domain.payment.entity.Reservation.ReservationStatus.cancelled THEN 1 ELSE 0 END) * 1.0 / COUNT(r)) * 100.0) " +
+            "FROM Reservation r " +
+            "GROUP BY YEAR(r.resevStart), MONTH(r.resevStart) " +
+            "ORDER BY YEAR(r.resevStart), MONTH(r.resevStart)")
+    List<ChartDataResponse> getMonthlyCancelRate();
+
+    // 연도별 취소율
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(" +
+            "CAST(YEAR(r.resevStart) AS string), " +
+            "(SUM(CASE WHEN r.status = daewoo.team5.hotelreservation.domain.payment.entity.Reservation.ReservationStatus.cancelled THEN 1 ELSE 0 END) * 1.0 / COUNT(r)) * 100.0) " +
+            "FROM Reservation r " +
+            "GROUP BY YEAR(r.resevStart) " +
+            "ORDER BY YEAR(r.resevStart)")
+    List<ChartDataResponse> getYearlyCancelRate();
+
+    // 카테고리별 예약 건수
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(pc.name, COUNT(r)) " +
+            "FROM Reservation r " +
+            "JOIN r.room ro " +
+            "JOIN ro.place pl " +
+            "JOIN pl.category pc " +
+            "GROUP BY pc.name " +
+            "ORDER BY COUNT(r) DESC")
+    List<ChartDataResponse> getReservationsByCategory();
+
+    @Query("SELECT r.guest.id, COUNT(r) FROM Reservation r GROUP BY r.guest.id ORDER BY COUNT(r) DESC")
+    List<Object[]> findTopCustomersByReservations();
+
+    @Query("SELECT COUNT(DISTINCT r.guest.id) FROM Reservation r")
+    long countActiveUsers();
+
+    // 네이티브 쿼리 → user_id 기준으로 수정
+    @Query(value = "SELECT AVG(t.cnt) " +
+            "FROM (SELECT COUNT(*) AS cnt " +
+            "      FROM reservations r " +
+            "      GROUP BY r.user_id) t", nativeQuery = true)
+    Double findAvgReservationsPerCustomer();
+
+
+    @Query("SELECT FUNCTION('DATE_FORMAT', r.resevStart, '%Y-%m-%d'), COUNT(r) " +
+            "FROM Reservation r GROUP BY FUNCTION('DATE_FORMAT', r.resevStart, '%Y-%m-%d')")
+    List<Object[]> countDailyReservations();
+
+    @Query("SELECT FUNCTION('DATE_FORMAT', r.resevStart, '%Y-%m'), COUNT(r) " +
+            "FROM Reservation r GROUP BY FUNCTION('DATE_FORMAT', r.resevStart, '%Y-%m')")
+    List<Object[]> countMonthlyReservations();
+
+    @Query("SELECT FUNCTION('DATE_FORMAT', r.resevStart, '%Y'), COUNT(r) " +
+            "FROM Reservation r GROUP BY FUNCTION('DATE_FORMAT', r.resevStart, '%Y')")
+    List<Object[]> countYearlyReservations();
 
 }

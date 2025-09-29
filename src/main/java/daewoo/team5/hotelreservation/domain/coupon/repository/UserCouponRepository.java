@@ -2,7 +2,9 @@ package daewoo.team5.hotelreservation.domain.coupon.repository;
 
 import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
 import daewoo.team5.hotelreservation.domain.coupon.entity.UserCouponEntity;
+import daewoo.team5.hotelreservation.domain.coupon.projection.CouponIssuedProjection;
 import daewoo.team5.hotelreservation.domain.coupon.projection.UserCouponProjection;
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -85,4 +87,24 @@ public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Lon
             """)
     List<CouponEntity> findUsableCouponsByUserIdAndPlaceId(Long userId, Long placeId);
 
+    @Query("SELECT uc FROM UserCouponEntity uc " +
+            "LEFT JOIN FETCH uc.coupon c " +
+            "LEFT JOIN FETCH uc.user u " +
+            "LEFT JOIN FETCH uc.id " +
+            "WHERE u.id = :userId")
+    List<UserCouponEntity> findAllWithCouponByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT " +
+            "c.id as couponId, " +
+            "c.couponName as couponName, " +
+            "c.couponCode as couponCode, " +
+            "c.amount as amount, " +
+            "c.couponType as couponType, " +
+            "uc.isUsed as isUsed, " +
+            "uc.issuedAt as issuedAt, " +
+            "c.expiredAt as expiredAt " +
+            "FROM UserCouponEntity uc " +
+            "JOIN uc.coupon c " +
+            "WHERE uc.user.id = :userId")
+    List<CouponIssuedProjection> findCouponsByUserId(Long userId);
 }

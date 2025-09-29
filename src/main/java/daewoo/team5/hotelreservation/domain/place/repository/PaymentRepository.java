@@ -3,6 +3,8 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment.PaymentStatus;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentInfoProjection;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentProjection;
+import daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.repository.projection.PaymentSummaryProjection;
 import org.springframework.data.domain.Page;
@@ -11,6 +13,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -254,5 +257,85 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Object[]> findPaymentMethodStats(@Param("ownerId") Long ownerId,
                                           @Param("startDate") LocalDateTime startDate,
                                           @Param("endDate") LocalDateTime endDate);
+
+    // 사용자별 결제 내역 조회 (Projection)
+    @Query("SELECT p.id as id, p.orderId as orderId, p.paymentKey as paymentKey, " +
+            "p.amount as amount, p.method as method, p.status as status, " +
+            "p.transactionDate as transactionDate, p.methodType as methodType, " +
+            "r.reservationId as reservation_reservationId " +
+            "FROM Payment p " +
+            "JOIN p.reservation r " +
+            "WHERE r.guest.id = :userId")
+    List<PaymentProjection> findPaymentsByUserId(Long userId);
+
+    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.transactionDate BETWEEN :start AND :end")
+    Long getRevenueBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // 일별 매출
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(" +
+            "CAST(DATE(p.transactionDate) AS string), SUM(p.amount)) " +
+            "FROM Payment p " +
+            "WHERE p.transactionDate BETWEEN :start AND :end " +
+            "GROUP BY DATE(p.transactionDate) " +
+            "ORDER BY DATE(p.transactionDate)")
+    List<ChartDataResponse> getDailyRevenue(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // 월별 매출
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(" +
+            "CONCAT(CAST(YEAR(p.transactionDate) AS string), '-', LPAD(CAST(MONTH(p.transactionDate) AS string), 2, '0')), " +
+            "SUM(p.amount)) " +
+            "FROM Payment p " +
+            "GROUP BY YEAR(p.transactionDate), MONTH(p.transactionDate) " +
+            "ORDER BY YEAR(p.transactionDate), MONTH(p.transactionDate)")
+    List<ChartDataResponse> getMonthRevenue();
+
+    // 연도별 매출
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(CAST(YEAR(p.transactionDate) AS string), SUM(p.amount)) " +
+            "FROM Payment p " +
+            "GROUP BY YEAR(p.transactionDate) " +
+            "ORDER BY YEAR(p.transactionDate)")
+    List<ChartDataResponse> getYearlyRevenue();
+
+    // 카테고리별 매출
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse(pc.name, SUM(p.amount)) " +
+            "FROM Payment p " +
+            "JOIN p.reservation r " +
+            "JOIN r.room ro " +
+            "JOIN ro.place pl " +
+            "JOIN pl.category pc " +
+            "GROUP BY pc.name " +
+            "ORDER BY SUM(p.amount) DESC")
+    List<ChartDataResponse> getRevenueByCategory();
+
+    @Query("SELECT r.guest.id, SUM(p.amount) " +
+            "FROM Payment p JOIN p.reservation r " +
+            "GROUP BY r.guest.id ORDER BY SUM(p.amount) DESC")
+    List<Object[]> findTopCustomersByPayments();
+
+    @Query("SELECT COUNT(DISTINCT r.guest.id) " +
+            "FROM Payment p JOIN p.reservation r " +
+            "GROUP BY r.guest.id HAVING COUNT(p) >= 2")
+    long countRepeatUsers();
+
+    // 네이티브 쿼리 → reservations.user_id 기준으로 수정
+    @Query(value = "SELECT AVG(t.sumAmt) " +
+            "FROM (SELECT SUM(p.amount) AS sumAmt " +
+            "      FROM payments p " +
+            "      JOIN reservations r ON p.reservation_id = r.reservation_id " +
+            "      GROUP BY r.user_id) t", nativeQuery = true)
+    Double findAvgPaymentsPerCustomer();
+
+    @Query("SELECT FUNCTION('DATE_FORMAT', p.transactionDate, '%Y-%m-%d'), SUM(p.amount) " +
+            "FROM Payment p GROUP BY FUNCTION('DATE_FORMAT', p.transactionDate, '%Y-%m-%d')")
+    List<Object[]> sumDailyPayments();
+
+    @Query("SELECT FUNCTION('DATE_FORMAT', p.transactionDate, '%Y-%m'), SUM(p.amount) " +
+            "FROM Payment p GROUP BY FUNCTION('DATE_FORMAT', p.transactionDate, '%Y-%m')")
+    List<Object[]> sumMonthlyPayments();
+
+    @Query("SELECT FUNCTION('DATE_FORMAT', p.transactionDate, '%Y'), SUM(p.amount) " +
+            "FROM Payment p GROUP BY FUNCTION('DATE_FORMAT', p.transactionDate, '%Y')")
+    List<Object[]> sumYearlyPayments();
+
 
 }

@@ -4,6 +4,7 @@ package daewoo.team5.hotelreservation.domain.place.review.service;
 import daewoo.team5.hotelreservation.domain.place.review.dto.CreateReviewCommentRequest;
 import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
 import daewoo.team5.hotelreservation.domain.place.review.entity.ReviewComment;
+import daewoo.team5.hotelreservation.domain.place.review.projection.ReviewCommentProjection;
 import daewoo.team5.hotelreservation.domain.place.review.repository.ReviewCommentRepository;
 import daewoo.team5.hotelreservation.domain.place.review.repository.ReviewRepository;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
@@ -14,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -48,5 +51,8 @@ public class ReviewCommentService {
                 .build();
 
         reviewCommentRepository.save(comment);
+    }
+    public List<ReviewCommentProjection> getUserReviewComments(Long userId) {
+        return reviewCommentRepository.findReviewCommentsByUserId(userId);
     }
 }

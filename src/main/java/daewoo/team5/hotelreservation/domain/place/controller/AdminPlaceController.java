@@ -62,6 +62,18 @@ public class AdminPlaceController {
         return ApiResult.ok(null, "숙소 거절 성공!!");
     }
 
+    @PatchMapping("/{placeId}/pending")
+    public ApiResult<?> pendingPlace(@PathVariable Long placeId) {
+        placeService.updatePlaceStatus(placeId, Places.Status.PENDING);
+        return ApiResult.ok(null, "숙소 승인 성공!!");
+    }
+
+    @PatchMapping("/{placeId}/inactive")
+    public ApiResult<?> inactivePlace(@PathVariable Long placeId) {
+        placeService.updatePlaceStatus(placeId, Places.Status.INACTIVE);
+        return ApiResult.ok(null, "숙소 거절 성공!!");
+    }
+
     @GetMapping("/{placeId}")
     public ApiResult<?> getDetail(@PathVariable Long placeId) {
         return ApiResult.ok(placeDetailService.getPlaceDetail(placeId), "숙소 상세 조회 성공");
