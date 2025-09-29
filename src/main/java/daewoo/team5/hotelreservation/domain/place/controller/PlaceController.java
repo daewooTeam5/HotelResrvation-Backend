@@ -30,7 +30,7 @@ public class PlaceController {
     private final WishListService wishListService;
     private final PaymentService paymentService;
 
-    @GetMapping("/{id}/available/coupon")
+    @GetMapping("/{id}/available/coupons")
     @AuthUser
     public ApiResult<List<CouponEntity>> getAvailableCoupon(
             @PathVariable("id") Long placeId,

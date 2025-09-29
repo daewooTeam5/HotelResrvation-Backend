@@ -16,7 +16,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Entity
+@Entity(name = "UserCoupon")
+@Table(
+        name = "user_coupon"
+)
 public class UserCouponEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

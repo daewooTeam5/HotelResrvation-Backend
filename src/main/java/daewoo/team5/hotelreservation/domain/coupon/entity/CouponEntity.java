@@ -55,4 +55,15 @@ public class CouponEntity {
     public boolean isIssuable(){
         return LocalDateTime.now().isBefore(this.expiredAt);
     }
+    public boolean isUsable(int orderAmount){
+        if(!isIssuable()){
+            return false;
+        }
+        // 고정 값 할인일때 최소 주문 가격과 주문 가격 비교
+        if(this.couponType==CouponType.fixed) {
+            return orderAmount > this.minOrderAmount;
+        }else{
+            return true;
+        }
+    }
 }

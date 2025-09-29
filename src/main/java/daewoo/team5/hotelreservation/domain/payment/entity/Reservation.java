@@ -29,7 +29,6 @@ public class Reservation extends BaseTimeEntity {
     private GuestEntity guest;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "room_id", referencedColumnName = "id")
     private Room room;
 
     @Column
@@ -55,6 +54,19 @@ public class Reservation extends BaseTimeEntity {
 
     @Column(name = "final_amount", nullable = false, precision = 38, scale = 2)
     private BigDecimal finalAmount;
+
+    // 고정 할인 가격 DISCOUNT 테이블의 평균 할인가
+    @Column(columnDefinition = "INT DEFAULT 0")
+    private Integer fixedDiscountAmount;
+
+    // 쿠폰 할인 가격 COUPON 테이블의 할인 가격
+    @Column(columnDefinition = "INT DEFAULT 0")
+    private Integer couponDiscountAmount;
+
+    // 포인트 할인 가격 GUEST 테이블의 보유 포인트
+    @Column(columnDefinition = "INT DEFAULT 0")
+    private Integer pointDiscountAmount;
+
 
     @Column(name = "resev_start")
     private LocalDate resevStart;

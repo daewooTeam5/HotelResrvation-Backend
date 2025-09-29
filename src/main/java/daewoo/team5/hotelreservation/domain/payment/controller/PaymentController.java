@@ -3,19 +3,18 @@ package daewoo.team5.hotelreservation.domain.payment.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import daewoo.team5.hotelreservation.domain.coupon.entity.CouponEntity;
-import daewoo.team5.hotelreservation.domain.payment.dto.DashboardSummary;
+import daewoo.team5.hotelreservation.domain.auth.service.AuthService;
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
-import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.service.DashboardService;
 import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
+import daewoo.team5.hotelreservation.domain.payment.service.PointService;
 import daewoo.team5.hotelreservation.domain.payment.service.TossPaymentService;
 import daewoo.team5.hotelreservation.domain.place.repository.PaymentRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
+import daewoo.team5.hotelreservation.domain.place.service.ReservationService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
@@ -23,10 +22,11 @@ import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,6 +42,9 @@ public class PaymentController {
     private final TossPaymentService tossPaymentService;
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
+    private final ReservationService reservationService;
+    private final PointService pointService;
+    private final AuthService authService;
 
 
     @GetMapping("/reservation/{id}")
@@ -54,41 +57,38 @@ public class PaymentController {
     @PostMapping("/confirm")
     public ApiResult<Payment> paymentConfirm(
             @RequestBody
-            PaymentConfirmRequestDto dto
+            PaymentConfirmRequestDto dto,
+            Authentication auth
     ) {
-        return ApiResult.created(paymentService.confirmPayment(dto), "결제 완료");
+        UserProjection user = authService.isAuthUser(auth);
+        Payment payment = paymentService.confirmPayment(user,dto);
+        if (auth != null
+                && auth.isAuthenticated()
+                && !(auth instanceof AnonymousAuthenticationToken)) {
+            pointService.earnPoint(user.getId(), payment.getAmount(),dto.getOrderId());
+        }
+        return ApiResult.created(payment, "결제 완료");
     }
+
     // cancel
     @PostMapping("/{id}/cancel")
+    @AuthUser
     public ApiResult<Boolean> cancelPayment(
-            @PathVariable("id") String paymentKey
+            @PathVariable("id") String paymentKey,
+            UserProjection user
     ) {
-        TossCancelResponse response = tossPaymentService.cancelPayment(paymentKey, "고객 예약 취소");
         Payment payment = paymentRepository.findByPaymentKey(paymentKey).orElseThrow();
-        payment.setStatus(Payment.PaymentStatus.cancelled);
-        Reservation reservation = reservationRepository.findByOrderId(payment.getOrderId()).orElseThrow();
-        reservation.setStatus(Reservation.ReservationStatus.cancelled);
-        reservation.setPaymentStatus(Reservation.ReservationPaymentStatus.refunded);
-        reservationRepository.save(reservation);
-        paymentRepository.save(payment);
+        reservationService.cancel(payment.getReservation());
         return ApiResult.ok(true, "결제 취소 완료");
     }
 
     @PostMapping("/process")
     public ApiResult<Reservation> processPayment(
             @RequestBody
-            ReservationRequestDto dto
-    ) throws JsonProcessingException {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserProjection currentUser = null;
-        System.out.println(auth);
-        if (auth.isAuthenticated()) {
-            Object principal = auth.getPrincipal();
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode node = mapper.readTree(principal.toString());
-            currentUser = usersRepository.findById(Long.parseLong(node.toString()), UserProjection.class)
-                    .orElseThrow(() -> new ApiException(404, "존재하지 않는 유저", "존재 하지 않는 유저입니다."));
-        }
+            ReservationRequestDto dto,
+            Authentication auth
+    )  {
+        UserProjection currentUser = authService.isAuthUser(auth);
         return ApiResult.ok(paymentService.reservationPlace(currentUser, dto), "예약 성공");
     }
 

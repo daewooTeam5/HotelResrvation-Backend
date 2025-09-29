@@ -75,6 +75,9 @@ public class PublishingService {
 
         List<Room> rooms = dto.getRooms().stream()
                 .map(roomDto -> Room.builder()
+                        .roomType(roomDto.getRoomType() != null && !roomDto.getRoomType().isEmpty()
+                                ? roomDto.getRoomType()
+                                : "single")
                         .roomNumber(roomDto.getRoomNumber())
                         .roomType(roomDto.getRoomType())
                         .bedType(roomDto.getBedType())

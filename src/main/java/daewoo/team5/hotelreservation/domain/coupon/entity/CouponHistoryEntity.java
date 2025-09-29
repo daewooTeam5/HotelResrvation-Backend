@@ -16,7 +16,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Entity
+@Entity(name = "CouponHistory")
+@Table(
+        name = "coupon_history",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_coupon_history_user_coupon_used_at",
+                        columnNames = {"user_coupon_id", "used_at"}
+                )
+        }
+)
 public class CouponHistoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +35,7 @@ public class CouponHistoryEntity {
     @ManyToOne
     private Reservation reservation_id; // 예약 ID
 
-    @OneToOne()
+    @ManyToOne()
     private UserCouponEntity userCoupon; // 발급 받은 유저 쿠폰 ID
 
     @Column(nullable = false)
@@ -41,6 +50,8 @@ public class CouponHistoryEntity {
 
     public enum CouponStatus {
         used,
-        canceled
+        canceled, // 예약 취소 (예약만 하고 결제 대기시간 지나서 자동 취소된 경우)
+        pending, // 예약 할때
+        refunded // 결제 취소로 인한 쿠폰 환불
     }
 }

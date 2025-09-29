@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment.PaymentStatus;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentInfoProjection;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.repository.projection.PaymentSummaryProjection;
@@ -135,7 +136,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             pl.name                         AS placeName,
 
             rm.id                           AS roomId,
-            rm.room_number                  AS roomNumber,
             rm.room_type                    AS roomType,
 
             img.image_url                   AS firstImageUrl
@@ -158,16 +158,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         WHERE g.id = :guestId
         ORDER BY p.transaction_date DESC
     """,
-    countQuery = """
+            countQuery = """
         SELECT COUNT(*)
         FROM payments p
         JOIN reservations r ON p.reservation_id = r.reservation_id
         JOIN guest g         ON r.user_id = g.id
         WHERE g.id = :guestId
     """,
-    nativeQuery = true)
+            nativeQuery = true)
     Page<PaymentSummaryProjection> findPaymentSummariesByGuestId(@Param("guestId") Long guestId, Pageable pageable);
-           
+
     List<PaymentInfoProjection> findByReservation_Room_Place_Id(Long placeId);
     // ✅ 일별 매출
     @Query(value = """
@@ -254,5 +254,66 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Object[]> findPaymentMethodStats(@Param("ownerId") Long ownerId,
                                           @Param("startDate") LocalDateTime startDate,
                                           @Param("endDate") LocalDateTime endDate);
+    @Query("""
+    select 
+        p.id                             as paymentId,
+        p.paymentKey                     as paymentKey,
+        p.orderId                        as orderId,
+        p.status                         as status,
+        p.method                         as method,
+        p.amount                         as amount,
+        p.transactionDate                as transactionDate,
 
+        r.reservationId                  as reservationId,
+        r.resevStart                     as resevStart,
+        r.resevEnd                       as resevEnd,
+        r.baseAmount                     as baseAmount,
+        r.finalAmount                    as finalAmount,
+        r.fixedDiscountAmount            as fixedDiscountAmount,
+        r.couponDiscountAmount           as couponDiscountAmount,
+        r.pointDiscountAmount            as pointDiscountAmount,
+        r.request                        as request,
+
+        pl.id                            as placeId,
+        pl.name                          as placeName,
+        pl.checkIn                       as checkIn,
+
+        rm.id                            as roomId,
+        rm.roomType                      as roomType,
+        rm.price                         as roomPrice,
+
+        f.url                            as firstImageUrl,
+
+        ch.id                            as couponHistoryId,
+        ch.discount_amount               as discountAmount,
+        ch.used_at                       as usedAt,
+        ch.status                        as couponStatus,
+        c.id                             as couponId,
+        c.couponName                     as couponName,
+        c.amount                         as couponAmount,
+        c.couponType                     as couponType,
+        c.couponCode                     as couponCode,
+        c.createdAt                      as couponCreatedAt,
+        c.expiredAt                      as couponExpiredAt,
+        c.minOrderAmount                 as minOrderAmount,
+        c.maxOrderAmount                 as maxOrderAmount
+
+    from Payment p
+    join p.reservation r
+    join r.room rm
+    join rm.place pl
+    left join File f on (
+        f.domain = 'room' and f.filetype = 'image' and f.domainFileId = rm.id
+        and f.id = (
+            select min(f2.id)
+            from File f2
+            where f2.domain = 'room' and f2.filetype = 'image' and f2.domainFileId = rm.id
+        )
+    )
+    left join CouponHistory ch on ch.reservation_id = r
+    left join ch.userCoupon uc
+    left join uc.coupon c
+    where p.id = :paymentId
+""")
+    Optional<PaymentDetailProjection> findPaymentDetailById(@Param("paymentId") Long paymentId);
 }
