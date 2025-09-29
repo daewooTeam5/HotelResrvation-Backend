@@ -13,7 +13,7 @@ import java.util.Optional;
 
 public interface PointHistoryRepository extends JpaRepository<PointHistoryEntity,Long> {
     @Query("SELECT p.id as id, " +
-            "p.userId as userId, " +
+            "p.user.id as userId, " +
             "p.type as type, " +
             "p.amount as amount, " +
             "p.balanceAfter as balanceAfter, " +
@@ -22,7 +22,7 @@ public interface PointHistoryRepository extends JpaRepository<PointHistoryEntity
             "r.reservationId as reservationId " +
             "FROM PointHistory p " +
             "LEFT JOIN p.reservation r " +
-            "WHERE p.userId = :userId " +
+            "WHERE p.user.id = :userId " +
             "ORDER BY p.createdAt DESC")
     List<PointProjection> findPointsByUserId(Long userId);
 

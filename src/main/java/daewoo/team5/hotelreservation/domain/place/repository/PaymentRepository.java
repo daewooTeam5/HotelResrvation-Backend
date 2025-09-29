@@ -301,6 +301,25 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         c.minOrderAmount                 as minOrderAmount,
         c.maxOrderAmount                 as maxOrderAmount
 
+    from Payment p
+    join p.reservation r
+    join r.room rm
+    join rm.place pl
+    left join File f on (
+        f.domain = 'room' and f.filetype = 'image' and f.domainFileId = rm.id
+        and f.id = (
+            select min(f2.id)
+            from File f2
+            where f2.domain = 'room' and f2.filetype = 'image' and f2.domainFileId = rm.id
+        )
+    )
+    left join CouponHistory ch on ch.reservation_id = r
+    left join ch.userCoupon uc
+    left join uc.coupon c
+    where p.id = :paymentId
+""")
+    Optional<PaymentDetailProjection> findPaymentDetailById(@Param("paymentId") Long paymentId);
+
     // 사용자별 결제 내역 조회 (Projection)
     @Query("SELECT p.id as id, p.orderId as orderId, p.paymentKey as paymentKey, " +
             "p.amount as amount, p.method as method, p.status as status, " +
@@ -381,23 +400,4 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Object[]> sumYearlyPayments();
 
 
-}
-    from Payment p
-    join p.reservation r
-    join r.room rm
-    join rm.place pl
-    left join File f on (
-        f.domain = 'room' and f.filetype = 'image' and f.domainFileId = rm.id
-        and f.id = (
-            select min(f2.id)
-            from File f2
-            where f2.domain = 'room' and f2.filetype = 'image' and f2.domainFileId = rm.id
-        )
-    )
-    left join CouponHistory ch on ch.reservation_id = r
-    left join ch.userCoupon uc
-    left join uc.coupon c
-    where p.id = :paymentId
-""")
-    Optional<PaymentDetailProjection> findPaymentDetailById(@Param("paymentId") Long paymentId);
 }

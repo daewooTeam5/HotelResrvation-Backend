@@ -95,7 +95,7 @@ public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Lon
             """)
     List<CouponEntity> findUsableCouponsByUserIdAndPlaceId(Long userId, Long placeId);
 
-    @Query("SELECT uc FROM UserCouponEntity uc " +
+    @Query("SELECT uc FROM UserCoupon uc " +
             "LEFT JOIN FETCH uc.coupon c " +
             "LEFT JOIN FETCH uc.user u " +
             "LEFT JOIN FETCH uc.id " +
@@ -111,7 +111,7 @@ public interface UserCouponRepository extends JpaRepository<UserCouponEntity,Lon
             "uc.isUsed as isUsed, " +
             "uc.issuedAt as issuedAt, " +
             "c.expiredAt as expiredAt " +
-            "FROM UserCouponEntity uc " +
+            "FROM UserCoupon uc " +
             "JOIN uc.coupon c " +
             "WHERE uc.user.id = :userId")
     List<CouponIssuedProjection> findCouponsByUserId(Long userId);
