@@ -79,9 +79,12 @@ public class PlaceController {
     public ApiResult<PlaceDetailResponse> getPlaceDetail(
             @PathVariable Long placeId,
             @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) Integer adults,
+            @RequestParam(required = false) Integer children,
+            @RequestParam(required = false) Integer rooms) {
         return ApiResult.ok(
-                placeService.getPlaceDetail(placeId, startDate, endDate),
+                placeService.getPlaceDetail(placeId, startDate, endDate, adults, children, rooms),
                 "숙소 상세 조회 성공"
         );
     }
