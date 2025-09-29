@@ -31,8 +31,9 @@ public class Room extends BaseTimeEntity {
     @Column(name = "capacity_people", nullable = false)
     private Integer capacityPeople; // 수용 가능 인원
 
+    @Builder.Default
     @Column(name = "capacity_room", nullable = false)
-    private Integer capacityRoom; // 수용 객실 수
+    private Integer capacityRoom = 1;
 
     @Column(name = "price", precision = 10, scale = 2, nullable = false)
     private BigDecimal price; // 가격
@@ -40,6 +41,7 @@ public class Room extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     private Status status; // 상태
+
 
     public enum Status {
         AVAILABLE,

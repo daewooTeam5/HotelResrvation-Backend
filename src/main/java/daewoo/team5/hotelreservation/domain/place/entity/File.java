@@ -22,7 +22,7 @@ public class File {
     @Column(name = "filename", length = 100, nullable = false)
     private String filename; // 파일명
 
-    @Column(name = "extension", length = 10, nullable = false)
+    @Column(name = "extension", length = 50, nullable = false)
     private String extension; // 확장자
 
     @Column(name = "filetype", length = 10, nullable = false)
@@ -34,6 +34,6 @@ public class File {
     @Column(name = "domain", length = 20, nullable = false)
     private String domain; // 도메인명 (place, room, chat)
 
-    @Column(name = "url", length = 200, nullable = false)
+    @Column(name = "url", nullable = false, columnDefinition = "MEDIUMTEXT")
     private String url; // 파일 URL
 }

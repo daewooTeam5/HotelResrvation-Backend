@@ -34,4 +34,17 @@ public interface DailyPlaceReservationRepository extends JpaRepository<DailyPlac
             "WHERE dpr.date = :targetDate " +
             "GROUP BY addr.sido")
     List<Object[]> getRegionReservationDistribution(@Param("targetDate") LocalDate targetDate);
+
+    @Query("""
+       SELECT dpr.date, r.roomType, SUM(dpr.availableRoom)
+       FROM DailyPlaceReservation dpr
+       JOIN dpr.room r
+       JOIN r.place p
+       WHERE p.owner.id = :ownerId
+       AND dpr.date BETWEEN :startDate AND :endDate
+       GROUP BY dpr.date, r.roomType
+       """)
+    List<Object[]> findAvailabilityByOwnerAndPeriod(@Param("ownerId") Long ownerId,
+                                                    @Param("startDate") LocalDate startDate,
+                                                    @Param("endDate") LocalDate endDate);
 }
