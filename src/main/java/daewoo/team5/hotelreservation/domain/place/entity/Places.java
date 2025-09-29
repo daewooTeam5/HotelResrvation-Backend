@@ -64,10 +64,6 @@ public class Places extends BaseTimeEntity {
     @Column(name = "check_out")
     private LocalTime checkOut;// 체크아웃 시간
 
-    @Builder.Default
-    @Column(name = "capacity_room", nullable = false) // DB에 NOT NULL 제약조건이 있음을 명시
-    private Integer capacityRoom = 1;
-
     @ManyToMany
     @JoinTable(
             name = "place_amenities",

@@ -338,7 +338,6 @@ public class PublishingService {
                 .description(place.getDescription())
                 .checkIn(place.getCheckIn().toString())
                 .checkOut(place.getCheckOut().toString())
-                .capacityRoom(place.getCapacityRoom())
                 .CategoryId(place.getCategory().getId())
                 .addressList(addressDTOs)
                 .hotelImages(hotelImageDTOs)
