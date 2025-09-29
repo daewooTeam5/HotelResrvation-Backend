@@ -78,7 +78,6 @@ public class PublishingService {
                         .roomType(roomDto.getRoomType() != null && !roomDto.getRoomType().isEmpty()
                                 ? roomDto.getRoomType()
                                 : "single")
-                        .roomNumber(roomDto.getRoomNumber())
                         .roomType(roomDto.getRoomType())
                         .bedType(roomDto.getBedType())
                         .price(BigDecimal.valueOf(roomDto.getMinPrice()))
@@ -192,7 +191,6 @@ public class PublishingService {
 
         List<Room> rooms = dto.getRooms().stream()
                 .map(roomDto -> Room.builder()
-                        .roomNumber(roomDto.getRoomNumber())
                         .roomType(roomDto.getRoomType())
                         .bedType(roomDto.getBedType())
                         .price(BigDecimal.valueOf(roomDto.getMinPrice()))
@@ -323,7 +321,6 @@ public class PublishingService {
                     .collect(Collectors.toList());
 
             return RoomDTO.builder()
-                    .roomNumber(room.getRoomNumber())
                     .roomType(room.getRoomType())
                     .capacityPeople(room.getCapacityPeople())
                     .minPrice(room.getPrice().intValue())
