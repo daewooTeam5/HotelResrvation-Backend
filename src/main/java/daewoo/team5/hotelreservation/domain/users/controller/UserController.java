@@ -13,6 +13,7 @@ import daewoo.team5.hotelreservation.domain.payment.service.PointService;
 import daewoo.team5.hotelreservation.domain.place.repository.projection.PaymentSummaryProjection;
 import daewoo.team5.hotelreservation.domain.shoppingcart.projection.CartProjection;
 import daewoo.team5.hotelreservation.domain.shoppingcart.service.ShoppingCartService;
+import daewoo.team5.hotelreservation.domain.users.entity.OwnerRequestEntity;
 import daewoo.team5.hotelreservation.domain.users.projection.MyInfoProjection;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.service.UsersService;
@@ -38,6 +39,17 @@ public class UserController {
     private final PaymentService paymentService;
     private final UsersService usersService;
     private final PointService pointService;
+
+    @PostMapping("/my/hotel-owner/request")
+    @AuthUser
+    public ApiResult<OwnerRequestEntity> requestHotelOwner(
+            @RequestBody Map<String, String> requestBody,
+            UserProjection user
+    ) {
+        return ApiResult.ok(null, "호텔 운영자 요청 기능은 현재 준비 중입니다.");
+//        OwnerRequestEntity ownerRequest = usersService.createOwnerRequest(userId, businessRegistrationNumber);
+//        return ApiResult.ok(ownerRequest, "호텔 운영자 요청이 성공적으로 접수되었습니다.");
+    }
 
     @GetMapping("/my/payments")
     @AuthUser
