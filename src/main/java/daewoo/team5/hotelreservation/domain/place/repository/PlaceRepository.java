@@ -28,6 +28,114 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                 pc.name AS categoryName,
                 MIN(r.price) AS originalPrice, -- (1) 기존 가격
                 MIN(f.url) AS fileUrl,
+                MAX(r.price) AS discountValue, -- (2) 할인 금액
+                MIN(r.price) AS finalPrice, -- (3) 최종 가격
+                CASE
+                    WHEN :userId IS NULL THEN 0
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM wishlist w
+                        WHERE w.place_id = p.id AND w.user_id = :userId
+                    )
+                    THEN 1
+                    ELSE 0
+                END AS isLiked
+            FROM places p
+            INNER JOIN place_address pa ON p.id = pa.place_id
+            INNER JOIN place_category pc ON p.category_id = pc.id
+            INNER JOIN room r ON r.place_id = p.id
+            LEFT JOIN file f ON f.domain = 'place' AND f.domain_file_id = p.id AND f.filetype = 'image'
+            WHERE
+                  (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
+                AND (:address IS NULL OR pa.sido = :address)
+                AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
+                AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+                AND COALESCE(
+                        (SELECT MIN(dpr.available_room)
+                         FROM daily_place_reservation dpr
+                         WHERE dpr.room_id = r.id
+                           AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
+                        ),
+                        r.capacity_room
+                    ) >= :room
+                AND (:placeCategory IS NULL OR pc.name = :placeCategory)
+                AND (:minRating IS NULL OR p.avg_rating >= :minRating)
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM (
+                        SELECT CAST(:checkIn AS DATE) AS date
+                        UNION ALL
+                        SELECT DATE_ADD(date, INTERVAL 1 DAY) 
+                        FROM (SELECT CAST(:checkIn AS DATE) AS date) AS t
+                        WHERE DATE_ADD(date, INTERVAL 1 DAY) < CAST(:checkOut AS DATE)
+                    ) AS date_range
+                    JOIN daily_place_reservation dpr
+                         ON dpr.room_id = r.id
+                        AND dpr.date = date_range.date
+                    WHERE dpr.available_room <= 0
+                )
+            GROUP BY p.id, p.name, p.avg_rating, pa.sido, pc.name
+            """,
+            countQuery = """
+                    WITH RECURSIVE date_range AS (
+                        SELECT CAST(:checkIn AS DATE) AS date
+                        UNION ALL
+                        SELECT DATE_ADD(date, INTERVAL 1 DAY) 
+                        FROM date_range 
+                        WHERE date < CAST(:checkOut AS DATE)
+                    )
+                    SELECT COUNT(DISTINCT p.id)
+                    FROM places p
+                    INNER JOIN place_address pa ON p.id = pa.place_id
+                    INNER JOIN place_category pc ON p.category_id = pc.id
+                    INNER JOIN room r ON r.place_id = p.id
+                    WHERE
+                        (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
+                        AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
+                        AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
+                        AND (:placeCategory IS NULL OR pc.name = :placeCategory)
+                        AND (:minRating IS NULL OR p.avg_rating >= :minRating)
+                        AND COALESCE(
+                                (SELECT MIN(dpr.available_room)
+                                 FROM daily_place_reservation dpr
+                                 WHERE dpr.room_id = r.id
+                                   AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
+                                ),
+                                r.capacity_room
+                            ) >= :room
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM date_range d
+                            JOIN daily_place_reservation dpr 
+                                 ON dpr.room_id = r.id 
+                                AND dpr.date = d.date
+                            WHERE dpr.available_room <= 0
+                        )
+                    """,
+            nativeQuery = true)
+    Page<PlaceItemInfomation> findAllSearchPlaceInfo(
+            @Param("name") String name,
+            @Param("checkIn") String checkIn,
+            @Param("checkOut") String checkOut,
+            @Param("people") int people,
+            @Param("room") int room,
+            @Param("placeCategory") String placeCategory,
+            @Param("minRating") Double minRating,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice,
+            @Param("userId") Long userId,
+            @Param("address") String address,
+            Pageable pageable
+    );
+    @Query(value = """
+            SELECT
+                p.id,
+                p.name,
+                p.avg_rating AS avgRating,
+                pa.sido,
+                pc.name AS categoryName,
+                MIN(r.price) AS originalPrice, -- (1) 기존 가격
+                MIN(f.url) AS fileUrl,
                 MAX(d.discount_value) AS discountValue, -- (2) 할인 금액
                 MIN(r.price) - COALESCE(MAX(d.discount_value), 0) AS finalPrice, -- (3) 최종 가격
                 CASE
@@ -118,7 +226,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                         )
                     """,
             nativeQuery = true)
-    Page<PlaceItemInfomation> findAllSearchPlaceInfo(
+    Page<PlaceItemInfomation> findAllSearchPlaceInfoBackup(
             @Param("name") String name,
             @Param("checkIn") String checkIn,
             @Param("checkOut") String checkOut,
