@@ -72,8 +72,8 @@ public class Places extends BaseTimeEntity {
     )
     private List<Amenity> amenities;
 
-    
-   // 기본값을 true로 설정
+
+    // 기본값을 true로 설정
 
     public void updateDetails(String name, String description, LocalTime checkIn, LocalTime checkOut, PlaceCategory category) {
         this.name = name;
@@ -88,5 +88,30 @@ public class Places extends BaseTimeEntity {
         APPROVED,
         REJECTED,
         INACTIVE
+    }
+
+    //== 평점 계산 편의 메서드 ==//
+    public void addReviewStats(Integer newRating) {
+        if (this.reviewCount == null || this.reviewCount == 0) {
+            this.reviewCount = 1;
+            this.avgRating = BigDecimal.valueOf(newRating);
+        } else {
+            BigDecimal totalRating = this.avgRating.multiply(BigDecimal.valueOf(this.reviewCount));
+            totalRating = totalRating.add(BigDecimal.valueOf(newRating));
+            this.reviewCount++;
+            this.avgRating = totalRating.divide(BigDecimal.valueOf(this.reviewCount), 2, BigDecimal.ROUND_HALF_UP);
+        }
+    }
+
+    public void removeReviewStats(Integer oldRating) {
+        if (this.reviewCount == null || this.reviewCount <= 1) {
+            this.reviewCount = 0;
+            this.avgRating = BigDecimal.ZERO;
+        } else {
+            BigDecimal totalRating = this.avgRating.multiply(BigDecimal.valueOf(this.reviewCount));
+            totalRating = totalRating.subtract(BigDecimal.valueOf(oldRating));
+            this.reviewCount--;
+            this.avgRating = totalRating.divide(BigDecimal.valueOf(this.reviewCount), 2, BigDecimal.ROUND_HALF_UP);
+        }
     }
 }
