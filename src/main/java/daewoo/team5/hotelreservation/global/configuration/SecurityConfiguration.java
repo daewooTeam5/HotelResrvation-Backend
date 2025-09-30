@@ -67,7 +67,8 @@ public class SecurityConfiguration {
                                 "/api/v1/payment/**",
                                 "/api/v1/amenities/*",
                                 "/api/v1/owner/coupons",
-                                "/images/**"
+                                "/images/**",
+                                "/api/v1/kakao/map-key"
                         ).permitAll()
                         .requestMatchers("/api/v1/reservations/**","/api/v1/statistics/**","/api/v1/dashboard/**","/api/v1/owner/coupons/**", "/api/v1/owner/inventory/**", "/api/v1/owner/rooms/**")
                         .hasAnyRole("admin", "hotel_owner")
