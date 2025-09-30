@@ -14,7 +14,9 @@ import daewoo.team5.hotelreservation.domain.place.repository.projection.PaymentS
 import daewoo.team5.hotelreservation.domain.shoppingcart.projection.CartProjection;
 import daewoo.team5.hotelreservation.domain.shoppingcart.service.ShoppingCartService;
 import daewoo.team5.hotelreservation.domain.users.dto.OwnerRequestDto;
+import daewoo.team5.hotelreservation.domain.users.dto.request.UserUpdateDTO;
 import daewoo.team5.hotelreservation.domain.users.entity.OwnerRequestEntity;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.MyInfoProjection;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.service.UsersService;
@@ -92,6 +94,15 @@ public class UserController {
             UserProjection user
     ) {
         return ApiResult.ok(usersService.getUserById(user.getId()), "사용자 정보 조회 성공");
+    }
+    @PutMapping("/update")
+    @AuthUser
+    public ApiResult<Users> updateMyProfile(
+            UserProjection user,
+            @RequestBody UserUpdateDTO dto
+    ) {
+        Users updated = usersService.updateUser(user.getId(), dto);
+        return ApiResult.ok(updated, "프로필 업데이트 성공");
     }
 
     @GetMapping("/my/point-history")
