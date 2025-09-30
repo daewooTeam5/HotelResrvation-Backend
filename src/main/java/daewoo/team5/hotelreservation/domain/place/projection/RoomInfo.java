@@ -12,6 +12,9 @@ public interface RoomInfo {
     Double getPrice();
     String getStatus();
     Integer getAvailableRoom();
-    List<String> getImages();
+    Double getArea();
+    String getImages();
     Integer getIsAvailable();
+    String getAmenities();
+    String getAmenityIcons();
 }

@@ -350,7 +350,7 @@ public class PaymentService {
         return paymentRepository.findById(paymentId).orElseThrow();
     }
 
-    public List<PaymentHistoryEntity> getPaymentHistory(Long paymentId) {
+    public PaymentHistoryEntity getPaymentHistory(Long paymentId) {
         return paymentHistoryRepository.findByPaymentId(paymentId);
     }
 }

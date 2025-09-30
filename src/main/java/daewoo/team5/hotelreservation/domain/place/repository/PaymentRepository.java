@@ -374,9 +374,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "GROUP BY r.guest.id ORDER BY SUM(p.amount) DESC")
     List<Object[]> findTopCustomersByPayments();
 
-    @Query("SELECT COUNT(DISTINCT r.guest.id) " +
-            "FROM Payment p JOIN p.reservation r " +
-            "GROUP BY r.guest.id HAVING COUNT(p) >= 2")
+    @Query(value = """
+    SELECT COALESCE(COUNT(*), 0)
+    FROM (
+        SELECT r.user_id
+        FROM payments p
+        JOIN reservations r ON p.reservation_id = r.reservation_id
+        GROUP BY r.user_id
+        HAVING COUNT(p.id) >= 2
+    ) sub
+""", nativeQuery = true)
     long countRepeatUsers();
 
     // 네이티브 쿼리 → reservations.user_id 기준으로 수정

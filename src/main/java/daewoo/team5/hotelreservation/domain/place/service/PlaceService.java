@@ -1,7 +1,9 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
+import daewoo.team5.hotelreservation.domain.place.dto.AmenityDto;
 import daewoo.team5.hotelreservation.domain.place.dto.PlaceDetailResponse;
 import daewoo.team5.hotelreservation.domain.place.dto.PlaceInfoProjection;
+import daewoo.team5.hotelreservation.domain.place.dto.RoomInfoDto;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.projection.*;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
@@ -15,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -54,11 +58,28 @@ public class PlaceService {
 
         List<String> images = placeRepository.findPlaceImages(placeId);
 
-        List<RoomInfo> availableRooms = placeRepository.findRoomsByPlace(placeId, startDate, endDate, totalPeople, rooms);
+        List<RoomInfo> roomEntities = placeRepository.findRoomsByPlace(placeId, startDate, endDate, totalPeople, rooms);
+
+        List<RoomInfoDto> roomDtos = roomEntities.stream()
+                .map(r -> new RoomInfoDto(
+                        r.getRoomId(),
+                        r.getRoomType(),
+                        r.getBedType(),
+                        r.getCapacityPeople(),
+                        r.getCapacityRoom(),
+                        r.getPrice(),
+                        r.getStatus(),
+                        r.getAvailableRoom(),
+                        r.getArea(),
+                        splitImages(r.getImages()),
+                        r.getIsAvailable(),
+                        mapAmenities(r.getAmenities())
+                ))
+                .toList();
 
         List<PlaceServiceProjection> services = placeRepository.findPlaceServices(placeId);
 
-        return new PlaceDetailResponse(detail, images, availableRooms, services);
+        return new PlaceDetailResponse(detail, images, roomDtos, services);
     }
 
     public Page<AdminPlaceProjection> getAdminPlace(
@@ -91,5 +112,23 @@ public class PlaceService {
         return placeRepository.findPlaceInfo(placeId);
     }
 
+    private List<String> splitImages(String images) {
+        if (images == null || images.isEmpty()) return List.of();
+        return Arrays.asList(images.split(","));
+    }
+
+    private List<AmenityDto> mapAmenities(String amenities) {
+        if (amenities == null || amenities.isEmpty()) return List.of();
+
+        return Arrays.stream(amenities.split(","))
+                .map(item -> {
+                    String[] parts = item.split(":", 2);
+                    return new AmenityDto(
+                            parts[0],
+                            (parts.length > 1 && !parts[1].isBlank()) ? parts[1] : null
+                    );
+                })
+                .toList();
+    }
 }
 

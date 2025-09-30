@@ -118,7 +118,7 @@ public class PaymentController {
 
     // 결제 상세 내역 (히스토리)
     @GetMapping("/{paymentId}/history")
-    public List<PaymentHistoryEntity> getPaymentHistory(@PathVariable Long paymentId) {
+    public PaymentHistoryEntity getPaymentHistory(@PathVariable Long paymentId) {
         return paymentService.getPaymentHistory(paymentId);
     }
 }

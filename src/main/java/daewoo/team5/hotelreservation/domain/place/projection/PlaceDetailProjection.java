@@ -16,9 +16,7 @@ public interface PlaceDetailProjection {
     String getRoadName();
     String getDetailAddress();
 
-    // 여러 이미지
     List<String> getFileUrls();
 
-    // 객실 상세
     List<RoomInfo> getRooms();
 }

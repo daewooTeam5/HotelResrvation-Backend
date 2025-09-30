@@ -1,12 +1,12 @@
 package daewoo.team5.hotelreservation.domain.place.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-
 
 @Getter
 @Setter
