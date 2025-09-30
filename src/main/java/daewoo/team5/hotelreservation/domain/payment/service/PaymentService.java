@@ -161,12 +161,13 @@ public class PaymentService {
                             .payment(payment)
                             .build()
             );
+
             // TODO : Room 양방향 제거후 영속성 유지
             entityManager.detach(payment);
             Reservation reservationUpdate = reservationRepository.findByOrderId(savePayment.getOrderId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "예약 정보가 존재하지 않습니다.", "예약 정보가 존재하지 않습니다."));
             reservationUpdate.setStatus(Reservation.ReservationStatus.confirmed);
             reservationUpdate.setPaymentStatus(Reservation.ReservationPaymentStatus.paid);
-            payment.setReservation(null);
+            payment.setReservation(reservationUpdate);
             return payment;
         } catch (FeignException e) {
             String errorMessage = "알 수 없는 오류";

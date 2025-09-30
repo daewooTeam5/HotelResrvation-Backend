@@ -1,6 +1,8 @@
 package daewoo.team5.hotelreservation.global.mail.service;
 
+import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailProjection;
+import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -11,13 +13,16 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.time.format.DateTimeFormatter; // DateTimeFormatter 임포트
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class MailService {
     private final JavaMailSender javaMailSender;
+    private final ReservationRepository reservationRepository; // ReservationRepository 주입
 
     @Async
     public void sendOtpCode(String email, String code) {
@@ -47,15 +52,31 @@ public class MailService {
         try {
             MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             mimeMessageHelper.setTo(email);
-            mimeMessageHelper.setSubject("[My Hotel] " + paymentDetail.getPlaceName() + " 예약이 완료되었습니다."); // ✅ 이메일 제목에 숙소 이름 추가
+            mimeMessageHelper.setSubject("[My Hotel] " + paymentDetail.getPlaceName() + " 예약이 완료되었습니다.");
 
-            // ✅ 날짜/시간 포맷터 생성
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH시 mm분");
 
-            // ✅ 프론트엔드 예약 상세 페이지 URL (실제 URL로 변경해야 합니다)
-            String reservationDetailUrl = "http://localhost:5173/profile/payments/" + paymentDetail.getPaymentId();
+            // 예약 정보에서 GuestEntity를 통해 회원/비회원 구분
+            Reservation reservation = reservationRepository.findById(paymentDetail.getReservationId())
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "예약 정보를 찾을 수 없습니다.", "이메일 발송 중 예약 정보를 찾지 못했습니다."));
 
-            // ✅ HTML 본문 생성 (개선된 버전)
+            boolean isMember = reservation.getGuest().getUsers() != null;
+            String lastName = reservation.getGuest().getLastName();
+            String firstName = reservation.getGuest().getFirstName();
+            String fullGuestName = lastName + " " + firstName; // 성 + 이름
+
+            String reservationDetailUrl;
+            if (isMember) {
+                reservationDetailUrl = "http://localhost:5173/profile/payments/" + paymentDetail.getPaymentId();
+            } else {
+                reservationDetailUrl = "http://localhost:5173/guest/reservation-search" +
+                        "?reservationId=" + paymentDetail.getReservationId() +
+                        "&lastName=" + URLEncoder.encode(lastName, StandardCharsets.UTF_8) +
+                        "&firstName=" + URLEncoder.encode(firstName, StandardCharsets.UTF_8) +
+                        "&email=" + email;
+            }
+
+
             String htmlContent = "<!DOCTYPE html>" +
                     "<html>" +
                     "<head>" +
@@ -75,26 +96,20 @@ public class MailService {
                     "<body>" +
                     "<div class='container'>" +
                     "<h1>✅ 예약 확정 안내</h1>" +
-                    "<p>안녕하세요! " + paymentDetail.getPlaceName() + " 예약이 성공적으로 완료되었습니다.</p>" +
+                    "<p>안녕하세요, " + fullGuestName + "님! " + paymentDetail.getPlaceName() + " 예약이 성공적으로 완료되었습니다.</p>" + // fullGuestName 사용
 
-                    // --- 예약 상세 정보 버튼 ---
                     "<div class='button-container'>" +
                     "<a href='" + reservationDetailUrl + "' class='button' style='color: #ffffff; text-decoration: none;'>예약 상세 보기</a>" +
                     "</div>" +
-
                     "<h3>예약 정보</h3>" +
                     "<ul>" +
                     "<li><b>예약 번호:</b> " + paymentDetail.getReservationId() + "</li>" +
                     "<li><b>숙소명:</b> " + paymentDetail.getPlaceName() + "</li>" +
-                    // 💡 숙소 주소와 연락처는 PaymentDetailProjection에 추가해야 합니다.
-                    // "<li><b>숙소 주소:</b> " + paymentDetail.getPlaceAddress() + " <a href='https://map.kakao.com/link/search/" + paymentDetail.getPlaceName() + "'>지도 보기</a></li>" +
-                    // "<li><b>숙소 연락처:</b> " + paymentDetail.getPlacePhone() + "</li>" +
                     "<li><b>객실 타입:</b> " + paymentDetail.getRoomType() + "</li>" +
                     "<li><b>체크인:</b> " + paymentDetail.getResevStart().toString() + " " + paymentDetail.getCheckIn().toString() + "</li>" +
                     "<li><b>체크아웃:</b> " + paymentDetail.getResevEnd().toString() + "</li>" +
                     (paymentDetail.getRequest() != null && !paymentDetail.getRequest().isEmpty() ? "<li><b>요청사항:</b> " + paymentDetail.getRequest() + "</li>" : "") +
                     "</ul>" +
-
                     "<h3>상세 결제 내역</h3>" +
                     "<ul>" +
                     "<li><b>주문 번호:</b> " + paymentDetail.getOrderId() + "</li>" +
@@ -103,10 +118,8 @@ public class MailService {
                     (paymentDetail.getPointDiscountAmount() > 0 ? "<li><b>포인트 사용:</b> -" + paymentDetail.getPointDiscountAmount() + "원</li>" : "") +
                     "<li><b>총 결제 금액:</b> <b>" + paymentDetail.getFinalAmount().toBigInteger() + "원</b></li>" +
                     "<li><b>결제 수단:</b> " + paymentDetail.getMethod() + "</li>" +
-                    // ✅ 포맷팅된 결제 일시 사용
                     "<li><b>결제 일시:</b> " + paymentDetail.getTransactionDate().format(formatter) + "</li>" +
                     "</ul>" +
-
                     "<div class='footer'>" +
                     "<p>본 메일은 발신전용입니다. 궁금한 점은 고객센터로 문의해주세요.<br>" +
                     "My Hotel &copy; 2025 All Rights Reserved.</p>" +
@@ -114,7 +127,6 @@ public class MailService {
                     "</div>" +
                     "</body>" +
                     "</html>";
-
             mimeMessageHelper.setText(htmlContent, true);
             javaMailSender.send(mimeMessage);
             log.info("개선된 예약 확정 메일 전송 성공: {}", email);

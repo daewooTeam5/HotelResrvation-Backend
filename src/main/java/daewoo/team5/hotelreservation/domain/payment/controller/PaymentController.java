@@ -65,18 +65,29 @@ public class PaymentController {
             Authentication auth
     ) {
         UserProjection user = authService.isAuthUser(auth);
-        Payment payment = paymentService.confirmPayment(user,dto);
-        if (auth != null
-                && auth.isAuthenticated()
-                && !(auth instanceof AnonymousAuthenticationToken)) {
-            pointService.earnPoint(user.getId(), payment.getAmount(),dto.getOrderId());
-            // 1. 결제 상세 정보 조회
-            PaymentDetailProjection paymentDetail = paymentService.getPaymentDetail(payment.getId(), user.getId());
-            // 2. 이메일 발송 호출 (비동기)
-            mailService.sendReservationConfirmation(user.getEmail(), paymentDetail);
+        Payment payment = paymentService.confirmPayment(user, dto);
+
+        // 결제 상세 정보 조회 (회원/비회원 공통)
+        // 회원이면 user.getId()를, 비회원이면 null을 넘겨주어 처리합니다.
+        Long userIdForDetail = (user != null) ? user.getId() : null;
+        PaymentDetailProjection paymentDetail = paymentService.getPaymentDetail(payment.getId(), userIdForDetail);
+
+        // 예약자 이메일 정보 가져오기
+        String guestEmail = paymentService.getReservationById(payment.getReservation().getReservationId()).getGuest().getEmail();
+
+
+        // 이메일 발송 (회원/비회원 공통)
+        mailService.sendReservationConfirmation(guestEmail, paymentDetail);
+
+
+        // 포인트 적립 (회원 전용)
+        if (user != null) {
+            pointService.earnPoint(user.getId(), payment.getAmount(), dto.getOrderId());
         }
+
         return ApiResult.created(payment, "결제 완료");
     }
+
 
     // cancel
     @PostMapping("/{id}/cancel")
