@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface PaymentHistoryRepository extends JpaRepository<PaymentHistoryEntity,Long> {
-    List<PaymentHistoryEntity> findByPaymentId(Long paymentId);
+    PaymentHistoryEntity findByPaymentId(Long paymentId);
 }

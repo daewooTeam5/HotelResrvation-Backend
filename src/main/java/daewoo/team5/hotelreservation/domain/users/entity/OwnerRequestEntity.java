@@ -19,6 +19,8 @@ public class OwnerRequestEntity {
 
     private String rejectionReason; // 반려 사유
 
+    private String businessNumber;
+
     @ManyToOne
     private Users user; // 요청자 ID (FK)
 

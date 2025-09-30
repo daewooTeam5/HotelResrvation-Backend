@@ -23,12 +23,12 @@ public class PlaceDetailResponse {
     private String detailAddress;
 
     private List<String> fileUrls;
-    private List<RoomInfo> rooms;
+    private List<RoomInfoDto> rooms;
     private List<PlaceServiceProjection> services;
 
     public PlaceDetailResponse(PlaceDetailProjection detail,
                                List<String> fileUrls,
-                               List<RoomInfo> rooms,
+                               List<RoomInfoDto> rooms,
                                List<PlaceServiceProjection> services) {
         this.name = detail.getName();
         this.description = detail.getDescription();

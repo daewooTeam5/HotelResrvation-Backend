@@ -42,6 +42,8 @@ public class Room extends BaseTimeEntity {
     @Column(length = 20, nullable = false)
     private Status status; // 상태
 
+    @Column(name = "area")
+    private Double area; // 면적
 
     public enum Status {
         AVAILABLE,

@@ -70,15 +70,23 @@ public class AuthService {
         blackListRepository.addToBlackList(refreshToken,expirationTime);
     }
 
-    public Users adminSignUp(SignUpRequest signUpRequest){
+    public Users adminSignUp(SignUpRequest signUpRequest) {
         signUpRequest.setAdminPassword(passwordEncoder.encode(signUpRequest.getAdminPassword()));
+
+        Users.Role role;
+        try {
+            role = Users.Role.valueOf(signUpRequest.getAdminRole());
+        } catch (IllegalArgumentException e) {
+            role = Users.Role.admin;
+        }
+
         return userRepository.save(Users.builder()
                 .email(signUpRequest.getAdminId() + "@daewoo.ac.kr")
                 .name(signUpRequest.getAdminName())
                 .userId(signUpRequest.getAdminId())
                 .password(signUpRequest.getAdminPassword())
-                .role(Users.Role.admin)
-                .status(Users.Status.active)
+                .role(role)
+                .status(Users.Status.inactive)
                 .build());
     }
 
