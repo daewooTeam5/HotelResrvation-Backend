@@ -66,7 +66,7 @@ public class Places extends BaseTimeEntity {
 
     @ManyToMany
     @JoinTable(
-            name = "place_amenities",
+            name = "place_amenity",
             joinColumns = @JoinColumn(name = "place_id"),
             inverseJoinColumns = @JoinColumn(name = "amenity_id")
     )

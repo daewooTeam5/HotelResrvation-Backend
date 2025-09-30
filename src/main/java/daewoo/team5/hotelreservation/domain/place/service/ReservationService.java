@@ -231,9 +231,9 @@ public class ReservationService {
 
         // TODO : 취소 로직 확인을 위한 임시 주석
 //        // ✅ 재고 복구
-//        if (r.getRoom() != null && r.getResevStart() != null && r.getResevEnd() != null) {
-//            adjustInventory(r.getRoom().getId(), r.getResevStart(), r.getResevEnd(), +1);
-//        }
+        if (r.getRoom() != null && r.getResevStart() != null && r.getResevEnd() != null) {
+            adjustInventory(r.getRoom().getId(), r.getResevStart(), r.getResevEnd().minusDays(1), +1);
+        }
 //
         //
         // 쿠폰 조회후 쿠폰 상태 복구
