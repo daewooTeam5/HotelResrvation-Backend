@@ -64,13 +64,6 @@ public class Places extends BaseTimeEntity {
     @Column(name = "check_out")
     private LocalTime checkOut;// 체크아웃 시간
 
-    @ManyToMany
-    @JoinTable(
-            name = "place_amenity",
-            joinColumns = @JoinColumn(name = "place_id"),
-            inverseJoinColumns = @JoinColumn(name = "amenity_id")
-    )
-    private List<Amenity> amenities;
 
 
     // 기본값을 true로 설정

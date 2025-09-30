@@ -42,6 +42,7 @@ public class PublishingService {
     private final UsersRepository usersRepository;
 
 
+    @Deprecated
     @Transactional
     public Places registerHotel(PublishingDTO dto) {
         PlaceCategory placeCategory = placeCategoryRepository.findById(Math.toIntExact(dto.getCategoryId()))
@@ -57,7 +58,7 @@ public class PublishingService {
                 .description(dto.getDescription())
                 .checkOut(LocalTime.parse(dto.getCheckOut()))
                 .checkIn(LocalTime.parse(dto.getCheckIn()))
-                .amenities(amenityList)
+//                .amenities(amenityList)
                 .category(placeCategory)
                 .build();
 
@@ -152,10 +153,7 @@ public class PublishingService {
         PlaceCategory placeCategory = placeCategoryRepository.findById(Math.toIntExact(dto.getCategoryId()))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
 
-        List<Amenity> amenityList = new ArrayList<>();
-        if (dto.getAmenityIds() != null && !dto.getAmenityIds().isEmpty()) {
-            amenityList = amentiesRepository.findAllById(dto.getAmenityIds());
-        }
+        List<Amenity> allById = amentiesRepository.findAllById(dto.getAmenityIds());
         log.info("=12==================");
         log.info(dto.getRooms().toString());
         Places place = Places.builder()
@@ -163,7 +161,6 @@ public class PublishingService {
                 .description(dto.getDescription())
                 .checkOut(LocalTime.parse(dto.getCheckOut()))
                 .checkIn(LocalTime.parse(dto.getCheckIn()))
-                .amenities(amenityList)
                 .status(Places.Status.PENDING) // 기본값 설정
                 .avgRating(BigDecimal.ZERO)
                 .isPublic(true)
@@ -255,9 +252,9 @@ public class PublishingService {
         // 4. 편의시설(Amenity) 목록을 업데이트합니다.
         if (dto.getAmenityIds() != null) {
             List<Amenity> updatedAmenities = amentiesRepository.findAllById(dto.getAmenityIds());
-            place.setAmenities(updatedAmenities);
+//            place.setAmenities(updatedAmenities);
         } else {
-            place.getAmenities().clear();
+//            place.getAmenities().clear();
         }
 
         // 5. 기존의 연관 데이터(이미지, 객실, 주소)를 모두 삭제합니다.
@@ -371,9 +368,9 @@ public class PublishingService {
 
         if (dto.getAmenityIds() != null) {
             List<Amenity> updatedAmenities = amentiesRepository.findAllById(dto.getAmenityIds());
-            place.setAmenities(updatedAmenities);
+//            place.setAmenities(updatedAmenities);
         } else {
-            place.getAmenities().clear();
+//            place.getAmenities().clear();
         }
 
         List<Long> existingRoomIds = roomRepository.findByPlaceId(placeId).stream()
@@ -523,9 +520,9 @@ public class PublishingService {
                     .build();
         }).collect(Collectors.toList());
 
-        List<Long> amenityIds = place.getAmenities().stream()
-                .map(Amenity::getId)
-                .collect(Collectors.toList());
+//        List<Long> amenityIds = place.getAmenities().stream()
+//                .map(Amenity::getId)
+//                .collect(Collectors.toList());
 
         return PublishingDTO.builder()
                 .hotelName(place.getName())
@@ -536,7 +533,7 @@ public class PublishingService {
                 .addressList(addressDTOs)
                 .hotelImages(hotelImageDTOs)
                 .rooms(roomDTOs)
-                .amenityIds(amenityIds)
+//                .amenityIds(amenityIds)
                 .build();
     }
 
