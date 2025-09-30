@@ -20,23 +20,37 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     @Query(
             value = """
-                        SELECT 
-                            r.id AS id,
-                            CONCAT(r.room_type, r.bed_type) AS roomName,
-                            r.place_id AS placeId,
-                            r.price AS price,
-                            COALESCE(dc.discount_value, 0) AS discountPercent,
-                            ROUND(r.price - r.price * COALESCE(dc.discount_value, 0) / 100, 0) AS finalPrice,
-                            MIN(COALESCE(d.available_room, r.capacity_room)) AS availableCount
-                        FROM room r
-                        LEFT JOIN daily_place_reservation d 
-                            ON d.date BETWEEN :startDate AND :endDate
-                        LEFT JOIN discount dc
-                            ON r.place_id = dc.place_id
-                        WHERE r.id = :roomId
-                        GROUP BY r.id, r.place_id, r.price, dc.discount_value
-                        HAVING MIN(COALESCE(d.available_room, r.capacity_room)) > 0
-                    """,
+            WITH RECURSIVE date_range AS (
+                SELECT CAST(:startDate AS DATE) AS date
+                UNION ALL
+                SELECT DATE_ADD(date, INTERVAL 1 DAY)
+                FROM date_range
+                WHERE date < DATE_SUB(CAST(:endDate AS DATE), INTERVAL 1 DAY)
+            )
+            SELECT 
+                r.id AS id,
+                CONCAT(r.room_type, r.bed_type) AS roomName,
+                r.place_id AS placeId,
+                r.price AS price,
+                -- (1) 평균 할인율 %
+                AVG(COALESCE(dc.discount_value, 0)) AS discountPercent,
+                -- (2) 최종가 (평균 할인율 반영)
+                ROUND(r.price * (1 - AVG(COALESCE(dc.discount_value, 0)) / 100), 0) AS finalPrice,
+                -- (3) 예약 가능 수량
+                MIN(COALESCE(dpr.available_room, r.capacity_room)) AS availableCount
+            FROM room r
+            LEFT JOIN daily_place_reservation dpr
+                   ON dpr.room_id = r.id
+                  AND dpr.date >= :startDate
+                  AND dpr.date < :endDate
+            JOIN date_range dr
+            LEFT JOIN discount dc
+                   ON dc.place_id = r.place_id
+                  AND dr.date BETWEEN dc.start_date AND dc.end_date
+            WHERE r.id = :roomId
+            GROUP BY r.id, r.room_type, r.bed_type, r.place_id, r.price
+            HAVING MIN(COALESCE(dpr.available_room, r.capacity_room)) > 0
+            """,
             nativeQuery = true
     )
     Optional<RoomInfoProjection> findRoomAvailability(
@@ -44,6 +58,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             @Param("startDate") String startDate,
             @Param("endDate") String endDate
     );
+
 
     // ownerId로 해당 소유자의 모든 객실 유형 조회
     @Query("SELECT r FROM room r " +

@@ -54,7 +54,13 @@ public interface UsersRepository extends JpaRepository<Users, Long> {
     SELECT u, orq, f
     FROM Users u
     JOIN OwnerRequest orq ON orq.user = u
+       AND orq.createdAt = (
+            SELECT MAX(orq2.createdAt) 
+            FROM OwnerRequest orq2 
+            WHERE orq2.user = u
+       )
     LEFT JOIN File f ON f.domain = 'owner_request' AND f.domainFileId = orq.id
 """)
     List<Object[]> findAllUsersWithOwnerRequestAndFiles();
+
 }
