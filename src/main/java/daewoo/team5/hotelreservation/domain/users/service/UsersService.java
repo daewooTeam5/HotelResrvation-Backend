@@ -7,6 +7,7 @@ import daewoo.team5.hotelreservation.domain.users.dto.OwnerRequestDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.CreateUserDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.LogInUserDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.UserResponse;
+import daewoo.team5.hotelreservation.domain.users.dto.request.UserUpdateDTO;
 import daewoo.team5.hotelreservation.domain.users.entity.OwnerRequestEntity;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.MyInfoProjection;
@@ -145,5 +146,19 @@ public class UsersService {
         // 유저 조회시 UserProjection 으로 민감정보 제외하고 조회
         return ownerRequestRepository.findTop1ByUserIdOrderByCreatedAtDesc(userId).orElse(null);
     }
+
+    public Users updateUser(Long userId, UserUpdateDTO dto) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        // DTO 값으로 엔티티 업데이트
+        if (dto.getName() != null) user.setName(dto.getName());
+        if (dto.getEmail() != null) user.setEmail(dto.getEmail());
+        if (dto.getPhone() != null) user.setPhone(dto.getPhone());
+
+        return usersRepository.save(user); // 변경 사항 DB 반영
+    }
+
+
 
 }
