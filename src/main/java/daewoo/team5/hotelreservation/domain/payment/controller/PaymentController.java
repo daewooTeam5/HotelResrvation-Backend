@@ -9,6 +9,7 @@ import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.PaymentHistoryEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailProjection;
 import daewoo.team5.hotelreservation.domain.payment.service.DashboardService;
 import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
 import daewoo.team5.hotelreservation.domain.payment.service.PointService;
@@ -21,6 +22,7 @@ import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import daewoo.team5.hotelreservation.global.mail.service.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -47,7 +49,7 @@ public class PaymentController {
     private final ReservationService reservationService;
     private final PointService pointService;
     private final AuthService authService;
-
+    private final MailService mailService;
 
     @GetMapping("/reservation/{id}")
     public ApiResult<Reservation> getReservationById(
@@ -68,6 +70,10 @@ public class PaymentController {
                 && auth.isAuthenticated()
                 && !(auth instanceof AnonymousAuthenticationToken)) {
             pointService.earnPoint(user.getId(), payment.getAmount(),dto.getOrderId());
+            // 1. 결제 상세 정보 조회
+            PaymentDetailProjection paymentDetail = paymentService.getPaymentDetail(payment.getId(), user.getId());
+            // 2. 이메일 발송 호출 (비동기)
+            mailService.sendReservationConfirmation(user.getEmail(), paymentDetail);
         }
         return ApiResult.created(payment, "결제 완료");
     }
