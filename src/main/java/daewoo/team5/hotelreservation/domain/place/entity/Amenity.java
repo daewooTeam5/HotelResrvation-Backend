@@ -23,4 +23,12 @@ public class Amenity {
 
     @Column(name = "icon", length = 100)
     private String icon;  // Icon name
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private Type type;
+
+    public enum Type{
+        PLACE,ROOM
+    }
 }

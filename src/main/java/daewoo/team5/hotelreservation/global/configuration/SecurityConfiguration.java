@@ -65,14 +65,20 @@ public class SecurityConfiguration {
                                 "/api/v1/autocomplete",
                                 "/api/v1/statistics/**",
                                 "/api/v1/payment/**",
+                                "/api/v1/amenities/*",
+                                "/api/v1/owner/coupons",
                                 "/images/**"
                         ).permitAll()
+                        .requestMatchers("/api/v1/reservations/**","/api/v1/statistics/**","/api/v1/dashboard/**","/api/v1/owner/coupons/**", "/api/v1/owner/inventory/**", "/api/v1/owner/rooms/**")
+                        .hasAnyRole("admin", "hotel_owner")
                         .requestMatchers("/api/v1/payment/dashboard/**")
                         .hasAnyRole("admin", "user_admin", "place_admin")
                         .requestMatchers("/api/v1/admin/places/**")
                         .hasAnyRole("admin", "place_admin")
                         .requestMatchers("/api/v1/admin/**")
                         .hasAnyRole("admin", "user_admin")
+                        .requestMatchers("/api/v1/reservations/**","/api/v1/statistics/**","/api/v1/dashboard/**","/api/v1/owner/coupons/**", "/api/v1/owner/inventory/**", "/api/v1/owner/rooms/**")
+                        .hasAnyRole("admin", "hotel_owner")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

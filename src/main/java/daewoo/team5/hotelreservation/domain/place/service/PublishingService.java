@@ -1,22 +1,27 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
+import daewoo.team5.hotelreservation.domain.file.service.FileService;
 import daewoo.team5.hotelreservation.domain.place.dto.AddressDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.FileDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.PublishingDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.RoomDTO;
 import daewoo.team5.hotelreservation.domain.place.entity.*;
 import daewoo.team5.hotelreservation.domain.place.repository.*;
+import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import daewoo.team5.hotelreservation.global.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -26,12 +31,15 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class PublishingService {
 
+    private static final Logger log = LoggerFactory.getLogger(PublishingService.class);
     private final PlaceCategoryRepository placeCategoryRepository;
     private final PlaceRepository repository;
     private final RoomRepository roomRepository;
     private final PlaceAddressRepository placeAddressRepository;
     private final FileRepository fileRepository;
     private final AmentiesRepository amentiesRepository;
+    private final FileService fileService;
+    private final UsersRepository usersRepository;
 
 
     @Transactional
@@ -60,11 +68,14 @@ public class PublishingService {
         if (dto.getHotelImages() != null) {
             dto.getHotelImages().forEach(imgDto -> {
                 String url = imgDto.getUrl();
+                String ext = (imgDto.getExtension() != null && !imgDto.getExtension().isEmpty())
+                        ? imgDto.getExtension()
+                        : extractExtensionFromDataUrl(url);
                 allFilesToSave.add(File.builder()
                         .domain("place")
                         .domainFileId(place.getId())
                         .filename(UUID.randomUUID().toString())
-                        .extension(extractExtensionFromDataUrl(url))
+                        .extension(ext)
                         .filetype("image")
 
                         .url(url)
@@ -95,11 +106,14 @@ public class PublishingService {
             if (roomDto.getImages() != null) {
                 roomDto.getImages().forEach(imgDto -> {
                     String url = imgDto.getUrl();
+                    String ext = (imgDto.getExtension() != null && !imgDto.getExtension().isEmpty())
+                            ? imgDto.getExtension()
+                            : extractExtensionFromDataUrl(url);
                     allFilesToSave.add(File.builder()
                             .domain("room")
                             .domainFileId(savedRoom.getId())
                             .filename(UUID.randomUUID().toString())
-                            .extension(extractExtensionFromDataUrl(url))
+                            .extension(ext)
                             .filetype("image")
                             .url(url)
                             .userId(dto.getUserId())
@@ -128,6 +142,92 @@ public class PublishingService {
 
         placeAddressRepository.saveAll(addresses);
 
+        return place;
+    }
+
+    // 멀티파트 입력을 받아 업로드까지 처리하는 등록 메서드
+    @Transactional
+    public Places registerHotel(UserProjection user, PublishingDTO dto, List<MultipartFile> hotelImages,
+                                Map<Integer, List<MultipartFile>> roomImagesMap) {
+        PlaceCategory placeCategory = placeCategoryRepository.findById(Math.toIntExact(dto.getCategoryId()))
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
+
+        List<Amenity> amenityList = new ArrayList<>();
+        if (dto.getAmenityIds() != null && !dto.getAmenityIds().isEmpty()) {
+            amenityList = amentiesRepository.findAllById(dto.getAmenityIds());
+        }
+        log.info("=12==================");
+        log.info(dto.getRooms().toString());
+        Places place = Places.builder()
+                .name(dto.getHotelName())
+                .description(dto.getDescription())
+                .checkOut(LocalTime.parse(dto.getCheckOut()))
+                .checkIn(LocalTime.parse(dto.getCheckIn()))
+                .amenities(amenityList)
+                .status(Places.Status.PENDING) // 기본값 설정
+                .avgRating(BigDecimal.ZERO)
+                .isPublic(true)
+                .owner(usersRepository.findById(user.getId()).orElseThrow(UserNotFoundException::new))
+                .category(placeCategory)
+                .build();
+        repository.save(place);
+
+        // 객실 생성 (null-safe)
+        List<RoomDTO> roomDtos = Optional.ofNullable(dto.getRooms()).orElse(Collections.emptyList());
+        System.out.println("roomdto1-12312");
+        System.out.println(roomDtos);
+        List<Room> rooms = roomDtos.stream()
+                .map(roomDto -> Room.builder()
+                        .roomType(roomDto.getRoomType() != null && !roomDto.getRoomType().isEmpty()
+                                ? roomDto.getRoomType()
+                                : "single")
+                        .bedType(roomDto.getBedType())
+                        .price(BigDecimal.valueOf(roomDto.getMinPrice()))
+                        .capacityPeople(roomDto.getCapacityPeople())
+                        .status(Room.Status.AVAILABLE)
+                        .place(place)
+                        .build())
+                .collect(Collectors.toList());
+        List<Room> savedRooms = roomRepository.saveAll(rooms);
+
+        // 주소 저장
+        if (dto.getAddressList() != null) {
+            List<PlaceAddress> addresses = dto.getAddressList().stream()
+                    .map(addressDto -> PlaceAddress.builder()
+                            .place(place)
+                            .sido(addressDto.getSido())
+                            .sigungu(addressDto.getSigungu())
+                            .town(addressDto.getTown())
+                            .roadName(addressDto.getRoadName())
+                            .postalCode(addressDto.getPostalCode())
+                            .detailAddress(addressDto.getDetailAddress())
+                            .lat(BigDecimal.valueOf(221))
+                            .lng(BigDecimal.valueOf(213))
+                            .build())
+                    .collect(Collectors.toList());
+            placeAddressRepository.saveAll(addresses);
+        }
+
+        // 호텔 이미지 업로드/저장
+        if (hotelImages != null) {
+            for (MultipartFile f : hotelImages) {
+                if (f == null || f.isEmpty()) continue;
+                fileService.uploadAndSave(f, dto.getUserId(), place.getId(), "place", null);
+            }
+        }
+
+        // 객실 이미지 업로드/저장 (null-safe)
+        if (roomImagesMap != null && !roomDtos.isEmpty()) {
+            for (int i = 0; i < roomDtos.size(); i++) {
+                List<MultipartFile> list = roomImagesMap.get(i);
+                if (list == null || list.isEmpty()) continue;
+                Long roomId = savedRooms.get(i).getId();
+                for (MultipartFile rf : list) {
+                    if (rf == null || rf.isEmpty()) continue;
+                    fileService.uploadAndSave(rf, dto.getUserId(), roomId, "room", null);
+                }
+            }
+        }
         return place;
     }
 
@@ -177,11 +277,14 @@ public class PublishingService {
         if (dto.getHotelImages() != null) {
             dto.getHotelImages().forEach(imgDto -> {
                 String url = imgDto.getUrl();
+                String ext = (imgDto.getExtension() != null && !imgDto.getExtension().isEmpty())
+                        ? imgDto.getExtension()
+                        : extractExtensionFromDataUrl(url);
                 allFilesToSave.add(File.builder()
                         .domain("place")
                         .domainFileId(place.getId())
                         .filename(UUID.randomUUID().toString())
-                        .extension(extractExtensionFromDataUrl(url))
+                        .extension(ext)
                         .filetype("image")
                         .url(url)
                         .userId(dto.getUserId())
@@ -208,11 +311,14 @@ public class PublishingService {
             if (roomDto.getImages() != null) {
                 roomDto.getImages().forEach(imgDto -> {
                     String url = imgDto.getUrl();
+                    String ext = (imgDto.getExtension() != null && !imgDto.getExtension().isEmpty())
+                            ? imgDto.getExtension()
+                            : extractExtensionFromDataUrl(url);
                     allFilesToSave.add(File.builder()
                             .domain("room")
                             .domainFileId(savedRoom.getId())
                             .filename(UUID.randomUUID().toString())
-                            .extension(extractExtensionFromDataUrl(url))
+                            .extension(ext)
                             .filetype("image")
                             .url(url)
                             .userId(dto.getUserId())
@@ -241,6 +347,92 @@ public class PublishingService {
 
         placeAddressRepository.saveAll(addresses);
 
+        return place;
+    }
+
+    // 멀티파트 입력을 받아 업로드까지 처리하는 수정 메서드
+    @Transactional
+    public Places updateHotel(Long placeId, PublishingDTO dto,
+                              List<MultipartFile> hotelImages,
+                              Map<Integer, List<MultipartFile>> roomImagesMap) {
+        Places place = repository.findById(placeId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "수정할 숙소를 찾을 수 없습니다.", "ID: " + placeId));
+
+        PlaceCategory placeCategory = placeCategoryRepository.findById(Math.toIntExact(dto.getCategoryId()))
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "카테고리 없음", ""));
+
+        place.updateDetails(
+                dto.getHotelName(),
+                dto.getDescription(),
+                LocalTime.parse(dto.getCheckIn()),
+                LocalTime.parse(dto.getCheckOut()),
+                placeCategory
+        );
+
+        if (dto.getAmenityIds() != null) {
+            List<Amenity> updatedAmenities = amentiesRepository.findAllById(dto.getAmenityIds());
+            place.setAmenities(updatedAmenities);
+        } else {
+            place.getAmenities().clear();
+        }
+
+        List<Long> existingRoomIds = roomRepository.findByPlaceId(placeId).stream()
+                .map(Room::getId).collect(Collectors.toList());
+        if (!existingRoomIds.isEmpty()) {
+            fileRepository.deleteByDomainAndDomainFileIdIn("room", existingRoomIds);
+        }
+        fileRepository.deleteByDomainAndDomainFileId("place", placeId);
+        roomRepository.deleteByPlaceId(placeId);
+        placeAddressRepository.deleteByPlaceId(placeId);
+
+        // 신규 객실 생성 (null-safe)
+        List<RoomDTO> roomDtos = Optional.ofNullable(dto.getRooms()).orElse(Collections.emptyList());
+        List<Room> rooms = roomDtos.stream()
+                .map(roomDto -> Room.builder()
+                        .roomType(roomDto.getRoomType())
+                        .bedType(roomDto.getBedType())
+                        .price(BigDecimal.valueOf(roomDto.getMinPrice()))
+                        .capacityPeople(roomDto.getCapacityPeople())
+                        .status(Room.Status.AVAILABLE)
+                        .place(place)
+                        .build())
+                .collect(Collectors.toList());
+        List<Room> savedRooms = roomRepository.saveAll(rooms);
+
+        if (dto.getAddressList() != null) {
+            List<PlaceAddress> addresses = dto.getAddressList().stream()
+                    .map(addressDto -> PlaceAddress.builder()
+                            .place(place)
+                            .sido(addressDto.getSido())
+                            .sigungu(addressDto.getSigungu())
+                            .town(addressDto.getTown())
+                            .roadName(addressDto.getRoadName())
+                            .postalCode(addressDto.getPostalCode())
+                            .detailAddress(addressDto.getDetailAddress())
+                            .lat(BigDecimal.valueOf(221))
+                            .lng(BigDecimal.valueOf(213))
+                            .build())
+                    .collect(Collectors.toList());
+            placeAddressRepository.saveAll(addresses);
+        }
+
+        if (hotelImages != null) {
+            for (MultipartFile f : hotelImages) {
+                if (f == null || f.isEmpty()) continue;
+                fileService.uploadAndSave(f, dto.getUserId(), place.getId(), "place", null);
+            }
+        }
+        if (roomImagesMap != null && !roomDtos.isEmpty()) {
+            for (int i = 0; i < roomDtos.size(); i++) {
+                List<MultipartFile> list = roomImagesMap.get(i);
+                if (list == null || list.isEmpty()) continue;
+                Long roomId = savedRooms.get(i).getId();
+                for (MultipartFile rf : list) {
+                    if (rf == null || rf.isEmpty()) continue;
+                    fileService.uploadAndSave(rf, dto.getUserId(), roomId, "room", null);
+                }
+            }
+        }
         return place;
     }
 
@@ -315,8 +507,10 @@ public class PublishingService {
                 .collect(Collectors.toList());
 
         List<RoomDTO> roomDTOs = rooms.stream().map(room -> {
-            List<FileDTO> currentRoomImages = roomImages.stream()
+            List<File> currentRoomImages = roomImages.stream()
                     .filter(img -> img.getDomainFileId().equals(room.getId()))
+                    .collect(Collectors.toList());
+            List<FileDTO> currentRoomImageDTOs = currentRoomImages.stream()
                     .map(file -> new FileDTO(file.getFilename(), file.getExtension(), file.getUrl()))
                     .collect(Collectors.toList());
 
@@ -325,7 +519,7 @@ public class PublishingService {
                     .capacityPeople(room.getCapacityPeople())
                     .minPrice(room.getPrice().intValue())
                     .bedType(room.getBedType())
-                    .images(currentRoomImages)
+                    .images(currentRoomImageDTOs)
                     .build();
         }).collect(Collectors.toList());
 
@@ -366,7 +560,6 @@ public class PublishingService {
             // 💡 [추가] Room을 삭제하기 전에, Room을 참조하는 예약(Reservation) 데이터를 먼저 삭제해야 합니다.
             // 이 라인이 누락되었습니다!
             dailyPlaceReservationRepository.deleteByRoomIdIn(roomIds);
- 이거 물어보고 넣기로
 
             // 그 다음, 기존 로직대로 Room의 이미지와 Room 자체를 삭제합니다.
             fileRepository.deleteByDomainAndDomainFileIdIn("room", roomIds);
@@ -377,3 +570,4 @@ public class PublishingService {
         repository.deleteById(placeId);
     }
 }
+

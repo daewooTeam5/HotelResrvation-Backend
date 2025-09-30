@@ -13,6 +13,7 @@ import daewoo.team5.hotelreservation.domain.payment.service.PointService;
 import daewoo.team5.hotelreservation.domain.place.repository.projection.PaymentSummaryProjection;
 import daewoo.team5.hotelreservation.domain.shoppingcart.projection.CartProjection;
 import daewoo.team5.hotelreservation.domain.shoppingcart.service.ShoppingCartService;
+import daewoo.team5.hotelreservation.domain.users.dto.OwnerRequestDto;
 import daewoo.team5.hotelreservation.domain.users.entity.OwnerRequestEntity;
 import daewoo.team5.hotelreservation.domain.users.projection.MyInfoProjection;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
@@ -23,8 +24,10 @@ import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -40,15 +43,29 @@ public class UserController {
     private final UsersService usersService;
     private final PointService pointService;
 
-    @PostMapping("/my/hotel-owner/request")
+    @GetMapping("/my/hotel-owner/status")
+    @AuthUser
+    public ApiResult<OwnerRequestEntity> getHotelOwnerStatus(UserProjection user){
+        return ApiResult.ok(usersService.getHotelOwnerStatus(user.getId()), "호텔 운영자 상태 조회 성공");
+    }
+
+
+    @PostMapping(value = "/my/hotel-owner/request", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @AuthUser
     public ApiResult<OwnerRequestEntity> requestHotelOwner(
-            @RequestBody Map<String, String> requestBody,
+            @ModelAttribute OwnerRequestDto requestDto, // JSON 데이터 대신 DTO로 바로 받기!
+            @RequestParam("documents") List<MultipartFile> documents, // 'documents' 키로 넘어온 파일들을 리스트로 받기!
             UserProjection user
     ) {
-        return ApiResult.ok(null, "호텔 운영자 요청 기능은 현재 준비 중입니다.");
-//        OwnerRequestEntity ownerRequest = usersService.createOwnerRequest(userId, businessRegistrationNumber);
-//        return ApiResult.ok(ownerRequest, "호텔 운영자 요청이 성공적으로 접수되었습니다.");
+        // 데이터가 잘 들어왔는지 로그로 확인해보자!
+        System.out.println("DTO Data: " + requestDto.toString());
+        documents.forEach(file -> {
+            System.out.println("Uploaded File Name: " + file.getOriginalFilename());
+            System.out.println("Uploaded File Size: " + file.getSize());
+        });
+
+        OwnerRequestEntity ownerRequest = usersService.createOwnerRequest(user.getId(), requestDto, documents);
+        return ApiResult.ok(ownerRequest, "호텔 운영자 요청이 성공적으로 접수되었습니다.");
     }
 
     @GetMapping("/my/payments")
