@@ -153,6 +153,9 @@ public class ReservationService {
                 .baseAmount(r.getBaseAmount())
                 .finalAmount(r.getFinalAmount())
 
+                .couponDiscountAmount(r.getCouponDiscountAmount())
+                .pointDiscountAmount(r.getPointDiscountAmount())
+
                 // 결제 정보
                 .paymentId(paymentOpt.map(Payment::getId).orElse(null))
                 .method(paymentOpt.map(p -> p.getMethod().name()).orElse(null))
