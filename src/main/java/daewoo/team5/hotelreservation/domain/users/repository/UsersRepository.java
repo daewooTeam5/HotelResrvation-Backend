@@ -1,6 +1,7 @@
 package daewoo.team5.hotelreservation.domain.users.repository;
 
 
+import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import io.lettuce.core.dynamic.annotation.Param;
@@ -16,12 +17,19 @@ import java.util.Optional;
 
 public interface UsersRepository extends JpaRepository<Users, Long> {
     Optional<Users> findByNameAndPassword(String username, String password);
+
     Optional<Users> findByName(String username);
+
     Optional<Users> findByEmail(String email);
+
     Optional<Users> findByUserId(String userId);
+
     Optional<UserProjection> findProjectedById(Long id);
+
     <T> Optional<T> findByName(String username, Class<T> type);
+
     <T> Optional<T> findById(Long id, Class<T> type);
+
     <T> Page<T> findAllBy(Class<T> type, Pageable pageable);
 
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
