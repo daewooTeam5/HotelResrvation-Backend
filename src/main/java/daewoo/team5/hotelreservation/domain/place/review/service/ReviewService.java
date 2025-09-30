@@ -78,12 +78,17 @@ public class ReviewService {
         }
 
         reviewRepository.save(review);
+
+        // ===== ✅ 효율적인 평균 평점 계산 로직 추가 =====
+        places.addReviewStats(request.getRating());
+        placeRepository.save(places); // 변경된 평점과 리뷰 수 저장
+
         return new ReviewResponse(review);
     }
 
 
 
-    // getReviewsByPlace, deleteReview, parseSortParameter 메서드는 이전과 동일
+    // getReviewsByPlace, parseSortParameter 메서드는 이전과 동일
     @Transactional(readOnly = true)
     public List<ReviewResponse> getReviewsByPlace(Long placeId, String sortBy) {
         Sort sort = parseSortParameter(sortBy);
@@ -99,6 +104,12 @@ public class ReviewService {
         if (!review.getUser().getId().equals(userProjection.getId())) {
             throw new ApiException(HttpStatus.FORBIDDEN, "삭제 권한이 없습니다.", "본인이 작성한 리뷰만 삭제할 수 있습니다.");
         }
+
+        // ===== ✅ 평균 평점 및 리뷰 수 업데이트 로직 추가 =====
+        Places places = review.getPlace();
+        places.removeReviewStats(review.getRating());
+        placeRepository.save(places);
+
         reviewRepository.delete(review);
     }
 
