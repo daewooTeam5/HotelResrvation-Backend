@@ -6,10 +6,7 @@ import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
-import daewoo.team5.hotelreservation.domain.place.review.dto.CreateReviewRequest;
-import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewDto;
-import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponse;
-import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponseDto;
+import daewoo.team5.hotelreservation.domain.place.review.dto.*;
 import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
 import daewoo.team5.hotelreservation.domain.place.review.entity.ReviewImage;
 import daewoo.team5.hotelreservation.domain.place.review.projection.ReviewCommentProjection;
@@ -111,6 +108,13 @@ public class ReviewService {
         placeRepository.save(places);
 
         reviewRepository.delete(review);
+    }
+
+    //내 리뷰 보기
+    public List<MyReviewResponseDTO> getReviewsByUser(Long userId) {
+        return reviewRepository.findReviewsByUserId(userId).stream()
+                .map(MyReviewResponseDTO::new) // Projection 생성자 사용
+                .collect(Collectors.toList());
     }
 
     private Sort parseSortParameter(String sortBy) {

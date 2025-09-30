@@ -114,4 +114,5 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                                       @Param("startDate") LocalDate startDate,
                                       @Param("endDate") LocalDate endDate);
 
+
 }
