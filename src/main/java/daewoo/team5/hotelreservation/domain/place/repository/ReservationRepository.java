@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
 
+import daewoo.team5.hotelreservation.domain.payment.projection.NonMemberReservationDetailProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationProjection;
 import daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse;
@@ -581,4 +582,29 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     ORDER BY label
     """, nativeQuery = true)
     List<Object[]> countReservationsByYear(@Param("ownerId") Long ownerId);
+    /**
+     * 비회원 예약 상세 조회를 위한 쿼리
+     */
+    @Query("SELECT " +
+            "p.id as paymentId, p.paymentKey as paymentKey, p.orderId as orderId, p.status as status, p.method as method, p.amount as amount, p.transactionDate as transactionDate, " +
+            "r.reservationId as reservationId, r.resevStart as resevStart, r.resevEnd as resevEnd, r.request as request, r.baseAmount as baseAmount, r.finalAmount as finalAmount, " +
+            "r.fixedDiscountAmount as fixedDiscountAmount, r.couponDiscountAmount as couponDiscountAmount, r.pointDiscountAmount as pointDiscountAmount, " +
+            "pl.id as placeId, pl.name as placeName, pl.checkIn as checkIn, " +
+            "rm.id as roomId, rm.roomType as roomType, rm.price as roomPrice, " +
+            "g.firstName as firstName, g.lastName as lastName, " + // firstName, lastName 추가
+            "(SELECT f.url FROM File f WHERE f.domain = 'room' AND f.domainFileId = rm.id ORDER BY f.id ASC LIMIT 1) as firstImageUrl " +
+            "FROM Payment p " +
+            "JOIN p.reservation r " +
+            "JOIN r.guest g " +
+            "JOIN r.room rm " +
+            "JOIN rm.place pl " +
+            "WHERE r.reservationId = :reservationId " +
+            "AND g.users IS NULL " +
+            "AND g.lastName = :lastName " + // lastName으로 변경
+            "AND g.firstName = :firstName " + // firstName 추가
+            "AND g.email = :email")
+    Optional<NonMemberReservationDetailProjection> findNonMemberReservationDetail(@Param("reservationId") Long reservationId,
+                                                                                  @Param("lastName") String lastName,
+                                                                                  @Param("firstName") String firstName,
+                                                                                  @Param("email") String email);
 }

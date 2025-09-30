@@ -14,6 +14,7 @@ import daewoo.team5.hotelreservation.domain.notification.repository.Notification
 import daewoo.team5.hotelreservation.domain.payment.dto.TossCancelResponse;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
+import daewoo.team5.hotelreservation.domain.payment.projection.NonMemberReservationDetailProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentProjection;
 import daewoo.team5.hotelreservation.domain.payment.entity.PointHistoryEntity;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
@@ -399,5 +400,16 @@ log.info("Finding coupon history for reservation: {}", r.getReservationId());
         return paymentRepository.findPaymentsByUserId(userId);
     }
 
+    /**
+     * 비회원 예약 조회
+     */
+    public NonMemberReservationDetailProjection getNonMemberReservation(NonMemberReservationRequest request) {
+        return reservationRepository.findNonMemberReservationDetail(
+                        request.getReservationId(),
+                        request.getLastName(),
+                        request.getFirstName(),
+                        request.getEmail())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "예약 정보를 찾을 수 없습니다.", "입력하신 정보와 일치하는 예약 내역이 없습니다."));
+    }
 
 }
