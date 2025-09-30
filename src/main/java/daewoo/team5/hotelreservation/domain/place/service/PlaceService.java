@@ -38,12 +38,27 @@ public class PlaceService {
     }
 
 
-    public PlaceDetailResponse getPlaceDetail(Long placeId, LocalDate startDate, LocalDate endDate) {
-        PlaceDetailProjection detail = placeRepository.findPlaceDetail(placeId).orElseThrow(() -> new ApiException(HttpStatus.MULTI_STATUS,"에러","에러"));
+    public PlaceDetailResponse getPlaceDetail(Long placeId, LocalDate startDate, LocalDate endDate, Integer adult, Integer children, Integer roomNum) {
+        // [수정됨] 파라미터 null 체크 및 기본값 설정
+        int adults = (adult == null) ? 1 : adult;
+        int childs = (children == null) ? 0 : children;
+        int rooms = (roomNum == null || roomNum == 0) ? 1 : roomNum;
+        int totalPeople = adults + childs;
+
+        if (startDate == null || endDate == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "날짜 정보가 필요합니다.", "체크인/체크아웃 날짜를 입력해주세요.");
+        }
+
+        PlaceDetailProjection detail = placeRepository.findPlaceDetail(placeId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 숙소입니다.", "ID: " + placeId));
+
         List<String> images = placeRepository.findPlaceImages(placeId);
-        List<RoomInfo> rooms = placeRepository.findRoomsByPlace(placeId, startDate, endDate);
+
+        List<RoomInfo> availableRooms = placeRepository.findRoomsByPlace(placeId, startDate, endDate, totalPeople, rooms);
+
         List<PlaceServiceProjection> services = placeRepository.findPlaceServices(placeId);
-        return new PlaceDetailResponse(detail, images, rooms, services);
+
+        return new PlaceDetailResponse(detail, images, availableRooms, services);
     }
 
     public Page<AdminPlaceProjection> getAdminPlace(

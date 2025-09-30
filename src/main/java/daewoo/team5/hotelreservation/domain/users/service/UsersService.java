@@ -1,16 +1,21 @@
 package daewoo.team5.hotelreservation.domain.users.service;
 
+import daewoo.team5.hotelreservation.domain.file.service.FileService;
 import daewoo.team5.hotelreservation.domain.payment.entity.GuestEntity;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
+import daewoo.team5.hotelreservation.domain.users.dto.OwnerRequestDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.CreateUserDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.LogInUserDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.UserResponse;
+import daewoo.team5.hotelreservation.domain.users.entity.OwnerRequestEntity;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.MyInfoProjection;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
+import daewoo.team5.hotelreservation.domain.users.repository.OwnerRequestRepository;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
+import daewoo.team5.hotelreservation.global.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +26,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @Service
@@ -34,6 +42,8 @@ public class UsersService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final GuestRepository guestRepository;
+    private final FileService fileService;
+    private final OwnerRequestRepository ownerRequestRepository;
 
     public GuestEntity getGuestByUser(UserProjection user) {
         return guestRepository.findByUsersId(user.getId()).orElseThrow(() -> new ApiException(404, "사용자 게스트 정보 없음", "해당 사용자의 게스트 정보가 존재하지 않습니다."));
@@ -111,4 +121,29 @@ public class UsersService {
             usersRepository.save(user);
         }
     }
+
+    @Transactional
+    public OwnerRequestEntity createOwnerRequest(Long userId, OwnerRequestDto requestDto, List<MultipartFile> documents) {
+        Users users = usersRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        users.setPhone(requestDto.getPhone());
+        users.setName(requestDto.getHotelName());
+
+        OwnerRequestEntity saveOwnerRequest = ownerRequestRepository.save(
+                OwnerRequestEntity.builder()
+                        .user(users)
+                        .businessNumber(requestDto.getBusinessNumber())
+                        .status(OwnerRequestEntity.Status.PENDING)
+                        .build()
+        );
+        for (MultipartFile file : documents) {
+            fileService.uploadAndSave(file,userId,saveOwnerRequest.getId(),"owner_request",file.getName());
+        }
+        return null;
+    }
+
+    public OwnerRequestEntity getHotelOwnerStatus(Long userId) {
+        // 유저 조회시 UserProjection 으로 민감정보 제외하고 조회
+        return ownerRequestRepository.findTop1ByUserIdOrderByCreatedAtDesc(userId).orElse(null);
+    }
+
 }

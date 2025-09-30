@@ -13,4 +13,5 @@ public interface RoomInfo {
     String getStatus();
     Integer getAvailableRoom();
     List<String> getImages();
+    Integer getIsAvailable();
 }
