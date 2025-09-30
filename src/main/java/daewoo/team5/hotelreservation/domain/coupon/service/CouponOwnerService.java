@@ -8,8 +8,7 @@ import daewoo.team5.hotelreservation.domain.coupon.repository.CouponRepository;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +16,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,7 +36,21 @@ public class CouponOwnerService {
         Places place = placeRepository.findByOwner_Id(ownerId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 관리자의 숙소를 찾을 수 없습니다."));
 
-        return couponRepository.findAllByPlace_Id(place.getId(), pageable)
+        boolean sortByUsedCount = pageable.getSort().stream()
+                .anyMatch(order -> order.getProperty().equals("usedCount"));
+
+        Page<CouponEntity> page;
+
+        if (sortByUsedCount) {
+            //  usedCount는 Entity에 없으니, DB 정렬 조건 제거
+            Pageable noSortPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+            page = couponRepository.findAllByPlace_Id(place.getId(), noSortPageable);
+        } else {
+            page = couponRepository.findAllByPlace_Id(place.getId(), pageable);
+        }
+
+        // Entity -> DTO 변환
+        List<CouponListDto> dtoList = page.stream()
                 .map(c -> CouponListDto.builder()
                         .id(c.getId())
                         .couponName(c.getCouponName())
@@ -48,7 +63,25 @@ public class CouponOwnerService {
                         .expiredAt(formatDate(c.getExpiredAt()))
                         .usedCount(couponRepository.countUsedByCouponId(c.getId()))
                         .build()
-                );
+                )
+                .collect(Collectors.toList());
+
+        //  usedCount 정렬 수동 처리
+        if (sortByUsedCount) {
+            for (Sort.Order order : pageable.getSort()) {
+                if (order.getProperty().equals("usedCount")) {
+                    Comparator<CouponListDto> comparator =
+                            Comparator.comparing(CouponListDto::getUsedCount, Comparator.nullsLast(Long::compareTo));
+
+                    if (order.getDirection().isDescending()) {
+                        comparator = comparator.reversed();
+                    }
+                    dtoList = dtoList.stream().sorted(comparator).toList();
+                }
+            }
+        }
+
+        return new PageImpl<>(dtoList, pageable, page.getTotalElements());
     }
 
     /**  쿠폰 상세 조회 */
@@ -58,6 +91,8 @@ public class CouponOwnerService {
 
         Page<CouponHistoryEntity> histories =
                 couponHistoryRepository.findAllByUserCoupon_Coupon_Id(couponId, pageable);
+
+        Long usedCount = couponRepository.countUsedByCouponId(couponId); //사용횟수 조회
 
         return CouponDetailDto.builder()
                 .id(coupon.getId())
@@ -69,15 +104,16 @@ public class CouponOwnerService {
                 .maxOrderAmount(coupon.getMaxOrderAmount())
                 .createdAt(formatDate(coupon.getCreatedAt()))
                 .expiredAt(formatDate(coupon.getExpiredAt()))
+                .usedCount(usedCount)
                 .history(
                         histories.getContent().stream()
                                 .map(h -> CouponHistoryDto.builder()
                                         .id(h.getId())
                                         .userCouponId(h.getUserCoupon().getId())
-                                        .reservationId(h.getReservation_id().getReservationId())
+                                        .reservationId(h.getReservationId().getReservationId())
                                         .userName(h.getUserCoupon().getUser().getName())
-                                        .discountAmount(h.getDiscount_amount())
-                                        .usedAt(formatDate(h.getUsed_at()))
+                                        .discountAmount(h.getDiscountAmount())
+                                        .usedAt(formatDate(h.getUsedAt()))
                                         .status(h.getStatus().name())
                                         .build()
                                 )
@@ -85,6 +121,7 @@ public class CouponOwnerService {
                 )
                 .build();
     }
+
 
     /**  쿠폰 생성 */
     @Transactional
@@ -117,5 +154,22 @@ public class CouponOwnerService {
 
     private String generateCouponCode() {
         return java.util.UUID.randomUUID().toString();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CouponHistoryDto> getCouponHistory(Long couponId, Pageable pageable) {
+        Page<CouponHistoryEntity> histories =
+                couponHistoryRepository.findByUserCoupon_Coupon_Id(couponId, pageable);
+
+        return histories.map(h -> CouponHistoryDto.builder()
+                .id(h.getId())
+                .userCouponId(h.getUserCoupon().getId())
+                .reservationId(h.getReservationId().getReservationId())
+                .userName(h.getUserCoupon().getUser().getName())
+                .discountAmount(h.getDiscountAmount())
+                .usedAt(formatDate(h.getUsedAt()))
+                .status(h.getStatus().name())
+                .build()
+        );
     }
 }

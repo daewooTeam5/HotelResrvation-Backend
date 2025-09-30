@@ -2,6 +2,7 @@ package daewoo.team5.hotelreservation.domain.coupon.controller;
 
 import daewoo.team5.hotelreservation.domain.coupon.dto.CouponCreateDto;
 import daewoo.team5.hotelreservation.domain.coupon.dto.CouponDetailDto;
+import daewoo.team5.hotelreservation.domain.coupon.dto.CouponHistoryDto;
 import daewoo.team5.hotelreservation.domain.coupon.dto.CouponListDto;
 import daewoo.team5.hotelreservation.domain.coupon.service.CouponOwnerService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
@@ -39,5 +40,13 @@ public class CouponOwnerController {
     @AuthUser
     public Long createCoupon(UserProjection projection, @RequestBody CouponCreateDto dto) {
         return couponOwnerService.createCoupon(projection.getId(), dto);
+    }
+
+    @GetMapping("/{couponId}/history")
+    public Page<CouponHistoryDto> getCouponHistory(
+            @PathVariable Long couponId,
+            Pageable pageable
+    ) {
+        return couponOwnerService.getCouponHistory(couponId, pageable);
     }
 }

@@ -25,5 +25,7 @@ public interface CouponHistoryRepository extends JpaRepository<CouponHistoryEnti
     """)
     Optional<CouponHistoryEntity> findByReservation_idWithUsed(Long reservationId);
 
+    Page<CouponHistoryEntity> findByUserCoupon_Coupon_Id(Long couponId, Pageable pageable);
+
     Page<CouponHistoryEntity> findAllByUserCoupon_Coupon_Id(Long couponId, Pageable pageable);
 }

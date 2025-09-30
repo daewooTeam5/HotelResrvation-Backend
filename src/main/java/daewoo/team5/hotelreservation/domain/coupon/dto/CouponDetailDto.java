@@ -22,4 +22,5 @@ public class CouponDetailDto {
     private String createdAt;
     private String expiredAt;
     private List<CouponHistoryDto> history;
+    private Long usedCount;
 }
