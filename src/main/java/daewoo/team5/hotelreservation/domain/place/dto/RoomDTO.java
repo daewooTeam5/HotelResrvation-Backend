@@ -32,4 +32,6 @@ public class RoomDTO {
 
     private List<FileDTO> images;
 
+    private List<Long> amenityIds;
+
 }
