@@ -27,7 +27,7 @@ public class DiscountEntity {
     private LocalDate endDate;
     private String name;
     private Integer discountValue;
-
+    private Integer maxDiscountAmount;
     @ManyToOne
     private Places place;
 }
