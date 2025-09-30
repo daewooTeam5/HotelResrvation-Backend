@@ -73,7 +73,9 @@ public class PlaceService {
                         r.getArea(),
                         splitImages(r.getImages()),
                         r.getIsAvailable(),
-                        mapAmenities(r.getAmenities())
+                        mapAmenities(r.getAmenities()),
+                        r.getDiscountValue(),
+                        r.getFinalPrice()
                 ))
                 .toList();
 

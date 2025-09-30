@@ -17,4 +17,7 @@ public interface RoomInfo {
     Integer getIsAvailable();
     String getAmenities();
     String getAmenityIcons();
+
+    Double getDiscountValue();  // 평균 할인율(%)
+    Double getFinalPrice();
 }

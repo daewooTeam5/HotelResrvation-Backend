@@ -25,9 +25,9 @@ public class SearchController {
         return ApiResult.ok(placeRepository.findAll());
     }
 
-    // 특정 Amenity를 가진 호텔들
-    @GetMapping("/{amenityId}")
-    public ApiResult<List<Places>> getHotelsByAmenity(@PathVariable Long amenityId) {
-        return ApiResult.ok(placeRepository.findByAmenityId(amenityId));
-    }
+//    // 특정 Amenity를 가진 호텔들
+//    @GetMapping("/{amenityId}")
+//    public ApiResult<List<Places>> getHotelsByAmenity(@PathVariable Long amenityId) {
+//        return ApiResult.ok(placeRepository.findByAmenities_Id(amenityId));
+//    }
 }

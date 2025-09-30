@@ -19,5 +19,7 @@ public class RoomInfoDto {
     private Double area;
     private List<String> images;
     private Integer isAvailable;
-    private List<AmenityDto> amenities; // ✅ name + icon 담을 DTO 리스트
+    private List<AmenityDto> amenities;
+    private Double discountValue;
+    private Double finalPrice;
 }

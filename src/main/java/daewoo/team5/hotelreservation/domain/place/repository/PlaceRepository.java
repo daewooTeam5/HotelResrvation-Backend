@@ -20,6 +20,13 @@ import java.util.Optional;
 public interface PlaceRepository extends JpaRepository<Places, Long> {
 
     @Query(value = """
+            WITH RECURSIVE date_range AS (
+                SELECT CAST(:checkIn AS DATE) AS date
+                UNION ALL
+                SELECT DATE_ADD(date, INTERVAL 1 DAY)
+                FROM date_range
+                WHERE date < DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
+            )
             SELECT
                 p.id,
                 p.name,
@@ -28,8 +35,8 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                 pc.name AS categoryName,
                 MIN(r.price) AS originalPrice, -- (1) 기존 가격
                 MIN(f.url) AS fileUrl,
-                MAX(r.price) AS discountValue, -- (2) 할인 금액
-                MIN(r.price) AS finalPrice, -- (3) 최종 가격
+                AVG(COALESCE(d.discount_value, 0)) AS discountValue, -- (2) 평균 할인율(%)
+                (MIN(r.price) * (1 - AVG(COALESCE(d.discount_value, 0)) / 100.0)) AS finalPrice, -- (3) 최종 가격
                 CASE
                     WHEN :userId IS NULL THEN 0
                     WHEN EXISTS (
@@ -45,6 +52,10 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             INNER JOIN place_category pc ON p.category_id = pc.id
             INNER JOIN room r ON r.place_id = p.id
             LEFT JOIN file f ON f.domain = 'place' AND f.domain_file_id = p.id AND f.filetype = 'image'
+            JOIN date_range dr
+            LEFT JOIN discount d
+                   ON d.place_id = p.id
+                  AND dr.date BETWEEN d.start_date AND d.end_date
             WHERE
                   (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
                 AND (:address IS NULL OR pa.sido = :address)
@@ -62,16 +73,10 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                 AND (:minRating IS NULL OR p.avg_rating >= :minRating)
                 AND NOT EXISTS (
                     SELECT 1
-                    FROM (
-                        SELECT CAST(:checkIn AS DATE) AS date
-                        UNION ALL
-                        SELECT DATE_ADD(date, INTERVAL 1 DAY) 
-                        FROM (SELECT CAST(:checkIn AS DATE) AS date) AS t
-                        WHERE DATE_ADD(date, INTERVAL 1 DAY) < CAST(:checkOut AS DATE)
-                    ) AS date_range
+                    FROM date_range d2
                     JOIN daily_place_reservation dpr
                          ON dpr.room_id = r.id
-                        AND dpr.date = date_range.date
+                        AND dpr.date = d2.date
                     WHERE dpr.available_room <= 0
                 )
             GROUP BY p.id, p.name, p.avg_rating, pa.sido, pc.name
@@ -82,7 +87,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                         UNION ALL
                         SELECT DATE_ADD(date, INTERVAL 1 DAY) 
                         FROM date_range 
-                        WHERE date < CAST(:checkOut AS DATE)
+                        WHERE date < DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
                     )
                     SELECT COUNT(DISTINCT p.id)
                     FROM places p
@@ -114,119 +119,6 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
                     """,
             nativeQuery = true)
     Page<PlaceItemInfomation> findAllSearchPlaceInfo(
-            @Param("name") String name,
-            @Param("checkIn") String checkIn,
-            @Param("checkOut") String checkOut,
-            @Param("people") int people,
-            @Param("room") int room,
-            @Param("placeCategory") String placeCategory,
-            @Param("minRating") Double minRating,
-            @Param("minPrice") Double minPrice,
-            @Param("maxPrice") Double maxPrice,
-            @Param("userId") Long userId,
-            @Param("address") String address,
-            Pageable pageable
-    );
-    @Query(value = """
-            SELECT
-                p.id,
-                p.name,
-                p.avg_rating AS avgRating,
-                pa.sido,
-                pc.name AS categoryName,
-                MIN(r.price) AS originalPrice, -- (1) 기존 가격
-                MIN(f.url) AS fileUrl,
-                MAX(d.discount_value) AS discountValue, -- (2) 할인 금액
-                MIN(r.price) - COALESCE(MAX(d.discount_value), 0) AS finalPrice, -- (3) 최종 가격
-                CASE
-                    WHEN :userId IS NULL THEN 0
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM wishlist w
-                        WHERE w.place_id = p.id AND w.user_id = :userId
-                    )
-                    THEN 1
-                    ELSE 0
-                END AS isLiked
-            FROM places p
-            INNER JOIN place_address pa ON p.id = pa.place_id
-            INNER JOIN place_category pc ON p.category_id = pc.id
-            INNER JOIN room r ON r.place_id = p.id
-            LEFT JOIN file f ON f.domain = 'place' AND f.domain_file_id = p.id AND f.filetype = 'image'
-            /* ===== [추가된 부분 시작] ===== */
-            LEFT JOIN discount d ON p.id = d.place_id
-                AND d.start_date <= CAST(:checkOut AS DATE) -- 검색 종료일 이전에 할인이 시작되고
-                AND d.end_date >= CAST(:checkIn AS DATE)   -- 검색 시작일 이후에 할인이 종료되는 경우
-            /* ===== [추가된 부분 끝] ===== */
-            WHERE
-                  (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
-                AND (:address IS NULL OR pa.sido = :address)
-                AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
-                AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
-                AND COALESCE(
-                        (SELECT MIN(dpr.available_room)
-                         FROM daily_place_reservation dpr
-                         WHERE dpr.room_id = r.id
-                           AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
-                        ),
-                        r.capacity_room
-                    ) >= :room
-                AND (:placeCategory IS NULL OR pc.name = :placeCategory)
-                AND (:minRating IS NULL OR p.avg_rating >= :minRating)
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM (
-                        SELECT CAST(:checkIn AS DATE) AS date
-                        UNION ALL
-                        SELECT DATE_ADD(date, INTERVAL 1 DAY) 
-                        FROM (SELECT CAST(:checkIn AS DATE) AS date) AS t
-                        WHERE DATE_ADD(date, INTERVAL 1 DAY) < CAST(:checkOut AS DATE)
-                    ) AS date_range
-                    JOIN daily_place_reservation dpr
-                         ON dpr.room_id = r.id
-                        AND dpr.date = date_range.date
-                    WHERE dpr.available_room <= 0
-                )
-            GROUP BY p.id, p.name, p.avg_rating, pa.sido, pc.name
-            """,
-            countQuery = """
-                    WITH RECURSIVE date_range AS (
-                        SELECT CAST(:checkIn AS DATE) AS date
-                        UNION ALL
-                        SELECT DATE_ADD(date, INTERVAL 1 DAY) 
-                        FROM date_range 
-                        WHERE date < CAST(:checkOut AS DATE)
-                    )
-                    SELECT COUNT(DISTINCT p.id)
-                    FROM places p
-                    INNER JOIN place_address pa ON p.id = pa.place_id
-                    INNER JOIN place_category pc ON p.category_id = pc.id
-                    INNER JOIN room r ON r.place_id = p.id
-                    WHERE
-                        (:name IS NULL OR p.name LIKE CONCAT('%', :name, '%'))
-                        AND r.capacity_people >= CEIL(CAST(:people AS DECIMAL) / :room)
-                        AND r.price BETWEEN COALESCE(:minPrice, 0) AND COALESCE(:maxPrice, 999999999)
-                        AND (:placeCategory IS NULL OR pc.name = :placeCategory)
-                        AND (:minRating IS NULL OR p.avg_rating >= :minRating)
-                        AND COALESCE(
-                                (SELECT MIN(dpr.available_room)
-                                 FROM daily_place_reservation dpr
-                                 WHERE dpr.room_id = r.id
-                                   AND dpr.date BETWEEN CAST(:checkIn AS DATE) AND DATE_SUB(CAST(:checkOut AS DATE), INTERVAL 1 DAY)
-                                ),
-                                r.capacity_room
-                            ) >= :room
-                        AND NOT EXISTS (
-                            SELECT 1
-                            FROM date_range d
-                            JOIN daily_place_reservation dpr 
-                                 ON dpr.room_id = r.id 
-                                AND dpr.date = d.date
-                            WHERE dpr.available_room <= 0
-                        )
-                    """,
-            nativeQuery = true)
-    Page<PlaceItemInfomation> findAllSearchPlaceInfoBackup(
             @Param("name") String name,
             @Param("checkIn") String checkIn,
             @Param("checkOut") String checkOut,
@@ -278,6 +170,13 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
     List<String> findPlaceImages(@Param("placeId") Long placeId);
 
     @Query(value = """
+    WITH RECURSIVE date_range AS (
+        SELECT :startDate AS date
+        UNION ALL
+        SELECT DATE_ADD(date, INTERVAL 1 DAY)
+        FROM date_range
+        WHERE date < DATE_SUB(:endDate, INTERVAL 1 DAY)
+    )
     SELECT
       r.id AS roomId,
       r.room_type AS roomType,
@@ -297,7 +196,11 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
               COALESCE(MIN(dpr.available_room), r.capacity_room) >= :roomNum
           THEN 1
           ELSE 0
-      END AS isAvailable
+      END AS isAvailable,
+      -- (추가) 평균 할인율(%)
+      AVG(COALESCE(d.discount_value, 0)) AS discountValue,
+      -- (추가) 할인 적용 최종가
+      (r.price * (1 - AVG(COALESCE(d.discount_value, 0)) / 100.0)) AS finalPrice
     FROM room r
     LEFT JOIN file f
            ON f.domain = 'room'
@@ -310,9 +213,14 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
            ON rae.room_id = r.id
     LEFT JOIN amenity a
            ON a.id = rae.amenity_id
+    JOIN places p ON p.id = r.place_id
+    JOIN date_range dr
+    LEFT JOIN discount d
+           ON d.place_id = p.id
+          AND dr.date BETWEEN d.start_date AND d.end_date
     WHERE r.place_id = :placeId
     GROUP BY r.id, r.room_type, r.bed_type, r.capacity_people,
-             r.capacity_room, r.price, r.status
+             r.capacity_room, r.price, r.status, r.area
     """, nativeQuery = true)
     List<RoomInfo> findRoomsByPlace(
             @Param("placeId") Long placeId,
@@ -320,7 +228,6 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
             @Param("endDate") LocalDate endDate,
             @Param("totalPeople") Integer totalPeople,
             @Param("roomNum") Integer roomNum);
-
 
     @Query(value = """
             SELECT s.id AS id,
@@ -379,6 +286,7 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
     WHERE pa.amenity_id = :amenityId
     """, nativeQuery = true)
     List<Places> findByAmenityId(@Param("amenityId") Long amenityId);
+//    List<Places> findByAmenities_Id(Long amenityId);
 
     Optional<Places> findByOwner_Id(Long ownerId);
 }
