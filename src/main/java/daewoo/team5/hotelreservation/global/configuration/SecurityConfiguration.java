@@ -65,6 +65,7 @@ public class SecurityConfiguration {
                                 "/api/v1/autocomplete",
                                 "/api/v1/statistics/**",
                                 "/api/v1/payment/**",
+                                "/api/v1/amenities/*",
                                 "/api/v1/owner/coupons",
                                 "/images/**"
                         ).permitAll()

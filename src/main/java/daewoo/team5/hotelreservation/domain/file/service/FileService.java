@@ -33,7 +33,7 @@ public class FileService {
                 .filetype(result.getFiletype())
                 .domainFileId(domainId)
                 .domain(fileDomain)
-                .url(result.getUrl())
+                .url("http://localhost:8080/uploads/"+result.getUrl())
                 .build();
         fileRepository.save(entity);
         return entity.getUrl();

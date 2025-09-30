@@ -51,7 +51,7 @@ public class LocalFileUploader implements FileUploader {
         }
 
         String filetype = toGeneralFileType(file.getContentType());
-        String url = destination.toUri().toString(); // file:// URL 형태
+        String url = finalFileName; // file:// URL 형태
 
         return new UploadResult(url, finalFileName, ext != null ? ext : "", filetype);
     }
