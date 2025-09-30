@@ -33,16 +33,16 @@ public class CouponHistoryEntity {
 
     // Reservation 엔티티가 있다고 가정!
     @ManyToOne
-    private Reservation reservation_id; // 예약 ID
+    private Reservation reservation; // 예약 ID
 
     @ManyToOne()
     private UserCouponEntity userCoupon; // 발급 받은 유저 쿠폰 ID
 
     @Column(nullable = false)
-    private Integer discount_amount; // 할인 금액
+    private Integer discountAmount; // 할인 금액
 
     @Column(nullable = false)
-    private LocalDateTime used_at; // 쿠폰 사용 시간
+    private LocalDateTime usedAt; // 쿠폰 사용 시간
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

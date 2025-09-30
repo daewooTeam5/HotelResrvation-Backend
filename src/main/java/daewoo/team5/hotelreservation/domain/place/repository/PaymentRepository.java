@@ -288,8 +288,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         f.url                            as firstImageUrl,
 
         ch.id                            as couponHistoryId,
-        ch.discount_amount               as discountAmount,
-        ch.used_at                       as usedAt,
+        ch.discountAmount               as discountAmount,
+        ch.usedAt                       as usedAt,
         ch.status                        as couponStatus,
         c.id                             as couponId,
         c.couponName                     as couponName,
@@ -313,7 +313,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             where f2.domain = 'room' and f2.filetype = 'image' and f2.domainFileId = rm.id
         )
     )
-    left join CouponHistory ch on ch.reservation_id = r
+    left join CouponHistory ch on ch.reservation = r
     left join ch.userCoupon uc
     left join uc.coupon c
     where p.id = :paymentId

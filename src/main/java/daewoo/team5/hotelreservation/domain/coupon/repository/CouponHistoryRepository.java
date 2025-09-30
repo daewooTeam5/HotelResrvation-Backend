@@ -14,14 +14,14 @@ public interface CouponHistoryRepository extends JpaRepository<CouponHistoryEnti
         select ch
         from CouponHistory ch
         join fetch ch.userCoupon c
-        where ch.reservation_id.reservationId = :reservationId and ch.status='pending'
+        where ch.reservation.reservationId = :reservationId and ch.status='pending'
     """)
     Optional<CouponHistoryEntity> findByReservation_idWithPending(Long reservationId);
     @Query(""" 
         select ch
         from CouponHistory ch
         join fetch ch.userCoupon c
-        where ch.reservation_id.reservationId = :reservationId and ch.status='used'
+        where ch.reservation.reservationId = :reservationId and ch.status='used'
     """)
     Optional<CouponHistoryEntity> findByReservation_idWithUsed(Long reservationId);
 

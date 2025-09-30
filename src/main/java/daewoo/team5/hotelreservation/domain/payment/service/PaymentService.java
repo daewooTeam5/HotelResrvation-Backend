@@ -114,7 +114,7 @@ public class PaymentService {
             if(user!=null){
                 couponHistoryRepository.findByReservation_idWithPending(reservation.getReservationId()).ifPresent(couponHistory -> {
                     couponHistory.setStatus(CouponHistoryEntity.CouponStatus.used);
-                    couponHistory.setUsed_at(paymentTime);
+                    couponHistory.setUsedAt(paymentTime);
                     couponHistoryRepository.save(couponHistory);
                     UserCouponEntity userCouponEntity = userCouponRepository.findByUserIdAndCouponId(user.getId(), couponHistory.getUserCoupon().getCoupon().getId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 유저 쿠폰입니다.", "존재하지 않는 유저 쿠폰입니다."));
                     userCouponEntity.setUsed(true);
@@ -297,10 +297,10 @@ public class PaymentService {
                 couponHistoryRepository.save(
                         CouponHistoryEntity.builder()
                                 .userCoupon(userCouponEntity)
-                                .reservation_id(reservation)
-                                .used_at(LocalDateTime.now())
+                                .reservation(reservation)
+                                .usedAt(LocalDateTime.now())
                                 .status(CouponHistoryEntity.CouponStatus.pending)
-                                .discount_amount(couponDiscount)
+                                .discountAmount(couponDiscount)
                                 .build()
                 );
                 save.setCouponDiscountAmount(couponDiscount);
