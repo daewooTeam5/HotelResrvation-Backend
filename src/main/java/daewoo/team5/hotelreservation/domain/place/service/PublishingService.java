@@ -2,7 +2,6 @@ package daewoo.team5.hotelreservation.domain.place.service;
 
 import daewoo.team5.hotelreservation.domain.file.service.FileService;
 import daewoo.team5.hotelreservation.domain.place.dto.AddressDTO;
-import daewoo.team5.hotelreservation.domain.place.dto.FileDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.PublishingDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.RoomDTO;
 import daewoo.team5.hotelreservation.domain.place.entity.*;
@@ -19,10 +18,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -88,6 +89,14 @@ public class PublishingService {
                     .build();
             roomRepository.save(room);
 
+            roomDto.getAmenityIds().forEach(aLong -> {
+                Amenity amenity = amenityRepository.findById(aLong).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "편의시설 없음", "ID=" + aLong));
+                roomAmenityRepository.save(RoomAmenityEntity
+                        .builder()
+                        .amenity(amenity)
+                        .room(room)
+                        .build());
+            });
             // ✅ 객실 편의시설 저장
             if (roomDto.getAmenityIds() != null && !roomDto.getAmenityIds().isEmpty()) {
                 List<Amenity> roomAmenities = amenityRepository.findAllById(roomDto.getAmenityIds());
