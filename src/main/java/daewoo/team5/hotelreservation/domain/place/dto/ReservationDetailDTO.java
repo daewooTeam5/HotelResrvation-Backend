@@ -42,6 +42,9 @@ public class ReservationDetailDTO {
     private BigDecimal baseAmount;
     private BigDecimal finalAmount;
 
+    private Integer couponDiscountAmount;
+    private Integer pointDiscountAmount;
+
     // 결제 정보
     private Long paymentId;
     private String method;

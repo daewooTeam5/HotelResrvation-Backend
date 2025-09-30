@@ -65,6 +65,7 @@ public class SecurityConfiguration {
                                 "/api/v1/autocomplete",
                                 "/api/v1/statistics/**",
                                 "/api/v1/payment/**",
+                                "/api/v1/owner/coupons",
                                 "/images/**"
                         ).permitAll()
                         .requestMatchers("/api/v1/reservations/**","/api/v1/statistics/**","/api/v1/dashboard/**","/api/v1/owner/coupons/**", "/api/v1/owner/inventory/**", "/api/v1/owner/rooms/**")
