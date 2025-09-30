@@ -77,6 +77,8 @@ public class SecurityConfiguration {
                         .hasAnyRole("admin", "place_admin")
                         .requestMatchers("/api/v1/admin/**")
                         .hasAnyRole("admin", "user_admin")
+                        .requestMatchers("/api/v1/reservations/**","/api/v1/statistics/**","/api/v1/dashboard/**","/api/v1/owner/coupons/**", "/api/v1/owner/inventory/**", "/api/v1/owner/rooms/**")
+                        .hasAnyRole("admin", "hotel_owner")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
