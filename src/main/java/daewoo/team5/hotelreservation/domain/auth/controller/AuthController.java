@@ -10,6 +10,7 @@ import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.core.provider.CookieProvider;
 import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import daewoo.team5.hotelreservation.infrastructure.firebasefcm.FcmService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ public class AuthController implements AuthSwagger {
     private final AuthService authService;
     private final JwtProvider jwtProvider;
     private final CookieProvider cookieProvider;
+    private final FcmService fcmService;
 
     @PostMapping("/auth")
     public ApiResult<Boolean> emailLogin(@RequestBody @Valid EmailLoginDto emailLoginDto) {
@@ -103,4 +105,17 @@ public class AuthController implements AuthSwagger {
         LoginSuccessDto loginSuccessDto = authService.adminLogin(adminLoginDto, response);
         return ApiResult.ok(loginSuccessDto, "관리자 로그인 성공");
     }
+
+    @PostMapping("/auth/fcm-token")
+    @AuthUser
+    public ApiResult<Boolean> saveFcmToken(
+             UserProjection user,
+             @RequestBody
+             SaveFcmTokenDto dto
+    ){
+        String firebaseToken = authService.saveFcmToken(user.getId(), dto.getFcmToken());
+        fcmService.subscribeToTopic("all", firebaseToken);
+        return ApiResult.ok(true, "FCM 토큰 저장 성공");
+    }
+
 }
