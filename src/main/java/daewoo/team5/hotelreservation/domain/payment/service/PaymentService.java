@@ -10,6 +10,7 @@ import daewoo.team5.hotelreservation.domain.coupon.repository.CouponHistoryRepos
 import daewoo.team5.hotelreservation.domain.coupon.repository.CouponRepository;
 import daewoo.team5.hotelreservation.domain.coupon.repository.UserCouponRepository;
 import daewoo.team5.hotelreservation.domain.coupon.service.CouponService;
+import daewoo.team5.hotelreservation.domain.discount.service.DiscountService;
 import daewoo.team5.hotelreservation.domain.payment.dto.PaymentConfirmRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.TossPaymentDto;
@@ -69,6 +70,7 @@ public class PaymentService {
     private final UserCouponRepository userCouponRepository;
     private final PointService pointService;
     private final PointHistoryRepository pointHistoryRepository;
+    private final DiscountService discountService;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -265,6 +267,7 @@ public class PaymentService {
         BigDecimal baseAmount = room.getPrice()
                 .multiply(BigDecimal.valueOf(dto.getNights()))
                 .multiply(BigDecimal.valueOf(dto.getRoomCount()));     // 예약
+        int discountAmount = 0;
 
         Reservation reservation = Reservation.builder()
                 .guest(guest)
@@ -283,8 +286,16 @@ public class PaymentService {
                 .room(room)
                 .build();
         Reservation save = reservationRepository.save(reservation);
+        // TODO : 할인 금액 검증
+//        Integer discountValue = discountService.calculateDiscountAmount(room, dto.getCheckIn(), dto.getCheckOut());
+//        int percentDiscountAmount = Math.round((float) baseAmount.intValue() / discountValue);
+//        int percentDiscountResult = baseAmount.intValue() * discountValue / 100;
+//        if(percentDiscountAmount!=dto.getDiscountAmount()){
+//            throw new ApiException(HttpStatus.BAD_REQUEST, "할인 금액 오류", "할인 금액이 올바르지 않습니다. 할인 금액을 확인해주세요.");
+//        }
+        save.setFixedDiscountAmount(Math.toIntExact(dto.getDiscountAmount()));
+        discountAmount+= dto.getDiscountAmount();
         // 쿠폰 적용 로그인 한 사용자만 해당
-        int discountAmount = 0;
         if (user != null && dto.getCouponId() != null) {
             CouponEntity couponEntity = couponRepository.findById(dto.getCouponId()).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "존재하지 않는 쿠폰입니다.", "couponId를 확인해주세요."));
             // 사용가능한 쿠폰인지 유효성 검사

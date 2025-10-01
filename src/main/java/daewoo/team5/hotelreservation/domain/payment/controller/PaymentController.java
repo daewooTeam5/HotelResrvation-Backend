@@ -13,6 +13,7 @@ import daewoo.team5.hotelreservation.domain.payment.projection.AdminPaymentProje
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailResponse;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentProjection;
+import daewoo.team5.hotelreservation.domain.payment.projection.ReservationProjection;
 import daewoo.team5.hotelreservation.domain.payment.service.DashboardService;
 import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
 import daewoo.team5.hotelreservation.domain.payment.service.PointService;
@@ -25,10 +26,12 @@ import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import daewoo.team5.hotelreservation.global.exception.HotelNotFoundException;
 import daewoo.team5.hotelreservation.global.mail.service.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -54,6 +57,13 @@ public class PaymentController {
     private final PointService pointService;
     private final AuthService authService;
     private final MailService mailService;
+
+    @GetMapping("/reservation/info/{id}")
+    public ApiResult<ReservationProjection> getReservationInfo(
+            @PathVariable("id") Long reservationId
+    ) {
+        return ApiResult.ok(reservationRepository.findByReservationIdWithDetail(reservationId).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"","")), "예약 정보 조회 성공");
+    }
 
     @GetMapping("/reservation/{id}")
     public ApiResult<Reservation> getReservationById(
