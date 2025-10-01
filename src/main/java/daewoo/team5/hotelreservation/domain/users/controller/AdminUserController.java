@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.users.controller;
 
+import daewoo.team5.hotelreservation.domain.payment.projection.PointModificationRequest;
 import daewoo.team5.hotelreservation.domain.users.dto.request.OwnerRequestDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.UserAllDataDTO;
 import daewoo.team5.hotelreservation.domain.users.service.AdminUserService;
@@ -67,5 +68,23 @@ public class AdminUserController {
         private String reason;
         public String getReason() { return reason; }
         public void setReason(String reason) { this.reason = reason; }
+    }
+
+    @PostMapping("/{userId}/points/add")
+    public ApiResult<Void> addPointsToUser(
+            @PathVariable Long userId,
+            @RequestBody PointModificationRequest request
+    ) {
+        adminUserService.addPoints(userId, request.getAmount(), request.getReason());
+        return ApiResult.ok(null, "포인트가 성공적으로 지급되었습니다.");
+    }
+
+    @PostMapping("/{userId}/points/deduct")
+    public ApiResult<Void> deductPointsFromUser(
+            @PathVariable Long userId,
+            @RequestBody PointModificationRequest request
+    ) {
+        adminUserService.deductPoints(userId, request.getAmount(), request.getReason());
+        return ApiResult.ok(null, "포인트가 성공적으로 차감되었습니다.");
     }
 }

@@ -15,8 +15,7 @@ import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.dto.TossPaymentDto;
 import daewoo.team5.hotelreservation.domain.payment.entity.*;
 import daewoo.team5.hotelreservation.domain.payment.infrastructure.TossPayClient;
-import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailProjection;
-import daewoo.team5.hotelreservation.domain.payment.projection.PaymentInfoProjection;
+import daewoo.team5.hotelreservation.domain.payment.projection.*;
 import daewoo.team5.hotelreservation.domain.payment.repository.GuestRepository;
 import daewoo.team5.hotelreservation.domain.payment.repository.PaymentHistoryRepository;
 import daewoo.team5.hotelreservation.domain.payment.repository.PointHistoryRepository;
@@ -347,11 +346,16 @@ public class PaymentService {
         return paymentRepository.findByReservation_Room_Place_Id(placeId);
     }
 
-    public Payment getPaymentDetail(Long paymentId) {
-        return paymentRepository.findById(paymentId).orElseThrow();
-    }
-
     public PaymentHistoryEntity getPaymentHistory(Long paymentId) {
         return paymentHistoryRepository.findByPaymentId(paymentId);
+    }
+
+    public PaymentDetailResponse getPaymentDetail(Long paymentId) {
+        return paymentRepository.findAdminPaymentDetailById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException("결제를 찾을 수 없습니다. id=" + paymentId));
+    }
+
+    public List<AdminPaymentProjection> searchPayments(String orderId, String paymentKey, String status, String name) {
+        return paymentRepository.searchPaymentsNative(orderId, paymentKey, status, name);
     }
 }
