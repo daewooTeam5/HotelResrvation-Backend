@@ -11,6 +11,12 @@ import java.util.List;
 public interface DiscountRepository extends JpaRepository<DiscountEntity, Long> {
     List<DiscountEntity> findByPlaceId(Long placeId);
 
+    List<DiscountEntity> findByPlaceIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+            Long placeId,
+            LocalDate checkout,   // 예약 끝나는 날
+            LocalDate checkin     // 예약 시작하는 날
+    );
+
     @Query("SELECT r.resevStart, COUNT(r.reservationId) " + // [!code ++]
             "FROM Reservation r " + // [!code ++]
             "WHERE r.room.place.id = :placeId " + // [!code ++]

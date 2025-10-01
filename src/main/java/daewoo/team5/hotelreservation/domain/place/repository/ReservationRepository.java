@@ -1,16 +1,13 @@
 package daewoo.team5.hotelreservation.domain.place.repository;
 
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
-
 import daewoo.team5.hotelreservation.domain.payment.projection.NonMemberReservationDetailProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationInfoProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationProjection;
 import daewoo.team5.hotelreservation.domain.place.dto.ChartDataResponse;
-import daewoo.team5.hotelreservation.domain.place.dto.ReservationStatsDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.ReviewableReservationResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -18,8 +15,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -40,13 +37,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             "JOIN r.room rm " +
             "JOIN rm.place pl " +
             "WHERE pl.owner.id = :ownerId")
-
     Page<Reservation> findAllByOwnerId(@Param("ownerId") Long ownerId,
                                        Pageable pageable);
 
     Optional<Reservation> findByOrderId(String orderId);
 
-   
+
     // 예약 ID로 예약을 조회
     Optional<Reservation> findById(Long reservationId);
 
@@ -125,10 +121,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             nativeQuery = true)
     List<Object[]> findMonthlyConfirmedPaidReservations(@Param("ownerId") Long ownerId,
                                                         @Param("sixMonthsAgo") LocalDate sixMonthsAgo);
+
     /**
      * ✅ [추가] 특정 사용자가 특정 숙소에 대해 '리뷰 작성 가능한' 예약 목록을 조회하는 쿼리
      * 조건: 1. 체크아웃 상태일 것
      * 2. 아직 리뷰가 작성되지 않았을 것
+     *
      * @param guestId 사용자(게스트) ID
      * @param placeId 숙소 ID
      * @return 리뷰 작성 가능한 예약 목록
@@ -209,7 +207,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             "LEFT JOIN Users u ON u.id = g.users.id OR u.id = g.id " +
             "WHERE r.room.place.id = :placeId")
     List<ReservationInfoProjection> findByRoom_Place_Id(@Param("placeId") Long placeId);
-
 
 
     // ✅ 정상 예약 (confirmed + paid)
@@ -434,6 +431,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             "WHERE r.guest.id = :userId")
     List<ReservationProjection> findReservationsByUserId(Long userId);
 
+    @Query(
+            "SELECT r.reservationId as reservationId, r.orderId as orderId, " +
+                    "r.status as status, r.paymentStatus as paymentStatus, " +
+                    "r.baseAmount as baseAmount, r.finalAmount as finalAmount, " +
+                    "r.resevStart as resevStart, r.resevEnd as resevEnd, r.request as request, " +
+                    "rm.roomType as room_roomType, rm.bedType as room_bedType, " +
+                    "rm.capacityPeople as room_capacityPeople, p.name as room_place_name " +
+                    "FROM Reservation r " +
+                    "JOIN r.room rm " +
+                    "JOIN rm.place p " +
+                    "WHERE r.reservationId = :reservationId "
+    )
+    Optional<ReservationProjection> findByReservationIdWithDetail(Long reservationId);
+
+
     @Query("SELECT COUNT(r) FROM Reservation r WHERE r.resevStart BETWEEN :start AND :end")
     Long countReservationsBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
@@ -537,51 +549,52 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
 
     // 피크 시즌 분석 - 요일별
     @Query(value = """
-    SELECT DAYOFWEEK(r.resev_start) AS label,
-           COUNT(*) AS count,
-           COALESCE(SUM(p.amount), 0) AS revenue,
-           (COUNT(*) * 100.0 / NULLIF(SUM(rm.capacity_room), 0)) AS occupancy
-    FROM reservations r
-    JOIN room rm ON r.room_id = rm.id
-    JOIN places pl ON rm.place_id = pl.id
-    LEFT JOIN payments p ON p.reservation_id = r.reservation_id
-    WHERE pl.owner_id = :ownerId
-    GROUP BY DAYOFWEEK(r.resev_start)
-    ORDER BY label
-    """, nativeQuery = true)
+            SELECT DAYOFWEEK(r.resev_start) AS label,
+                   COUNT(*) AS count,
+                   COALESCE(SUM(p.amount), 0) AS revenue,
+                   (COUNT(*) * 100.0 / NULLIF(SUM(rm.capacity_room), 0)) AS occupancy
+            FROM reservations r
+            JOIN room rm ON r.room_id = rm.id
+            JOIN places pl ON rm.place_id = pl.id
+            LEFT JOIN payments p ON p.reservation_id = r.reservation_id
+            WHERE pl.owner_id = :ownerId
+            GROUP BY DAYOFWEEK(r.resev_start)
+            ORDER BY label
+            """, nativeQuery = true)
     List<Object[]> countReservationsByWeekday(@Param("ownerId") Long ownerId);
 
     // 피크 시즌 분석 - 월별
     @Query(value = """
-    SELECT MONTH(r.resev_start) AS label,
-           COUNT(*) AS count,
-           COALESCE(SUM(p.amount), 0) AS revenue,
-           (COUNT(*) * 100.0 / NULLIF(SUM(rm.capacity_room), 0)) AS occupancy
-    FROM reservations r
-    JOIN room rm ON r.room_id = rm.id
-    JOIN places pl ON rm.place_id = pl.id
-    LEFT JOIN payments p ON p.reservation_id = r.reservation_id
-    WHERE pl.owner_id = :ownerId
-    GROUP BY MONTH(r.resev_start)
-    ORDER BY label
-    """, nativeQuery = true)
+            SELECT MONTH(r.resev_start) AS label,
+                   COUNT(*) AS count,
+                   COALESCE(SUM(p.amount), 0) AS revenue,
+                   (COUNT(*) * 100.0 / NULLIF(SUM(rm.capacity_room), 0)) AS occupancy
+            FROM reservations r
+            JOIN room rm ON r.room_id = rm.id
+            JOIN places pl ON rm.place_id = pl.id
+            LEFT JOIN payments p ON p.reservation_id = r.reservation_id
+            WHERE pl.owner_id = :ownerId
+            GROUP BY MONTH(r.resev_start)
+            ORDER BY label
+            """, nativeQuery = true)
     List<Object[]> countReservationsByMonth(@Param("ownerId") Long ownerId);
 
     // 피크 시즌 분석 - 연도별
     @Query(value = """
-    SELECT YEAR(r.resev_start) AS label,
-           COUNT(*) AS count,
-           COALESCE(SUM(p.amount), 0) AS revenue,
-           (COUNT(*) * 100.0 / NULLIF(SUM(rm.capacity_room), 0)) AS occupancy
-    FROM reservations r
-    JOIN room rm ON r.room_id = rm.id
-    JOIN places pl ON rm.place_id = pl.id
-    LEFT JOIN payments p ON p.reservation_id = r.reservation_id
-    WHERE pl.owner_id = :ownerId
-    GROUP BY YEAR(r.resev_start)
-    ORDER BY label
-    """, nativeQuery = true)
+            SELECT YEAR(r.resev_start) AS label,
+                   COUNT(*) AS count,
+                   COALESCE(SUM(p.amount), 0) AS revenue,
+                   (COUNT(*) * 100.0 / NULLIF(SUM(rm.capacity_room), 0)) AS occupancy
+            FROM reservations r
+            JOIN room rm ON r.room_id = rm.id
+            JOIN places pl ON rm.place_id = pl.id
+            LEFT JOIN payments p ON p.reservation_id = r.reservation_id
+            WHERE pl.owner_id = :ownerId
+            GROUP BY YEAR(r.resev_start)
+            ORDER BY label
+            """, nativeQuery = true)
     List<Object[]> countReservationsByYear(@Param("ownerId") Long ownerId);
+
     /**
      * 비회원 예약 상세 조회를 위한 쿼리
      */

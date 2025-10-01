@@ -3,12 +3,17 @@ package daewoo.team5.hotelreservation.domain.discount.service;
 import daewoo.team5.hotelreservation.domain.discount.dto.DiscountCreateDto;
 import daewoo.team5.hotelreservation.domain.discount.dto.DiscountDetailDto;
 import daewoo.team5.hotelreservation.domain.discount.dto.DiscountResponseDto;
+import daewoo.team5.hotelreservation.domain.discount.repository.DiscountHistoryRepository;
 import daewoo.team5.hotelreservation.domain.discount.repository.DiscountRepository;
+import daewoo.team5.hotelreservation.domain.discount.repository.ReservationDiscountHistoryRepository;
 import daewoo.team5.hotelreservation.domain.payment.entity.DiscountEntity;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
+import daewoo.team5.hotelreservation.domain.place.entity.Room;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,8 +28,41 @@ import java.util.stream.Collectors;
 @Transactional
 public class DiscountService {
 
+    private static final Logger log = LoggerFactory.getLogger(DiscountService.class);
     private final DiscountRepository discountRepository;
     private final PlaceRepository placeRepository;
+    private final ReservationDiscountHistoryRepository reservationDiscountHistoryRepository;
+    private final DiscountHistoryRepository discountHistoryRepository;
+
+    public Integer calculateDiscountAmount(Room room, LocalDate checkIn, LocalDate checkOut) {
+        List<DiscountEntity> discounts =
+                discountRepository.findByPlaceIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        room.getPlace().getId(),
+                        checkOut.minusDays(1),
+                        checkIn
+                );
+
+        int days = checkIn.until(checkOut).getDays(); // 숙박일수
+        if (days <= 0) return 0;
+
+        int totalDiscountValue = 0;
+
+        // 체크인일부터 체크아웃 전날까지 하루씩 체크
+        for (LocalDate date = checkIn; date.isBefore(checkOut); date = date.plusDays(1)) {
+            // 이 날짜에 적용되는 할인 찾기
+            LocalDate finalDate = date;
+            DiscountEntity applicable = discounts.stream()
+                    .filter(d -> !d.getStartDate().isAfter(finalDate) && !d.getEndDate().isBefore(finalDate))
+                    .findFirst()
+                    .orElse(null);
+
+            if (applicable != null) {
+                totalDiscountValue += applicable.getDiscountValue();
+            }
+        }
+
+        return totalDiscountValue / days;
+    }
 
     public DiscountResponseDto createDiscount(Long ownerId, DiscountCreateDto dto) {
         Places place = placeRepository.findByOwnerId(ownerId)
