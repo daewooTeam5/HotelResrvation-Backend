@@ -6,14 +6,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import daewoo.team5.hotelreservation.domain.auth.dto.AdminLoginDto;
 import daewoo.team5.hotelreservation.domain.auth.dto.LoginSuccessDto;
 import daewoo.team5.hotelreservation.domain.auth.dto.SignUpRequest;
+import daewoo.team5.hotelreservation.domain.auth.entity.UserFcmEntity;
 import daewoo.team5.hotelreservation.domain.auth.repository.BlackListRepository;
+import daewoo.team5.hotelreservation.domain.auth.repository.FcmCacheRepository;
 import daewoo.team5.hotelreservation.domain.auth.repository.OtpRepository;
+import daewoo.team5.hotelreservation.domain.auth.repository.UserFcmRepository;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.core.provider.CookieProvider;
 import daewoo.team5.hotelreservation.global.core.provider.JwtProvider;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import daewoo.team5.hotelreservation.global.exception.UserNotFoundException;
 import daewoo.team5.hotelreservation.global.mail.service.MailService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.Cookie;
@@ -45,6 +49,8 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final FcmCacheRepository fcmCacheRepository;
+    private final UserFcmRepository userFcmRepository;
 
     // null 이면 비회원, null 아니면 회원
     public UserProjection isAuthUser(Authentication auth){
@@ -164,5 +170,34 @@ public class AuthService {
         refreshTokenCookie.setMaxAge((int) ((tokenParse.getExpiration().getTime() - System.currentTimeMillis()) / 1000));
         response.addCookie(refreshTokenCookie);
         return newAccessToken;
+    }
+
+    public String saveFcmToken(Long userId, String fcmToken) {
+        String cacheFcmToken = fcmCacheRepository.getFcmToken(userId);
+
+        // 1. 캐시에 토큰 존재하고 같으면 그대로 리턴
+        if (cacheFcmToken != null && cacheFcmToken.equals(fcmToken)) {
+            return cacheFcmToken;
+        }
+
+        // 2. DB에서 토큰 조회
+        Optional<UserFcmEntity> users = userFcmRepository.findByUserId(userId);
+        if (users.isPresent()) {
+            UserFcmEntity userFcmEntity = users.get();
+            // 2-1. DB에 토큰이 존재하고, 다를 경우 -> 업데이트
+            if (!userFcmEntity.getToken().equals(fcmToken)) {
+                userFcmEntity.setToken(fcmToken);
+                userFcmRepository.save(userFcmEntity);
+                fcmCacheRepository.saveFcmToken(userId, fcmToken);
+            }
+        } else {
+            // 2-2. DB에 토큰이 존재하지 않을 경우 -> 생성
+            userFcmRepository.save(UserFcmEntity.builder()
+                    .user(usersRepository.findById(userId).orElseThrow(UserNotFoundException::new))
+                    .token(fcmToken)
+                    .build());
+            fcmCacheRepository.saveFcmToken(userId, fcmToken);
+        }
+        return fcmToken;
     }
 }
