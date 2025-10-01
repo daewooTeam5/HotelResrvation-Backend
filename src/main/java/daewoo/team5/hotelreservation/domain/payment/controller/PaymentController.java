@@ -9,7 +9,10 @@ import daewoo.team5.hotelreservation.domain.payment.dto.ReservationRequestDto;
 import daewoo.team5.hotelreservation.domain.payment.entity.Payment;
 import daewoo.team5.hotelreservation.domain.payment.entity.PaymentHistoryEntity;
 import daewoo.team5.hotelreservation.domain.payment.entity.Reservation;
+import daewoo.team5.hotelreservation.domain.payment.projection.AdminPaymentProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailProjection;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentDetailResponse;
+import daewoo.team5.hotelreservation.domain.payment.projection.PaymentProjection;
 import daewoo.team5.hotelreservation.domain.payment.projection.ReservationProjection;
 import daewoo.team5.hotelreservation.domain.payment.service.DashboardService;
 import daewoo.team5.hotelreservation.domain.payment.service.PaymentService;
@@ -27,6 +30,7 @@ import daewoo.team5.hotelreservation.global.exception.HotelNotFoundException;
 import daewoo.team5.hotelreservation.global.mail.service.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -133,13 +137,17 @@ public class PaymentController {
     }
 
     @GetMapping("/all")
-    public List<Payment> getAllPayments() {
-        return paymentRepository.findAll();
+    public List<AdminPaymentProjection> getPayments(
+            @RequestParam(required = false) String orderId,
+            @RequestParam(required = false) String paymentKey,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String name) {
+        return paymentService.searchPayments(orderId, paymentKey, status, name);
     }
 
     // 결제 상세
     @GetMapping("/{paymentId}")
-    public Payment getPaymentDetail(@PathVariable Long paymentId) {
+    public PaymentDetailResponse getPaymentDetail(@PathVariable Long paymentId) {
         return paymentService.getPaymentDetail(paymentId);
     }
 

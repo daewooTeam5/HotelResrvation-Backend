@@ -13,4 +13,5 @@ public class ReviewResponseDto {
     private String comment;     // 리뷰 코멘트
     private String placeName;   // 숙소 이름
     private String ownerReply;  // 사장 답글
+    private Integer rating;
 }

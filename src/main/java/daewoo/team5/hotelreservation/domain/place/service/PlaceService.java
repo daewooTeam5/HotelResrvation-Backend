@@ -1,5 +1,8 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
+import daewoo.team5.hotelreservation.domain.auth.repository.UserFcmRepository;
+import daewoo.team5.hotelreservation.domain.notification.entity.NotificationEntity;
+import daewoo.team5.hotelreservation.domain.notification.repository.NotificationRepository;
 import daewoo.team5.hotelreservation.domain.place.dto.AmenityDto;
 import daewoo.team5.hotelreservation.domain.place.dto.PlaceDetailResponse;
 import daewoo.team5.hotelreservation.domain.place.dto.PlaceInfoProjection;
@@ -7,7 +10,9 @@ import daewoo.team5.hotelreservation.domain.place.dto.RoomInfoDto;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.projection.*;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
+import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
+import daewoo.team5.hotelreservation.infrastructure.firebasefcm.FcmService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +30,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PlaceService {
 
+    private final UserFcmRepository userFcmRepository;
+    private final FcmService fcmService;
+    private final NotificationRepository notificationRepository;
     private final PlaceRepository placeRepository;
 
     public Page<PlaceItemInfomation> AllSearchPlaces(
@@ -106,9 +114,40 @@ public class PlaceService {
     public void updatePlaceStatus(Long placeId, Places.Status status) {
         Places place = placeRepository.findById(placeId)
                 .orElseThrow(() -> new IllegalArgumentException("숙소를 찾을 수 없습니다. ID=" + placeId));
+
         place.setStatus(status);
         placeRepository.save(place);
+
+        // === 알림 발송 및 저장 ===
+        Users owner = place.getOwner(); // 숙소 주인
+        if (owner != null) {
+            userFcmRepository.findByUserId(owner.getId()).ifPresent(userFcm -> {
+                String token = userFcm.getToken();
+                if (token != null && !token.isEmpty()) {
+                    try {
+                        String title = "숙소 승인 상태 변경";
+                        String body = "숙소 [" + place.getName() + "] 의 상태가 [" + status.name() + "]로 변경되었습니다.";
+
+                        // FCM 푸시 전송
+                        fcmService.sendToToken(token, title, body, null);
+
+                        // Notification 저장
+                        NotificationEntity notification = NotificationEntity.builder()
+                                .title(title)
+                                .content(body)
+                                .notificationType(NotificationEntity.NotificationType.ADMIN)
+                                .user(owner)
+                                .build();
+                        notificationRepository.save(notification);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
     }
+
 
     public PlaceInfoProjection getPlaceInfo(Long placeId) {
         return placeRepository.findPlaceInfo(placeId);

@@ -28,12 +28,27 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findTop3ByPlace_OwnerIdOrderByCreatedAtDesc(Long ownerId);
 
     @Query("SELECT new daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponseDto(" +
-            "r.reviewId, u.name, u.role, r.comment, p.name, rc.comment) " +
+            "r.reviewId, u.name, u.role, r.comment, p.name, rc.comment, r.rating) " +
             "FROM Review r " +
             "JOIN r.user u " +
             "JOIN r.place p " +
             "LEFT JOIN r.commentByOwner rc")
     List<ReviewResponseDto> findAllReviewsWithDetails();
+
+    @Query("SELECT new daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponseDto(" +
+            "r.reviewId, u.name, u.role, r.comment, p.name, rc.comment, r.rating) " +
+            "FROM Review r " +
+            "JOIN r.user u " +
+            "JOIN r.place p " +
+            "LEFT JOIN r.commentByOwner rc " +
+            "WHERE (:userName IS NULL OR u.name LIKE %:userName%) " +
+            "AND (:placeName IS NULL OR p.name LIKE %:placeName%) " +
+            "AND (:replyStatus IS NULL OR " +
+            "     (:replyStatus = 'Y' AND rc.comment IS NOT NULL) OR " +
+            "     (:replyStatus = 'N' AND rc.comment IS NULL))")
+    List<ReviewResponseDto> searchReviews(@Param("userName") String userName,
+                                          @Param("placeName") String placeName,
+                                          @Param("replyStatus") String replyStatus);
 
     @Query("SELECT r FROM Review r " +
             "LEFT JOIN FETCH r.images " +

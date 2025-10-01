@@ -131,10 +131,6 @@ public class ReviewService {
         return Sort.by(direction, property);
     }
 
-    public List<ReviewResponseDto> getAllReviews() {
-        return reviewRepository.findAllReviewsWithDetails();
-    }
-
     public List<ReviewDto> getReviewsByPlaceId(Long placeId) {
         return reviewRepository.findAllByPlaceIdWithDetails(placeId)
                 .stream()

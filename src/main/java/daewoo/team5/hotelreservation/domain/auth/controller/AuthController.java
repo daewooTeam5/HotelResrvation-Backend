@@ -117,5 +117,4 @@ public class AuthController implements AuthSwagger {
         fcmService.subscribeToTopic("all", firebaseToken);
         return ApiResult.ok(true, "FCM 토큰 저장 성공");
     }
-
 }
