@@ -1,13 +1,25 @@
 package daewoo.team5.hotelreservation.domain.place.service;
 
+import daewoo.team5.hotelreservation.domain.file.service.FileService;
+import daewoo.team5.hotelreservation.domain.place.dto.RoomDTO;
 import daewoo.team5.hotelreservation.domain.place.dto.RoomOwnerDTO;
+import daewoo.team5.hotelreservation.domain.place.dto.RoomUpdateDTO;
+import daewoo.team5.hotelreservation.domain.place.entity.Amenity;
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.entity.Room;
+import daewoo.team5.hotelreservation.domain.place.entity.RoomAmenityEntity;
+import daewoo.team5.hotelreservation.domain.place.repository.AmenityRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
+import daewoo.team5.hotelreservation.domain.place.repository.RoomAmenityRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.RoomRepository;
+import daewoo.team5.hotelreservation.global.exception.ApiException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -16,6 +28,9 @@ public class RoomOwnerService {
 
     private final RoomRepository roomRepository;
     private final PlaceRepository placeRepository;
+    private final FileService fileService;
+    private final RoomAmenityRepository roomAmenityRepository;
+    private final AmenityRepository amenityRepository;
 
     public List<RoomOwnerDTO> getRoomsByOwner(Long ownerId) {
         return roomRepository.findAllByOwnerId(ownerId).stream()
@@ -29,14 +44,58 @@ public class RoomOwnerService {
         return toDTO(room);
     }
 
-    public RoomOwnerDTO createRoom(Long ownerId, RoomOwnerDTO dto) {
-        // ownerId로 소유자의 숙소 1개 가져오기 (여러 개 나오면 첫 번째만)
-        Places place = placeRepository.findByOwnerId(ownerId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 소유자의 숙소를 찾을 수 없습니다."));
+    @Transactional
+    public RoomDTO createRoom(Long ownerId, RoomUpdateDTO dto, List<MultipartFile> roomImages) {
+        // ✅ ownerId로 Place 조회
+        Places place = placeRepository.findByOwner_Id(ownerId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "숙소 없음", "ownerId=" + ownerId));
 
-        Room room = toEntity(dto, place);
-        return toDTO(roomRepository.save(room));
+        // ✅ Room 엔티티 생성
+        Room room = Room.builder()
+                .roomType(dto.getRoomType())
+                .bedType(dto.getBedType())
+                .capacityPeople(dto.getCapacityPeople())
+                .capacityRoom(dto.getCapacityRoom())
+                .price(BigDecimal.valueOf(dto.getMinPrice()))
+                .status(Room.Status.AVAILABLE)
+                .place(place)  // 🔑 ownerId로 매핑된 place
+                .build();
+        roomRepository.save(room);
+
+        // ✅ 편의시설 매핑
+        if (dto.getAmenityIds() != null && !dto.getAmenityIds().isEmpty()) {
+            List<Amenity> amenities = amenityRepository.findAllById(dto.getAmenityIds());
+            List<RoomAmenityEntity> entities = amenities.stream()
+                    .map(a -> RoomAmenityEntity.builder()
+                            .room(room)
+                            .amenity(a)
+                            .build())
+                    .toList();
+            roomAmenityRepository.saveAll(entities);
+        }
+
+        // ✅ 이미지 업로드
+        if (roomImages != null) {
+            for (MultipartFile img : roomImages) {
+                if (img != null && !img.isEmpty()) {
+                    fileService.uploadAndSave(img, ownerId, room.getId(), "room", null);
+                }
+            }
+        }
+
+        // ✅ DTO로 변환해서 반환
+        return RoomDTO.builder()
+                .roomNumber(room.getId().intValue())
+                .roomType(room.getRoomType())
+                .capacityPeople(room.getCapacityPeople())
+                .capacityRoom(room.getCapacityRoom())
+                .minPrice(room.getPrice().intValue())
+                .bedType(room.getBedType())
+                //.images(dto.getImages())  // 필요하면 매핑
+                .amenityIds(dto.getAmenityIds())
+                .build();
     }
+
 
     public RoomOwnerDTO updateRoom(Long ownerId, Long roomId, RoomOwnerDTO dto) {
         Room room = roomRepository.findByIdAndOwnerId(roomId, ownerId)
@@ -82,4 +141,6 @@ public class RoomOwnerService {
                 .status(dto.getStatus())
                 .build();
     }
+
+
 }
