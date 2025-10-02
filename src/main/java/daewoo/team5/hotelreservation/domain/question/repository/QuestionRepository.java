@@ -2,6 +2,8 @@ package daewoo.team5.hotelreservation.domain.question.repository;
 
 import daewoo.team5.hotelreservation.domain.question.entity.Question;
 import daewoo.team5.hotelreservation.domain.question.projection.QuestionProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor; // 👈 추가
 import org.springframework.data.jpa.repository.Query;
@@ -31,4 +33,11 @@ public interface QuestionRepository extends JpaRepository<Question, Long>, JpaSp
             "WHERE u.id = :userId")
     List<QuestionProjection> findQuestionsByUserId(Long userId);
 
+    @Query("SELECT q FROM Question q " +
+            "JOIN FETCH q.place p " +
+            "JOIN FETCH p.category " +
+            "JOIN FETCH q.user u " +
+            "WHERE u.id = :userId " +
+            "ORDER BY q.createdAt DESC")
+    Page<Question> findByUserIdWithDetails(@Param("userId") Long userId, Pageable pageable);
 }

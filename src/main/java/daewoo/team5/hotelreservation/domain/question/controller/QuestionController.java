@@ -1,15 +1,15 @@
 package daewoo.team5.hotelreservation.domain.question.controller;
 
-import daewoo.team5.hotelreservation.domain.question.dto.CreateAnswerRequest;
-import daewoo.team5.hotelreservation.domain.question.dto.CreateQuestionRequest;
-import daewoo.team5.hotelreservation.domain.question.dto.QuestionResponse;
-import daewoo.team5.hotelreservation.domain.question.dto.QuestionSearchRequest;
+import daewoo.team5.hotelreservation.domain.question.dto.*;
 import daewoo.team5.hotelreservation.domain.question.service.QuestionService;
 import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.global.aop.annotation.AuthUser;
 import daewoo.team5.hotelreservation.global.core.common.ApiResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -68,5 +68,15 @@ public class QuestionController {
             @RequestBody QuestionSearchRequest request
     ) {
         return ApiResult.ok(questionService.searchQuestions(placeId, request));
+    }
+
+    @GetMapping("/questions/my-questions")
+    public ResponseEntity<Page<MyQuestionResponse>> getMyQuestions(
+            @AuthenticationPrincipal Long userId, // 또는 커스텀 UserDetails 사용
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<MyQuestionResponse> questions = questionService.getMyQuestions(userId, page, size);
+        return ResponseEntity.ok(questions);
     }
 }

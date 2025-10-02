@@ -2,9 +2,7 @@ package daewoo.team5.hotelreservation.domain.question.service;
 
 import daewoo.team5.hotelreservation.domain.place.entity.Places;
 import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
-import daewoo.team5.hotelreservation.domain.question.dto.CreateAnswerRequest;
-import daewoo.team5.hotelreservation.domain.question.dto.CreateQuestionRequest;
-import daewoo.team5.hotelreservation.domain.question.dto.QuestionResponse;
+import daewoo.team5.hotelreservation.domain.question.dto.*;
 import daewoo.team5.hotelreservation.domain.question.entity.Question;
 import daewoo.team5.hotelreservation.domain.question.projection.QuestionProjection;
 import daewoo.team5.hotelreservation.domain.question.repository.QuestionRepository;
@@ -13,10 +11,12 @@ import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import daewoo.team5.hotelreservation.domain.question.dto.QuestionSearchRequest;
 import daewoo.team5.hotelreservation.domain.question.specification.QuestionSpecification;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -112,4 +112,35 @@ public class QuestionService {
         return questionRepository.findQuestionsByUserId(userId);
     }
 
+    public Page<MyQuestionResponse> getMyQuestions(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Question> questions = questionRepository.findByUserIdWithDetails(userId, pageable);
+
+        return questions.map(this::convertToMyQuestionResponse);
+    }
+
+    private MyQuestionResponse convertToMyQuestionResponse(Question question) {
+        return MyQuestionResponse.builder()
+                .questionId(question.getId())
+                .place(MyQuestionResponse.PlaceInfo.builder()
+                        .placeId(question.getPlace().getId())
+                        .placeName(question.getPlace().getName())
+                        .categoryName(question.getPlace().getCategory().getName())
+                        .build())
+                .title(question.getTitle())
+                .content(question.getContent())
+                .answer(convertToAnswerInfo(question))
+                .createdAt(question.getCreatedAt())
+                .build();
+    }
+
+    private MyQuestionResponse.AnswerInfo convertToAnswerInfo(Question question) {
+        if (question.getAnswer() == null || question.getAnswer().isEmpty()) {
+            return null;
+        }
+
+        return MyQuestionResponse.AnswerInfo.builder()
+                .content(question.getAnswer())
+                .build();
+    }
 }
