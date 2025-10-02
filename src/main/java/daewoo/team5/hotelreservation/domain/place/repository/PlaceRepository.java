@@ -243,23 +243,24 @@ public interface PlaceRepository extends JpaRepository<Places, Long> {
 
     @Query("""
         SELECT p.id AS id,
-               p.name AS name,
-               u.id AS ownerId,
-               u.name AS ownerName,
-               a.sido AS sido,
-               a.sigungu AS sigungu,
-               c.name AS categoryName,
-               p.status AS status
-        FROM Places p
-        JOIN p.owner u
-        JOIN PlaceAddress a ON a.place = p
-        JOIN p.category c
-        WHERE (:sido IS NULL OR a.sido = :sido)
-          AND (:sigungu IS NULL OR a.sigungu = :sigungu)
-          AND (:approvalStatus IS NULL OR p.status = :approvalStatus)
-          AND (:ownerName IS NULL OR u.name LIKE %:ownerName%)
-          AND (:placeName IS NULL OR p.name LIKE %:placeName%)
-        """)
+         p.name AS name,
+         u.id AS ownerId,
+         u.name AS ownerName,
+         a.sido AS sido,
+         a.sigungu AS sigungu,
+         c.name AS categoryName,
+         p.status AS status
+          FROM Places p
+          JOIN p.owner u
+          JOIN PlaceAddress a ON a.place = p
+          JOIN p.category c
+          WHERE (:sido IS NULL OR a.sido = :sido)
+            AND (:sigungu IS NULL OR a.sigungu = :sigungu)
+            AND (:approvalStatus IS NULL OR p.status = :approvalStatus)
+            AND (:ownerName IS NULL OR u.name LIKE %:ownerName%)
+            AND (:placeName IS NULL OR p.name LIKE %:placeName%)
+          ORDER BY p.id DESC
+            """)
     Page<AdminPlaceProjection> searchAdminPlaces(
             @Param("sido") String sido,
             @Param("sigungu") String sigungu,
