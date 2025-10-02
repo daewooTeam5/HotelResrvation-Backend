@@ -40,7 +40,7 @@ public class Users extends BaseTimeEntity {
     private Role role;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('active', 'inactive', 'banned') DEFAULT 'active'")
+    @Column(columnDefinition = "ENUM('active', 'inactive', 'banned', 'withdraw') DEFAULT 'active'")
     private Status status;
 
 
@@ -62,7 +62,8 @@ public class Users extends BaseTimeEntity {
     public enum Status {
         active,
         inactive,
-        banned
+        banned,
+        withdraw
     }
 }
 

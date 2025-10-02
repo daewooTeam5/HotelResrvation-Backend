@@ -8,6 +8,7 @@ import daewoo.team5.hotelreservation.domain.place.repository.PlaceRepository;
 import daewoo.team5.hotelreservation.domain.place.repository.ReservationRepository;
 import daewoo.team5.hotelreservation.domain.place.review.dto.*;
 import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
+import daewoo.team5.hotelreservation.domain.place.review.entity.ReviewComment;
 import daewoo.team5.hotelreservation.domain.place.review.entity.ReviewImage;
 import daewoo.team5.hotelreservation.domain.place.review.projection.ReviewCommentProjection;
 import daewoo.team5.hotelreservation.domain.place.review.projection.ReviewImageProjection;
@@ -19,6 +20,9 @@ import daewoo.team5.hotelreservation.domain.users.projection.UserProjection;
 import daewoo.team5.hotelreservation.domain.users.repository.UsersRepository;
 import daewoo.team5.hotelreservation.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -144,6 +148,44 @@ public class ReviewService {
 
     public List<ReviewImageProjection> getUserReviewImages(Long userId) {
         return reviewImageRepository.findReviewImagesByUserId(userId);
+    }
+
+    public Page<MyReviewResponse> getMyReviews(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Review> reviews = reviewRepository.findByUserIdWithDetails(userId, pageable);
+
+        return reviews.map(this::convertToMyReviewResponse);
+    }
+
+    private MyReviewResponse convertToMyReviewResponse(Review review) {
+        return MyReviewResponse.builder()
+                .reviewId(review.getReviewId())
+                .place(MyReviewResponse.PlaceInfo.builder()
+                        .placeId(review.getPlace().getId())
+                        .placeName(review.getPlace().getName())
+                        .categoryName(review.getPlace().getCategory().getName())
+                        .build())
+                .rating(review.getRating())
+                .comment(review.getComment())
+                .imageUrls(review.getImages().stream()
+                        .map(ReviewImage::getImageUrl)
+                        .collect(Collectors.toList()))
+                .ownerComment(convertToOwnerCommentInfo(review.getCommentByOwner()))
+                .createdAt(review.getCreatedAt())
+                .build();
+    }
+
+    private MyReviewResponse.OwnerCommentInfo convertToOwnerCommentInfo(ReviewComment comment) {
+        if (comment == null) {
+            return null;
+        }
+
+        return MyReviewResponse.OwnerCommentInfo.builder()
+                .commentId(comment.getId())
+                .comment(comment.getComment())
+                .ownerName(comment.getUser().getName())
+                .createdAt(comment.getCreatedAt())
+                .build();
     }
 
 }

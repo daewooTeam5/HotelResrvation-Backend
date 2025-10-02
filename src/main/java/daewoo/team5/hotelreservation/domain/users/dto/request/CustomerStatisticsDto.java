@@ -13,6 +13,8 @@ public class CustomerStatisticsDto {
     private long activeUsers;            // 예약/결제 고객 수
     private double repeatRate;           // 재구매율 (%)
 
+    private long withdrawnUsers;
+    private double withdrawalRate;
     // 고객 활동 통계
     private List<TopCustomerDto> topReservationCustomers;
     private List<TopCustomerDto> topPaymentCustomers;

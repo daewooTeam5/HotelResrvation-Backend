@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.users.controller;
 
+import daewoo.team5.hotelreservation.domain.users.dto.RoleDistributionDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.CustomerStatisticsDto;
 import daewoo.team5.hotelreservation.domain.users.dto.request.MonthlyCountDto;
 import daewoo.team5.hotelreservation.domain.users.service.AdminCustomerStatisticsService;
@@ -36,5 +37,26 @@ public class AdminCustomerStatisticsController {
     @GetMapping("/stats/payments")
     public List<MonthlyCountDto> getPaymentStats(@RequestParam(defaultValue = "monthly") String type) {
         return customerStatisticsService.getPaymentStats(type);
+    }
+
+    @GetMapping("/stats/withdrawals")
+    public List<MonthlyCountDto> getWithdrawalStats(@RequestParam(defaultValue = "monthly") String type) {
+        return customerStatisticsService.getWithdrawalStats(type);
+    }
+
+    @GetMapping("/stats/total-users")
+    public List<MonthlyCountDto> getTotalUserStats(@RequestParam(defaultValue = "monthly") String type) {
+        return customerStatisticsService.getTotalUserStats(type);
+    }
+
+    @GetMapping("/role-distribution")
+    public List<RoleDistributionDto> getRoleDistribution() {
+        return customerStatisticsService.getRoleDistribution();
+    }
+
+    @GetMapping("/stats/inactive")
+    public List<MonthlyCountDto> getInactiveUserStats(
+            @RequestParam(defaultValue = "monthly") String type) {
+        return customerStatisticsService.getInactiveUserStats(type);
     }
 }

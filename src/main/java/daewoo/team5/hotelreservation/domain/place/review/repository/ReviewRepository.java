@@ -4,6 +4,8 @@ package daewoo.team5.hotelreservation.domain.place.review.repository;
 import daewoo.team5.hotelreservation.domain.place.review.dto.ReviewResponseDto;
 import daewoo.team5.hotelreservation.domain.place.review.entity.Review;
 import daewoo.team5.hotelreservation.domain.place.review.projection.ReviewProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -129,5 +131,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                                       @Param("startDate") LocalDate startDate,
                                       @Param("endDate") LocalDate endDate);
 
-
+    @Query("SELECT r FROM Review r " +
+            "JOIN FETCH r.place p " +
+            "JOIN FETCH r.user u " +
+            "JOIN FETCH r.reservation res " +
+            "LEFT JOIN FETCH r.commentByOwner " +
+            "WHERE u.id = :userId " +
+            "ORDER BY r.createdAt DESC")
+    Page<Review> findByUserIdWithDetails(@Param("userId") Long userId, Pageable pageable);
 }
