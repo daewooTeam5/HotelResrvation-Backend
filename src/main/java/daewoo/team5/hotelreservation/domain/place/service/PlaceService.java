@@ -100,7 +100,7 @@ public class PlaceService {
             String placeName,
             int start
     ) {
-        Pageable pageable = PageRequest.of(start, 10);
+        Pageable pageable = PageRequest.of(start, 20);
 
         Places.Status status = null;
         if (approvalStatus != null && !approvalStatus.isEmpty()) {
