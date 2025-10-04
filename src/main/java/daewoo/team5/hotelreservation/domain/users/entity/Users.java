@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.users.entity;
 
+import daewoo.team5.hotelreservation.domain.place.entity.File;
 import jakarta.persistence.*;
 import lombok.*;
 import daewoo.team5.hotelreservation.global.core.common.BaseTimeEntity;
@@ -35,6 +36,10 @@ public class Users extends BaseTimeEntity {
     @Column(length = 20)
     private String phone;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id", referencedColumnName = "domain_file_id", insertable = false, updatable = false)
+    private File profileImage;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "ENUM('customer', 'hotel_owner', 'admin', 'place_admin', 'user_admin') DEFAULT 'customer'")
     private Role role;
@@ -42,7 +47,6 @@ public class Users extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('active', 'inactive', 'banned', 'withdraw') DEFAULT 'active'")
     private Status status;
-
 
     @Column(nullable = false)
     @UpdateTimestamp

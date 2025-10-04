@@ -1,5 +1,6 @@
 package daewoo.team5.hotelreservation.domain.users.dto.request;
 
+import daewoo.team5.hotelreservation.domain.place.entity.File;
 import daewoo.team5.hotelreservation.domain.users.entity.Users;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,4 +18,7 @@ public class UserResponse {
     private Users.Role role;
     private Users.Status status;
     private Long point;
+    private File profileImageUrl; //이미지
+
+
 }

@@ -29,10 +29,10 @@ public class File {
     private String filetype; // 파일 유형 (image, video, document)
 
     @Column(name = "domain_file_id", nullable = false)
-    private Long domainFileId; // 도메인 파일 ID (place, room, chat 등에 해당하는 ID)
+    private Long domainFileId; // 도메인 파일 ID (place, room, chat, profile 등에 해당하는 ID)
 
     @Column(name = "domain", length = 20, nullable = false)
-    private String domain; // 도메인명 (place, room, chat)
+    private String domain; // 도메인명 (place, room, chat, profile)
 
     @Column(name = "url", nullable = false, columnDefinition = "MEDIUMTEXT")
     private String url; // 파일 URL

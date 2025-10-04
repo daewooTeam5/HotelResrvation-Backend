@@ -1,5 +1,8 @@
 package daewoo.team5.hotelreservation.domain.place.service; // 경로는 프로젝트에 맞게 조정
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import daewoo.team5.hotelreservation.domain.place.entity.File;
+import daewoo.team5.hotelreservation.domain.place.repository.FileRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -16,8 +19,10 @@ import java.util.UUID;
 public class FileUploadService {
 
     private final Path fileStorageLocation;
+    private final FileRepository fileRepository;
 
-    public FileUploadService(@Value("${file.upload-dir}") String uploadDir) {
+    public FileUploadService(@Value("${file.upload-dir}") String uploadDir, FileRepository fileRepository) {
+        this.fileRepository = fileRepository;
         this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
@@ -25,6 +30,7 @@ public class FileUploadService {
             throw new RuntimeException("파일을 업로드할 디렉토리를 생성할 수 없습니다.", ex);
         }
     }
+
 
     public String storeFile(MultipartFile file) {
         String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
@@ -46,6 +52,37 @@ public class FileUploadService {
 
         } catch (IOException ex) {
             throw new RuntimeException(fileName + " 파일을 저장할 수 없습니다. 다시 시도해 주세요.", ex);
+        }
+    }
+
+
+    public File storeProfileImage(MultipartFile file, Long userId) {
+        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        String fileName = UUID.randomUUID().toString() + extension;
+
+        try {
+            if (fileName.contains("..")) {
+                throw new RuntimeException("잘못된 파일명: " + fileName);
+            }
+
+            Path targetLocation = this.fileStorageLocation.resolve(fileName);
+            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+
+            File savedFile = File.builder()
+                    .userId(userId)
+                    .filename(originalFileName)
+                    .extension(extension.replace(".", ""))
+                    .filetype("image")
+                    .domain("profile")              // ✅ 프로필 도메인
+                    .domainFileId(userId)           // ✅ 유저 id 매핑
+                    .url("/uploads/" + fileName)    // 클라이언트에서 접근 가능하도록
+                    .build();
+
+            return fileRepository.save(savedFile);
+
+        } catch (IOException ex) {
+            throw new RuntimeException(fileName + " 파일 저장 실패", ex);
         }
     }
 }

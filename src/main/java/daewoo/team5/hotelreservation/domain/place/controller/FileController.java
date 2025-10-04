@@ -26,6 +26,7 @@ public class FileController {
 
     @Value("${file.upload-dir}")
     private String uploadDir;
+    private final FileUploadService fileUploadService;
 
     // 실제 서비스에서는 @Value 등을 통해 외부 설정 파일에서 경로를 관리하는 것이 좋습니다.
   //  private final String uploadDir = Paths.get(System.getProperty("user.dir"), "uploads").toString();
@@ -70,4 +71,8 @@ public class FileController {
 
         return ApiResult.ok(imageUrls, "이미지 업로드 성공");
     }
+
+
+
+
 }

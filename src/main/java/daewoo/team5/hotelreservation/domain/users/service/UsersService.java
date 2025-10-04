@@ -98,7 +98,8 @@ public class UsersService {
                         u.getPhone(),
                         u.getRole(),
                         u.getStatus(),
-                        u.getPoint()
+                        u.getPoint(),
+                        u.getProfileImage()
                 ));
     }
 
@@ -155,6 +156,7 @@ public class UsersService {
         if (dto.getName() != null) user.setName(dto.getName());
         if (dto.getEmail() != null) user.setEmail(dto.getEmail());
         if (dto.getPhone() != null) user.setPhone(dto.getPhone());
+
 
         return usersRepository.save(user); // 변경 사항 DB 반영
     }

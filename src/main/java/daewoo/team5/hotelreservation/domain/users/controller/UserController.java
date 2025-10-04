@@ -95,6 +95,7 @@ public class UserController {
     ) {
         return ApiResult.ok(usersService.getUserById(user.getId()), "사용자 정보 조회 성공");
     }
+
     @PutMapping("/update")
     @AuthUser
     public ApiResult<Users> updateMyProfile(
